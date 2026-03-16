@@ -11,10 +11,10 @@ export default function Home() {
 
         <div className="mt-6 flex gap-3">
           <Link
-            href="/finanzas"
+            href="/administrador"
             className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
           >
-            Ir a Finanzas
+            Panel Admin
           </Link>
 
           <Link

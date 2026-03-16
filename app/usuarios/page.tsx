@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { FormEvent, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,6 +24,7 @@ const initialRegister = {
 }
 
 export default function UsuariosPage() {
+  const router = useRouter()
   const { profile, token, loadingProfile, submitting, error, isAuthenticated, login, register, logout } =
     useAuth()
 
@@ -46,6 +48,11 @@ export default function UsuariosPage() {
     if (result.ok) {
       setLoginForm(initialLogin)
       setUiMessage("Sesion iniciada correctamente")
+      const nextPath =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("next")
+          : null
+      router.push(nextPath || "/administrador")
       return
     }
 
@@ -126,10 +133,10 @@ export default function UsuariosPage() {
 
             <div className="flex gap-3">
               <Link
-                href="/finanzas"
+                href="/administrador"
                 className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
               >
-                Ir a Finanzas
+                Ir a Panel Admin
               </Link>
               <Button variant="outline" onClick={logout} disabled={submitting}>
                 Cerrar sesion
