@@ -6,6 +6,7 @@ import { FormEvent, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { logUbicacionUsuario } from "@/lib/geolocation"
 import { useAuth } from "@/modules/auth/hooks/useAuth"
 import { authLoginSchema, authRegisterSchema } from "@/modules/auth/schemas/auth.schema"
 
@@ -43,6 +44,7 @@ export default function UsuariosPage() {
       return
     }
 
+    void logUbicacionUsuario("login")
     const result = await login(parsed.data)
 
     if (result.ok) {
@@ -252,3 +254,5 @@ export default function UsuariosPage() {
     </main>
   )
 }
+
+
