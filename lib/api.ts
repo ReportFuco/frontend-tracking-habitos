@@ -1,8 +1,7 @@
 import axios from "axios"
+import { clearStoredSession, getValidStoredToken } from "@/lib/auth-session"
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
-const AUTH_TOKEN_KEY = "auth_token"
-const LEGACY_TOKEN_KEY = "token"
 const LOGIN_PATH = "/usuarios"
 
 let isHandlingUnauthorized = false
@@ -16,7 +15,7 @@ export const api = axios.create({
 
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY) ?? localStorage.getItem(LEGACY_TOKEN_KEY)
+    const token = getValidStoredToken()
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
@@ -38,8 +37,7 @@ api.interceptors.response.use(
     if (error?.response?.status === 401 && hasAuthHeader && !isHandlingUnauthorized) {
       isHandlingUnauthorized = true
 
-      localStorage.removeItem(AUTH_TOKEN_KEY)
-      localStorage.removeItem(LEGACY_TOKEN_KEY)
+      clearStoredSession()
 
       const currentPath = `${window.location.pathname}${window.location.search}`
       const shouldKeepNext = window.location.pathname !== LOGIN_PATH

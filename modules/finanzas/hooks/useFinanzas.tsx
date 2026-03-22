@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { AxiosError } from "axios"
+import { toast } from "sonner"
+import { getFriendlyErrorMessage } from "@/lib/error-messages"
 import { FinanzasAPI } from "@/modules/finanzas/api/finanzas.api"
 import {
   BancoCreate,
@@ -16,14 +17,6 @@ import {
   MovimientoPatch,
   MovimientoResponse,
 } from "@/modules/finanzas/types/finanzas"
-
-const getErrorMessage = (error: unknown) => {
-  if (error instanceof AxiosError) {
-    return error.response?.data?.detail ?? error.message
-  }
-
-  return "Ocurrio un error inesperado."
-}
 
 export const useFinanzas = () => {
   const [bancos, setBancos] = useState<BancoResponse[]>([])
@@ -60,10 +53,18 @@ export const useFinanzas = () => {
 
       if (failures.length > 0) {
         const firstFailure = failures[0] as PromiseRejectedResult
-        setError(getErrorMessage(firstFailure.reason))
+        const message = getFriendlyErrorMessage(firstFailure.reason)
+        setError(message)
+        toast.error("No pudimos cargar tus datos", {
+          description: message,
+        })
       }
     } catch (err) {
-      setError(getErrorMessage(err))
+      const message = getFriendlyErrorMessage(err)
+      setError(message)
+      toast.error("No pudimos cargar tus datos", {
+        description: message,
+      })
     } finally {
       setLoadingCatalogos(false)
     }
@@ -77,7 +78,7 @@ export const useFinanzas = () => {
       await fetchCatalogos()
       return { ok: true as const }
     } catch (err) {
-      const message = getErrorMessage(err)
+      const message = getFriendlyErrorMessage(err)
       setError(message)
       return { ok: false as const, message }
     }

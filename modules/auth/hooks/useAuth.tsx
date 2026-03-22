@@ -1,25 +1,10 @@
 "use client"
 
-import { AxiosError } from "axios"
 import { useCallback, useEffect, useState } from "react"
+import { clearStoredSession, getValidStoredToken } from "@/lib/auth-session"
+import { getFriendlyErrorMessage } from "@/lib/error-messages"
 import { AuthAPI } from "@/modules/auth/api/auth.api"
 import { AuthLoginPayload, AuthRegisterPayload, UsuarioProfile } from "@/modules/auth/types/auth"
-
-const TOKEN_KEY = "auth_token"
-
-const getErrorMessage = (error: unknown) => {
-  if (error instanceof AxiosError) {
-    const detail = error.response?.data?.detail
-
-    if (typeof detail === "string") {
-      return detail
-    }
-
-    return error.message
-  }
-
-  return "Ocurrio un error inesperado"
-}
 
 export const useAuth = () => {
   const [token, setToken] = useState<string | null>(null)
@@ -37,7 +22,7 @@ export const useAuth = () => {
       setProfile(data)
       return { ok: true as const, data }
     } catch (err) {
-      const message = getErrorMessage(err)
+      const message = getFriendlyErrorMessage(err)
       setError(message)
       setProfile(null)
       return { ok: false as const, message }
@@ -52,12 +37,12 @@ export const useAuth = () => {
 
     try {
       const data = await AuthAPI.login(payload)
-      localStorage.setItem(TOKEN_KEY, data.access_token)
+      localStorage.setItem("auth_token", data.access_token)
       setToken(data.access_token)
       await fetchProfile()
       return { ok: true as const }
     } catch (err) {
-      const message = getErrorMessage(err)
+      const message = getFriendlyErrorMessage(err)
       setError(message)
       return { ok: false as const, message }
     } finally {
@@ -73,7 +58,7 @@ export const useAuth = () => {
       await AuthAPI.register(payload)
       return { ok: true as const }
     } catch (err) {
-      const message = getErrorMessage(err)
+      const message = getFriendlyErrorMessage(err)
       setError(message)
       return { ok: false as const, message }
     } finally {
@@ -89,7 +74,7 @@ export const useAuth = () => {
     } catch {
       // Si falla el logout backend igualmente limpiamos sesion local
     } finally {
-      localStorage.removeItem(TOKEN_KEY)
+      clearStoredSession()
       setToken(null)
       setProfile(null)
       setSubmitting(false)
@@ -97,7 +82,7 @@ export const useAuth = () => {
   }
 
   useEffect(() => {
-    const savedToken = localStorage.getItem(TOKEN_KEY) ?? localStorage.getItem("token")
+    const savedToken = getValidStoredToken()
 
     if (!savedToken) {
       return

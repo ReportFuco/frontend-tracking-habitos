@@ -1,50 +1,78 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useFinanzas } from "@/modules/finanzas/hooks/useFinanzas"
 
 export function BancosManager() {
-  const { bancos, error, crearBanco, editarBanco, eliminarBanco } = useFinanzas()
+  const { bancos, crearBanco, editarBanco, eliminarBanco } = useFinanzas()
   const [nuevoBanco, setNuevoBanco] = useState("")
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editingName, setEditingName] = useState("")
-  const [uiMessage, setUiMessage] = useState<string | null>(null)
 
   const onCreate = async () => {
     if (!nuevoBanco.trim()) {
-      setUiMessage("Ingresa el nombre del banco")
+      toast.error("Nombre requerido", {
+        description: "Ingresa el nombre del banco.",
+      })
       return
     }
 
     const result = await crearBanco({ nombre_banco: nuevoBanco.trim() })
-    setUiMessage(result.ok ? "Banco creado" : result.message)
 
     if (result.ok) {
+      toast.success("Banco creado", {
+        description: "El banco se agrego correctamente.",
+      })
       setNuevoBanco("")
+      return
     }
+
+    toast.error("No pudimos crear el banco", {
+      description: result.message,
+    })
   }
 
   const onSave = async (idBanco: number) => {
     if (!editingName.trim()) {
-      setUiMessage("El nombre no puede ir vacio")
+      toast.error("Nombre requerido", {
+        description: "El nombre del banco no puede ir vacio.",
+      })
       return
     }
 
     const result = await editarBanco(idBanco, { nombre_banco: editingName.trim() })
-    setUiMessage(result.ok ? "Banco actualizado" : result.message)
 
     if (result.ok) {
+      toast.success("Banco actualizado", {
+        description: "Los cambios se guardaron correctamente.",
+      })
       setEditingId(null)
       setEditingName("")
+      return
     }
+
+    toast.error("No pudimos actualizar el banco", {
+      description: result.message,
+    })
   }
 
   const onDelete = async (idBanco: number) => {
     const result = await eliminarBanco(idBanco)
-    setUiMessage(result.ok ? "Banco eliminado" : result.message)
+
+    if (result.ok) {
+      toast.success("Banco eliminado", {
+        description: "El banco se elimino correctamente.",
+      })
+      return
+    }
+
+    toast.error("No pudimos eliminar el banco", {
+      description: result.message,
+    })
   }
 
   return (
@@ -54,12 +82,6 @@ export function BancosManager() {
         <CardDescription>CRUD completo para bancos.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {(uiMessage || error) && (
-          <div className="rounded-md border border-amber-500/40 bg-amber-50 p-3 text-sm text-amber-900">
-            {uiMessage ?? error}
-          </div>
-        )}
-
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             placeholder="Nuevo banco"

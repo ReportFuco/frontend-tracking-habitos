@@ -2,6 +2,8 @@
 
 import { usePathname, useRouter } from "next/navigation"
 import { ReactNode, useEffect, useState } from "react"
+import { getValidStoredToken } from "@/lib/auth-session"
+import { AuthAPI } from "@/modules/auth/api/auth.api"
 
 interface AuthGuardProps {
   children: ReactNode
@@ -14,8 +16,8 @@ export function AuthGuard({ children, redirectTo = "/usuarios" }: AuthGuardProps
   const [status, setStatus] = useState<"checking" | "authorized" | "unauthorized">("checking")
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const token = localStorage.getItem("auth_token") ?? localStorage.getItem("token")
+    const validateSession = async () => {
+      const token = getValidStoredToken()
 
       if (!token) {
         setStatus("unauthorized")
@@ -24,10 +26,17 @@ export function AuthGuard({ children, redirectTo = "/usuarios" }: AuthGuardProps
         return
       }
 
-      setStatus("authorized")
-    }, 0)
+      try {
+        await AuthAPI.getProfile()
+        setStatus("authorized")
+      } catch {
+        setStatus("unauthorized")
+        const next = pathname ? `?next=${encodeURIComponent(pathname)}` : ""
+        router.replace(`${redirectTo}${next}`)
+      }
+    }
 
-    return () => clearTimeout(timer)
+    void validateSession()
   }, [pathname, redirectTo, router])
 
   if (status !== "authorized") {

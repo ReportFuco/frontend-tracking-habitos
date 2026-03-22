@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -27,16 +28,13 @@ export function MovimientoFormCard() {
     cuentas,
     loadingCatalogos,
     submittingMovimiento,
-    error,
     crearMovimiento,
   } = useFinanzas()
 
   const [form, setForm] = useState(initialMovimientoForm)
-  const [uiMessage, setUiMessage] = useState<string | null>(null)
 
   const handleCreateMovimiento = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setUiMessage(null)
 
     const parsed = movimientoCreateSchema.safeParse({
       id_categoria: Number(form.id_categoria),
@@ -48,7 +46,9 @@ export function MovimientoFormCard() {
     })
 
     if (!parsed.success) {
-      setUiMessage(parsed.error.issues[0]?.message ?? "Formulario de movimiento invalido")
+      toast.error("Revisa el formulario", {
+        description: parsed.error.issues[0]?.message ?? "Completa los datos del movimiento.",
+      })
       return
     }
 
@@ -61,11 +61,15 @@ export function MovimientoFormCard() {
 
     if (result.ok) {
       setForm(initialMovimientoForm)
-      setUiMessage("Movimiento creado correctamente")
+      toast.success("Movimiento creado", {
+        description: "El movimiento se registro correctamente.",
+      })
       return
     }
 
-    setUiMessage(result.message)
+    toast.error("No pudimos registrar el movimiento", {
+      description: result.message,
+    })
   }
 
   return (
@@ -75,12 +79,6 @@ export function MovimientoFormCard() {
         <CardDescription>Registra ingresos y gastos para una cuenta.</CardDescription>
       </CardHeader>
       <CardContent>
-        {(error || uiMessage) && (
-          <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-50 p-3 text-sm text-amber-900">
-            {uiMessage ?? error}
-          </div>
-        )}
-
         <form onSubmit={handleCreateMovimiento} className="space-y-3">
           <div className="space-y-1">
             <label className="text-sm font-medium">Categoria</label>

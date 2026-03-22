@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,13 +16,11 @@ const initialCuentaForm = {
 }
 
 export function CuentaFormCard() {
-  const { bancos, loadingCatalogos, submittingCuenta, error, crearCuenta } = useFinanzas()
+  const { bancos, loadingCatalogos, submittingCuenta, crearCuenta } = useFinanzas()
   const [form, setForm] = useState(initialCuentaForm)
-  const [uiMessage, setUiMessage] = useState<string | null>(null)
 
   const handleCreateCuenta = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setUiMessage(null)
 
     const parsed = cuentaCreateSchema.safeParse({
       id_banco: Number(form.id_banco),
@@ -30,7 +29,9 @@ export function CuentaFormCard() {
     })
 
     if (!parsed.success) {
-      setUiMessage(parsed.error.issues[0]?.message ?? "Formulario de cuenta invalido")
+      toast.error("Revisa el formulario", {
+        description: parsed.error.issues[0]?.message ?? "Completa los datos de la cuenta.",
+      })
       return
     }
 
@@ -38,11 +39,15 @@ export function CuentaFormCard() {
 
     if (result.ok) {
       setForm(initialCuentaForm)
-      setUiMessage("Cuenta creada correctamente")
+      toast.success("Cuenta creada", {
+        description: "La cuenta bancaria fue creada correctamente.",
+      })
       return
     }
 
-    setUiMessage(result.message)
+    toast.error("No pudimos crear la cuenta", {
+      description: result.message,
+    })
   }
 
   return (
@@ -52,12 +57,6 @@ export function CuentaFormCard() {
         <CardDescription>Crea una nueva cuenta bancaria para el usuario actual.</CardDescription>
       </CardHeader>
       <CardContent>
-        {(error || uiMessage) && (
-          <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-50 p-3 text-sm text-amber-900">
-            {uiMessage ?? error}
-          </div>
-        )}
-
         <form onSubmit={handleCreateCuenta} className="space-y-3">
           <div className="space-y-1">
             <label className="text-sm font-medium">Banco</label>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,7 +10,7 @@ import { TIPOS_GASTO, TIPOS_MOVIMIENTO } from "@/modules/finanzas/schemas/finanz
 import { TipoGasto, TipoMovimiento } from "@/modules/finanzas/types/finanzas"
 
 export function MovimientosManager() {
-  const { categorias, cuentas, movimientos, error, editarMovimiento } = useFinanzas()
+  const { categorias, cuentas, movimientos, editarMovimiento } = useFinanzas()
 
   const [editingId, setEditingId] = useState<number | null>(null)
   const [idCategoria, setIdCategoria] = useState("")
@@ -17,7 +18,6 @@ export function MovimientosManager() {
   const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimiento>("gasto")
   const [tipoGasto, setTipoGasto] = useState<TipoGasto>("variable")
   const [monto, setMonto] = useState("")
-  const [uiMessage, setUiMessage] = useState<string | null>(null)
 
   const onSave = async (idMovimiento: number) => {
     const result = await editarMovimiento(idMovimiento, {
@@ -28,11 +28,17 @@ export function MovimientosManager() {
       monto: Number(monto),
     })
 
-    setUiMessage(result.ok ? "Movimiento actualizado" : result.message)
-
     if (result.ok) {
+      toast.success("Movimiento actualizado", {
+        description: "Los cambios del movimiento se guardaron correctamente.",
+      })
       setEditingId(null)
+      return
     }
+
+    toast.error("No pudimos actualizar el movimiento", {
+      description: result.message,
+    })
   }
 
   return (
@@ -44,12 +50,6 @@ export function MovimientosManager() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {(uiMessage || error) && (
-          <div className="rounded-md border border-amber-500/40 bg-amber-50 p-3 text-sm text-amber-900">
-            {uiMessage ?? error}
-          </div>
-        )}
-
         <div className="space-y-2">
           {movimientos.map((movimiento) => (
             <div key={movimiento.id_transaccion} className="rounded-md border p-3">

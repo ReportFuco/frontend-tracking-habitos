@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { FormEvent, useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -26,21 +27,21 @@ const initialRegister = {
 
 export default function UsuariosPage() {
   const router = useRouter()
-  const { profile, token, loadingProfile, submitting, error, isAuthenticated, login, register, logout } =
+  const { profile, token, loadingProfile, submitting, isAuthenticated, login, register, logout } =
     useAuth()
 
   const [loginForm, setLoginForm] = useState(initialLogin)
   const [registerForm, setRegisterForm] = useState(initialRegister)
-  const [uiMessage, setUiMessage] = useState<string | null>(null)
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setUiMessage(null)
 
     const parsed = authLoginSchema.safeParse(loginForm)
 
     if (!parsed.success) {
-      setUiMessage(parsed.error.issues[0]?.message ?? "Formulario invalido")
+      toast.error("Revisa el formulario", {
+        description: parsed.error.issues[0]?.message ?? "Completa los datos para iniciar sesion.",
+      })
       return
     }
 
@@ -49,7 +50,9 @@ export default function UsuariosPage() {
 
     if (result.ok) {
       setLoginForm(initialLogin)
-      setUiMessage("Sesion iniciada correctamente")
+      toast.success("Sesion iniciada", {
+        description: "Bienvenido de nuevo.",
+      })
       const nextPath =
         typeof window !== "undefined"
           ? new URLSearchParams(window.location.search).get("next")
@@ -58,17 +61,20 @@ export default function UsuariosPage() {
       return
     }
 
-    setUiMessage(result.message)
+    toast.error("No pudimos iniciar sesion", {
+      description: result.message,
+    })
   }
 
   const handleRegister = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setUiMessage(null)
 
     const parsed = authRegisterSchema.safeParse(registerForm)
 
     if (!parsed.success) {
-      setUiMessage(parsed.error.issues[0]?.message ?? "Formulario invalido")
+      toast.error("Revisa el formulario", {
+        description: parsed.error.issues[0]?.message ?? "Completa los datos del registro.",
+      })
       return
     }
 
@@ -76,11 +82,15 @@ export default function UsuariosPage() {
 
     if (result.ok) {
       setRegisterForm(initialRegister)
-      setUiMessage("Usuario registrado. Ahora puedes iniciar sesion.")
+      toast.success("Usuario registrado", {
+        description: "Tu cuenta fue creada correctamente. Ahora puedes iniciar sesion.",
+      })
       return
     }
 
-    setUiMessage(result.message)
+    toast.error("No pudimos completar el registro", {
+      description: result.message,
+    })
   }
 
   return (
@@ -91,12 +101,6 @@ export default function UsuariosPage() {
           Inicia sesion para obtener JWT y consumir endpoints protegidos como /finanzas.
         </p>
       </header>
-
-      {(uiMessage || error) && (
-        <div className="rounded-md border border-amber-500/40 bg-amber-50 p-3 text-sm text-amber-900">
-          {uiMessage ?? error}
-        </div>
-      )}
 
       {isAuthenticated ? (
         <Card>

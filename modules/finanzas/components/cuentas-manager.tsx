@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,11 +10,10 @@ import { TIPOS_CUENTA } from "@/modules/finanzas/schemas/finanzas.schema"
 import { TipoCuenta } from "@/modules/finanzas/types/finanzas"
 
 export function CuentasManager() {
-  const { cuentas, error, editarCuenta, eliminarCuenta } = useFinanzas()
+  const { cuentas, editarCuenta, eliminarCuenta } = useFinanzas()
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editingName, setEditingName] = useState("")
   const [editingTipo, setEditingTipo] = useState<TipoCuenta>("Cuenta Corriente")
-  const [uiMessage, setUiMessage] = useState<string | null>(null)
 
   const onSave = async (idCuenta: number) => {
     const result = await editarCuenta(idCuenta, {
@@ -21,17 +21,33 @@ export function CuentasManager() {
       tipo_cuenta: editingTipo,
     })
 
-    setUiMessage(result.ok ? "Cuenta actualizada" : result.message)
-
     if (result.ok) {
+      toast.success("Cuenta actualizada", {
+        description: "Los cambios de la cuenta se guardaron correctamente.",
+      })
       setEditingId(null)
       setEditingName("")
+      return
     }
+
+    toast.error("No pudimos actualizar la cuenta", {
+      description: result.message,
+    })
   }
 
   const onDelete = async (idCuenta: number) => {
     const result = await eliminarCuenta(idCuenta)
-    setUiMessage(result.ok ? "Cuenta desactivada" : result.message)
+
+    if (result.ok) {
+      toast.success("Cuenta desactivada", {
+        description: "La cuenta fue desactivada correctamente.",
+      })
+      return
+    }
+
+    toast.error("No pudimos desactivar la cuenta", {
+      description: result.message,
+    })
   }
 
   return (
@@ -41,12 +57,6 @@ export function CuentasManager() {
         <CardDescription>Editar o desactivar cuentas existentes.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {(uiMessage || error) && (
-          <div className="rounded-md border border-amber-500/40 bg-amber-50 p-3 text-sm text-amber-900">
-            {uiMessage ?? error}
-          </div>
-        )}
-
         <div className="space-y-2">
           {cuentas.map((cuenta) => (
             <div key={cuenta.id_cuenta} className="rounded-md border p-3">

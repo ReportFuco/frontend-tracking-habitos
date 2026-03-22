@@ -1,50 +1,78 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useFinanzas } from "@/modules/finanzas/hooks/useFinanzas"
 
 export function CategoriasManager() {
-  const { categorias, error, crearCategoria, editarCategoria, eliminarCategoria } = useFinanzas()
+  const { categorias, crearCategoria, editarCategoria, eliminarCategoria } = useFinanzas()
   const [nuevaCategoria, setNuevaCategoria] = useState("")
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editingName, setEditingName] = useState("")
-  const [uiMessage, setUiMessage] = useState<string | null>(null)
 
   const onCreate = async () => {
     if (!nuevaCategoria.trim()) {
-      setUiMessage("Ingresa el nombre de la categoria")
+      toast.error("Nombre requerido", {
+        description: "Ingresa el nombre de la categoria.",
+      })
       return
     }
 
     const result = await crearCategoria({ nombre: nuevaCategoria.trim() })
-    setUiMessage(result.ok ? "Categoria creada" : result.message)
 
     if (result.ok) {
+      toast.success("Categoria creada", {
+        description: "La categoria se agrego correctamente.",
+      })
       setNuevaCategoria("")
+      return
     }
+
+    toast.error("No pudimos crear la categoria", {
+      description: result.message,
+    })
   }
 
   const onSave = async (idCategoria: number) => {
     if (!editingName.trim()) {
-      setUiMessage("El nombre no puede ir vacio")
+      toast.error("Nombre requerido", {
+        description: "El nombre de la categoria no puede ir vacio.",
+      })
       return
     }
 
     const result = await editarCategoria(idCategoria, { nombre: editingName.trim() })
-    setUiMessage(result.ok ? "Categoria actualizada" : result.message)
 
     if (result.ok) {
+      toast.success("Categoria actualizada", {
+        description: "Los cambios se guardaron correctamente.",
+      })
       setEditingId(null)
       setEditingName("")
+      return
     }
+
+    toast.error("No pudimos actualizar la categoria", {
+      description: result.message,
+    })
   }
 
   const onDelete = async (idCategoria: number) => {
     const result = await eliminarCategoria(idCategoria)
-    setUiMessage(result.ok ? "Categoria eliminada" : result.message)
+
+    if (result.ok) {
+      toast.success("Categoria eliminada", {
+        description: "La categoria se elimino correctamente.",
+      })
+      return
+    }
+
+    toast.error("No pudimos eliminar la categoria", {
+      description: result.message,
+    })
   }
 
   return (
@@ -54,12 +82,6 @@ export function CategoriasManager() {
         <CardDescription>CRUD completo para categorias.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {(uiMessage || error) && (
-          <div className="rounded-md border border-amber-500/40 bg-amber-50 p-3 text-sm text-amber-900">
-            {uiMessage ?? error}
-          </div>
-        )}
-
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             placeholder="Nueva categoria"
