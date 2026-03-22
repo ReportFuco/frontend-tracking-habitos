@@ -1,4 +1,5 @@
 import { BancosManager } from "@/modules/finanzas/components/bancos-manager"
+import { FinanzasProvider } from "@/modules/finanzas/hooks/useFinanzas"
 import { FinanzasMenuLinks } from "@/modules/finanzas/components/menu-links"
 
 export default function BancosPage() {
@@ -10,7 +11,9 @@ export default function BancosPage() {
         <FinanzasMenuLinks />
       </header>
 
-      <BancosManager />
+      <FinanzasProvider>
+        <BancosManager />
+      </FinanzasProvider>
     </main>
   )
 }

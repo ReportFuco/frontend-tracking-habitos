@@ -1,4 +1,5 @@
 import { CategoriasManager } from "@/modules/finanzas/components/categorias-manager"
+import { FinanzasProvider } from "@/modules/finanzas/hooks/useFinanzas"
 import { FinanzasMenuLinks } from "@/modules/finanzas/components/menu-links"
 
 export default function CategoriasPage() {
@@ -10,7 +11,9 @@ export default function CategoriasPage() {
         <FinanzasMenuLinks />
       </header>
 
-      <CategoriasManager />
+      <FinanzasProvider>
+        <CategoriasManager />
+      </FinanzasProvider>
     </main>
   )
 }

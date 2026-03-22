@@ -1,4 +1,5 @@
 import { MovimientoFormCard } from "@/modules/finanzas/components/movimiento-form"
+import { FinanzasProvider } from "@/modules/finanzas/hooks/useFinanzas"
 import { FinanzasMenuLinks } from "@/modules/finanzas/components/menu-links"
 
 export default function RegistrarMovimientoPage() {
@@ -12,7 +13,9 @@ export default function RegistrarMovimientoPage() {
         <FinanzasMenuLinks />
       </header>
 
-      <MovimientoFormCard />
+      <FinanzasProvider>
+        <MovimientoFormCard />
+      </FinanzasProvider>
     </main>
   )
 }

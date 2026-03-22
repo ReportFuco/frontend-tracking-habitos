@@ -1,5 +1,6 @@
 import { MovimientoFormCard } from "@/modules/finanzas/components/movimiento-form"
 import { MovimientosManager } from "@/modules/finanzas/components/movimientos-manager"
+import { FinanzasProvider } from "@/modules/finanzas/hooks/useFinanzas"
 import { FinanzasMenuLinks } from "@/modules/finanzas/components/menu-links"
 
 export default function MovimientosPage() {
@@ -13,10 +14,12 @@ export default function MovimientosPage() {
         <FinanzasMenuLinks />
       </header>
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        <MovimientoFormCard />
-        <MovimientosManager />
-      </section>
+      <FinanzasProvider>
+        <section className="grid gap-6 lg:grid-cols-2">
+          <MovimientoFormCard />
+          <MovimientosManager />
+        </section>
+      </FinanzasProvider>
     </main>
   )
 }

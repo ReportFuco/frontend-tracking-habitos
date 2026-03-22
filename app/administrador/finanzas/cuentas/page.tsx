@@ -1,5 +1,6 @@
 import { CuentaFormCard } from "@/modules/finanzas/components/cuenta-form"
 import { CuentasManager } from "@/modules/finanzas/components/cuentas-manager"
+import { FinanzasProvider } from "@/modules/finanzas/hooks/useFinanzas"
 import { FinanzasMenuLinks } from "@/modules/finanzas/components/menu-links"
 
 export default function CuentasPage() {
@@ -11,10 +12,12 @@ export default function CuentasPage() {
         <FinanzasMenuLinks />
       </header>
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        <CuentaFormCard />
-        <CuentasManager />
-      </section>
+      <FinanzasProvider>
+        <section className="grid gap-6 lg:grid-cols-2">
+          <CuentaFormCard />
+          <CuentasManager />
+        </section>
+      </FinanzasProvider>
     </main>
   )
 }

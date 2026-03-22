@@ -1,4 +1,5 @@
 import { HistoricoCards } from "@/modules/finanzas/components/historico-cards"
+import { FinanzasProvider } from "@/modules/finanzas/hooks/useFinanzas"
 import { FinanzasMenuLinks } from "@/modules/finanzas/components/menu-links"
 
 export default function HistoricoFinanzasPage() {
@@ -12,7 +13,9 @@ export default function HistoricoFinanzasPage() {
         <FinanzasMenuLinks />
       </header>
 
-      <HistoricoCards />
+      <FinanzasProvider>
+        <HistoricoCards />
+      </FinanzasProvider>
     </main>
   )
 }

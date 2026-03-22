@@ -1,4 +1,5 @@
 import { CuentaFormCard } from "@/modules/finanzas/components/cuenta-form"
+import { FinanzasProvider } from "@/modules/finanzas/hooks/useFinanzas"
 import { FinanzasMenuLinks } from "@/modules/finanzas/components/menu-links"
 
 export default function RegistrarCuentaPage() {
@@ -12,7 +13,9 @@ export default function RegistrarCuentaPage() {
         <FinanzasMenuLinks />
       </header>
 
-      <CuentaFormCard />
+      <FinanzasProvider>
+        <CuentaFormCard />
+      </FinanzasProvider>
     </main>
   )
 }

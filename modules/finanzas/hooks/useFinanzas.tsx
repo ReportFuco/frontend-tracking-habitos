@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { createContext, ReactNode, useContext, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { getFriendlyErrorMessage } from "@/lib/error-messages"
 import { FinanzasAPI } from "@/modules/finanzas/api/finanzas.api"
@@ -18,7 +18,11 @@ import {
   MovimientoResponse,
 } from "@/modules/finanzas/types/finanzas"
 
-export const useFinanzas = () => {
+type FinanzasContextValue = ReturnType<typeof useFinanzasState>
+
+const FinanzasContext = createContext<FinanzasContextValue | null>(null)
+
+const useFinanzasState = () => {
   const [bancos, setBancos] = useState<BancoResponse[]>([])
   const [categorias, setCategorias] = useState<CategoriaResponse[]>([])
   const [cuentas, setCuentas] = useState<CuentaResponse[]>([])
@@ -152,4 +156,20 @@ export const useFinanzas = () => {
     crearMovimiento,
     editarMovimiento,
   }
+}
+
+export function FinanzasProvider({ children }: { children: ReactNode }) {
+  const value = useFinanzasState()
+
+  return <FinanzasContext.Provider value={value}>{children}</FinanzasContext.Provider>
+}
+
+export const useFinanzas = () => {
+  const context = useContext(FinanzasContext)
+
+  if (!context) {
+    throw new Error("useFinanzas debe usarse dentro de un FinanzasProvider")
+  }
+
+  return context
 }
