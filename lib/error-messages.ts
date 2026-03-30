@@ -27,8 +27,8 @@ const getValidationMessage = (detail: unknown) => {
   const issueField =
     "loc" in firstIssue && Array.isArray(firstIssue.loc)
       ? firstIssue.loc
-          .filter((item): item is string => typeof item === "string")
-          .filter((item) => item !== "body")
+          .filter((item: unknown): item is string => typeof item === "string")
+          .filter((item: string) => item !== "body")
           .join(", ")
       : null
 

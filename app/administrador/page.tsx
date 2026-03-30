@@ -12,6 +12,11 @@ export default function AdministradorPage() {
           href: "/administrador/finanzas",
         },
         {
+          title: "Entrenamientos",
+          description: "Gestion de gimnasios, sesiones de fuerza y seguimiento de series.",
+          href: "/administrador/entrenamientos",
+        },
+        {
           title: "Usuarios",
           description: "Gestion y autenticacion de usuarios (en expansion).",
           href: "/usuarios",
