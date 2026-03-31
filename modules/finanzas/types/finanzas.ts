@@ -54,6 +54,7 @@ export interface MovimientoCreate {
   tipo_gasto: TipoGasto
   monto: number
   descripcion?: string | null
+  created_at?: string
 }
 
 export interface MovimientoPatch {

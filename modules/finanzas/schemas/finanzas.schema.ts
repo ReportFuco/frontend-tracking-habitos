@@ -17,6 +17,15 @@ export const movimientoCreateSchema = z.object({
   tipo_gasto: z.enum(TIPOS_GASTO),
   monto: z.number().int().positive("El monto debe ser mayor a 0"),
   descripcion: z.string().trim().max(250).optional().or(z.literal("")),
+  created_at: z
+    .string()
+    .trim()
+    .regex(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/,
+      "La fecha debe tener formato valido"
+    )
+    .optional()
+    .or(z.literal("")),
 })
 
 export type CuentaCreateForm = z.infer<typeof cuentaCreateSchema>

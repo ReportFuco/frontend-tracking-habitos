@@ -20,6 +20,7 @@ const initialMovimientoForm = {
   tipo_gasto: "variable" as TipoGasto,
   monto: "",
   descripcion: "",
+  created_at: "",
 }
 
 export function MovimientoFormCard() {
@@ -43,6 +44,7 @@ export function MovimientoFormCard() {
       tipo_gasto: form.tipo_gasto,
       monto: Number(form.monto),
       descripcion: form.descripcion,
+      created_at: form.created_at,
     })
 
     if (!parsed.success) {
@@ -55,6 +57,7 @@ export function MovimientoFormCard() {
     const payload = {
       ...parsed.data,
       descripcion: parsed.data.descripcion || null,
+      created_at: parsed.data.created_at ? ensureSeconds(parsed.data.created_at) : undefined,
     }
 
     const result = await crearMovimiento(payload)
@@ -170,6 +173,15 @@ export function MovimientoFormCard() {
             />
           </div>
 
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Fecha (opcional)</label>
+            <Input
+              type="datetime-local"
+              value={form.created_at}
+              onChange={(event) => setForm((prev) => ({ ...prev, created_at: event.target.value }))}
+            />
+          </div>
+
           <Button
             type="submit"
             className="w-full sm:w-auto"
@@ -181,4 +193,8 @@ export function MovimientoFormCard() {
       </CardContent>
     </Card>
   )
+}
+
+function ensureSeconds(value: string) {
+  return value.length === 16 ? `${value}:00` : value
 }
