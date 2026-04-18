@@ -29,7 +29,7 @@ const useEntrenamientosState = () => {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchEntrenamientoActivo = async () => {
+  const fetchEntrenamientoActivo = useCallback(async () => {
     try {
       const data = await EntrenamientosAPI.getEntrenoFuerzaActivo()
       setEntrenamientoActivo(data)
@@ -42,7 +42,7 @@ const useEntrenamientosState = () => {
 
       throw err
     }
-  }
+  }, [])
 
   const fetchResumen = useCallback(async () => {
     setLoading(true)
@@ -63,9 +63,9 @@ const useEntrenamientosState = () => {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [fetchEntrenamientoActivo])
 
-  const fetchGimnasios = async (q?: string) => {
+  const fetchGimnasios = useCallback(async (q?: string) => {
     setLoading(true)
     setError(null)
 
@@ -80,9 +80,9 @@ const useEntrenamientosState = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const fetchDetalleEntrenoFuerza = async (idEntrenamientoFuerza: number) => {
+  const fetchDetalleEntrenoFuerza = useCallback(async (idEntrenamientoFuerza: number) => {
     setLoading(true)
     setError(null)
 
@@ -95,9 +95,9 @@ const useEntrenamientosState = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const runAction = async (action: () => Promise<unknown>, shouldRefresh = true) => {
+  const runAction = useCallback(async (action: () => Promise<unknown>, shouldRefresh = true) => {
     setSubmitting(true)
     setError(null)
 
@@ -116,31 +116,51 @@ const useEntrenamientosState = () => {
     } finally {
       setSubmitting(false)
     }
-  }
+  }, [fetchResumen])
 
-  const crearGimnasio = async (payload: GimnasioCreate) =>
-    runAction(() => EntrenamientosAPI.createGimnasio(payload))
+  const crearGimnasio = useCallback(
+    async (payload: GimnasioCreate) => runAction(() => EntrenamientosAPI.createGimnasio(payload)),
+    [runAction]
+  )
 
-  const editarGimnasio = async (idGimnasio: number, payload: GimnasioEdit) =>
-    runAction(() => EntrenamientosAPI.updateGimnasio(idGimnasio, payload))
+  const editarGimnasio = useCallback(
+    async (idGimnasio: number, payload: GimnasioEdit) =>
+      runAction(() => EntrenamientosAPI.updateGimnasio(idGimnasio, payload)),
+    [runAction]
+  )
 
-  const eliminarGimnasio = async (idGimnasio: number) =>
-    runAction(() => EntrenamientosAPI.deleteGimnasio(idGimnasio))
+  const eliminarGimnasio = useCallback(
+    async (idGimnasio: number) => runAction(() => EntrenamientosAPI.deleteGimnasio(idGimnasio)),
+    [runAction]
+  )
 
-  const iniciarEntrenoFuerza = async (payload: EntrenoFuerzaCreate) =>
-    runAction(() => EntrenamientosAPI.createEntrenoFuerza(payload))
+  const iniciarEntrenoFuerza = useCallback(
+    async (payload: EntrenoFuerzaCreate) =>
+      runAction(() => EntrenamientosAPI.createEntrenoFuerza(payload)),
+    [runAction]
+  )
 
-  const cerrarEntrenoFuerzaActivo = async () =>
-    runAction(() => EntrenamientosAPI.closeEntrenoFuerzaActivo())
+  const cerrarEntrenoFuerzaActivo = useCallback(
+    async () => runAction(() => EntrenamientosAPI.closeEntrenoFuerzaActivo()),
+    [runAction]
+  )
 
-  const agregarSerieFuerza = async (payload: SerieFuerzaCreate) =>
-    runAction(() => EntrenamientosAPI.createSerieFuerza(payload))
+  const agregarSerieFuerza = useCallback(
+    async (payload: SerieFuerzaCreate) => runAction(() => EntrenamientosAPI.createSerieFuerza(payload)),
+    [runAction]
+  )
 
-  const editarSerieFuerza = async (idFuerzaDetalle: number, payload: SerieFuerzaPatch) =>
-    runAction(() => EntrenamientosAPI.updateSerieFuerza(idFuerzaDetalle, payload))
+  const editarSerieFuerza = useCallback(
+    async (idFuerzaDetalle: number, payload: SerieFuerzaPatch) =>
+      runAction(() => EntrenamientosAPI.updateSerieFuerza(idFuerzaDetalle, payload)),
+    [runAction]
+  )
 
-  const eliminarSerieFuerza = async (idFuerzaDetalle: number) =>
-    runAction(() => EntrenamientosAPI.deleteSerieFuerza(idFuerzaDetalle))
+  const eliminarSerieFuerza = useCallback(
+    async (idFuerzaDetalle: number) =>
+      runAction(() => EntrenamientosAPI.deleteSerieFuerza(idFuerzaDetalle)),
+    [runAction]
+  )
 
   useEffect(() => {
     const timer = setTimeout(() => {

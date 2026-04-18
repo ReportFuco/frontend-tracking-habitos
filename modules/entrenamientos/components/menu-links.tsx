@@ -6,12 +6,14 @@ import { ContextNav } from "@/components/shell/context-nav"
 export function EntrenamientosMenuLinks() {
   const pathname = usePathname()
   const currentLabel =
-    pathname === "/app/entrenamientos/iniciar-fuerza"
-      ? "Iniciar fuerza"
+    pathname === "/app/entrenamientos/registrar" || pathname === "/app/entrenamientos/iniciar-fuerza"
+      ? "Registrar entrenamiento"
       : pathname === "/app/entrenamientos/activo"
         ? "Entrenamiento activo"
+        : pathname === "/app/entrenamientos/gimnasios"
+          ? "Gimnasios"
         : pathname === "/app/entrenamientos/historico"
-          ? "Historico"
+          ? "Entrenamientos anteriores"
           : "Resumen"
 
   return (
