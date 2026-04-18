@@ -1,5 +1,6 @@
 import { api } from "@/lib/api"
 import {
+  EjercicioResponse,
   EntrenoFuerzaCreate,
   EntrenoFuerzaResponse,
   EntrenoFuerzaSerieResponse,
@@ -11,7 +12,84 @@ import {
   SerieFuerzaResponse,
 } from "@/modules/entrenamientos/types/entrenamientos"
 
+const toArray = <T>(payload: unknown): T[] => {
+  if (Array.isArray(payload)) {
+    return payload as T[]
+  }
+
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "results" in payload &&
+    Array.isArray((payload as { results?: unknown[] }).results)
+  ) {
+    return (payload as { results: T[] }).results
+  }
+
+  return []
+}
+
+const normalizeEjercicio = (item: unknown): EjercicioResponse | null => {
+  if (!item || typeof item !== "object") {
+    return null
+  }
+
+  const record = item as Record<string, unknown>
+  const id = Number(record.id_ejercicio ?? record.id ?? 0)
+  const nombre = String(record.nombre ?? record.nombre_ejercicio ?? "").trim()
+  const tipo = String(record.tipo ?? record.tipo_ejercicio ?? "").trim()
+
+  if (!Number.isFinite(id) || id <= 0 || !nombre) {
+    return null
+  }
+
+  return {
+    id_ejercicio: id,
+    nombre,
+    tipo,
+    url_video: typeof record.url_video === "string" ? record.url_video : null,
+  }
+}
+
+const normalizeTipoMuscular = (item: unknown): string | null => {
+  if (typeof item === "string") {
+    const value = item.trim()
+    return value || null
+  }
+
+  if (!item || typeof item !== "object") {
+    return null
+  }
+
+  const record = item as Record<string, unknown>
+  const value =
+    record.tipo ?? record.nombre ?? record.label ?? record.value ?? record.descripcion ?? null
+
+  if (typeof value !== "string") {
+    return null
+  }
+
+  const normalized = value.trim()
+  return normalized || null
+}
+
 export const EntrenamientosAPI = {
+  getEjercicios: async (params?: { q?: string; tipo?: string }): Promise<EjercicioResponse[]> => {
+    const { data } = await api.get("/api/entrenamientos/ejercicios/", {
+      params: params?.q || params?.tipo ? params : undefined,
+    })
+
+    return toArray<unknown>(data).map(normalizeEjercicio).filter((item): item is EjercicioResponse => item !== null)
+  },
+
+  getTiposMusculares: async (): Promise<string[]> => {
+    const { data } = await api.get("/api/entrenamientos/ejercicios/musculos")
+
+    return Array.from(
+      new Set(toArray<unknown>(data).map(normalizeTipoMuscular).filter((item): item is string => item !== null))
+    )
+  },
+
   getGimnasios: async (q?: string): Promise<GimnasioResponse[]> => {
     const { data } = await api.get("/api/entrenamientos/gimnasio/", {
       params: q ? { q } : undefined,

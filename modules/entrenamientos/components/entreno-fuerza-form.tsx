@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { FormEvent, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { ArrowRight, Flame, MapPin } from "lucide-react"
+import { ArrowRight, Flame } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { EditorialSelect, FieldGroup, FormNote, FormPanel } from "@/components/forms/editorial-form"
@@ -67,34 +67,8 @@ export function EntrenoFuerzaFormCard() {
       <FormPanel
         eyebrow="Registro"
         title="Registrar entrenamiento en gym"
-        description="Aqui se abre la sesion y queda marcada como activa. El registro y ajuste de series continua despues dentro de entrenamiento activo."
+        description="Abre tu sesion, elige el gimnasio y deja listo el espacio donde despues iras registrando tus series."
         accent="tertiary"
-        aside={
-          <div className="space-y-4">
-            <div className="rounded-[1.25rem] bg-white/70 p-4">
-              <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
-                Gimnasios
-              </p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-                {availableGimnasios.length}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Lugares activos disponibles para elegir antes de abrir tu sesion.
-              </p>
-            </div>
-
-            <div className="rounded-[1.25rem] bg-white/70 p-4">
-              <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
-                Estado
-              </p>
-              <p className="mt-2 text-sm leading-6 text-foreground">
-                {entrenamientoActivo
-                  ? "Ya existe una sesion abierta. Continua registrando series dentro del entrenamiento activo."
-                  : "No tienes una sesion activa. Este es el punto correcto para abrir una nueva."}
-              </p>
-            </div>
-          </div>
-        }
       >
         <div className="space-y-6">
           {entrenamientoActivo ? (
@@ -106,8 +80,8 @@ export function EntrenoFuerzaFormCard() {
                 Ya tienes un entrenamiento en curso.
               </h3>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                La sesion actual esta asociada a {entrenamientoActivo.nombre_gimnasio ?? "un gimnasio"}.
-                Para evitar duplicados, desde aqui solo te llevamos al espacio donde se registran las series.
+                Tu sesion actual ya esta asociada a {entrenamientoActivo.nombre_gimnasio ?? "un gimnasio"}.
+                Desde aqui te llevamos directo al espacio donde se registran las series.
               </p>
               <Link
                 href="/app/entrenamientos/activo"
@@ -150,7 +124,7 @@ export function EntrenoFuerzaFormCard() {
               </FieldGroup>
 
               <FormNote>
-                Al crear el entrenamiento, la API lo deja como <span className="font-medium text-foreground">activo</span>. Desde ese momento la gestion de series continua en la vista de entrenamiento activo.
+                Cuando actives esta sesion, el entrenamiento quedara vinculado a este gimnasio y tus registros se iran armando desde ese contexto.
               </FormNote>
 
               {selectedGym ? (
@@ -177,8 +151,7 @@ export function EntrenoFuerzaFormCard() {
 
           {availableGimnasios.length === 0 ? (
             <FormNote>
-              Todavia no hay gimnasios activos para seleccionar. Como este catalogo depende del panel
-              admin, por ahora tu ruta mas util es revisar la lista disponible en gimnasios.
+              Aun no hay gimnasios disponibles para elegir. Cuando aparezcan, podras volver aqui y abrir tu siguiente sesion.
             </FormNote>
           ) : null}
         </div>
@@ -188,48 +161,33 @@ export function EntrenoFuerzaFormCard() {
         <article className="rounded-[1.75rem] bg-[color:var(--surface-lowest)] p-6 shadow-[var(--shadow-airy)]">
           <p className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Flame className="size-4 text-[color:var(--module-entrenamientos)]" />
-            Flujo del modulo
+            Paso a paso
           </p>
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 space-y-3">
             <div className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4">
               <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
-                1. Registrar
+                1. Elige el gimnasio
               </p>
               <p className="mt-2 text-sm leading-6 text-foreground">
-                Se abre la sesion y queda activa con el gimnasio seleccionado.
+                Selecciona el lugar donde vas a entrenar hoy.
               </p>
             </div>
             <div className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4">
               <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
-                2. Entrenamiento activo
+                2. Abre la sesion
               </p>
               <p className="mt-2 text-sm leading-6 text-foreground">
-                En esa vista agregas, corriges o eliminas series mientras entrenas.
+                El entrenamiento queda activo y listo para empezar.
               </p>
             </div>
             <div className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4">
               <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
-                3. Historico
+                3. Registra tus series
               </p>
               <p className="mt-2 text-sm leading-6 text-foreground">
-                Una vez cerrada la sesion, pasa al historico para consulta posterior.
+                Continua en entrenamiento activo mientras avanzas en tu rutina.
               </p>
             </div>
-          </div>
-        </article>
-
-        <article className="rounded-[1.75rem] bg-[color:var(--surface-lowest)] p-6 shadow-[var(--shadow-airy)]">
-          <p className="font-label text-[0.7rem] uppercase tracking-[0.22em] text-muted-foreground">
-            Contexto
-          </p>
-          <div className="mt-4 space-y-3 text-sm leading-6 text-muted-foreground">
-            <p className="flex items-start gap-2">
-              <MapPin className="mt-1 size-4 shrink-0 text-[color:var(--module-entrenamientos)]" />
-              El gimnasio sirve como marco de la sesion, aunque el seguimiento fino despues vive en las series.
-            </p>
-            <p>
-              No hace falta mencionar otros tipos de entrenamiento: la interfaz habla de entrenamiento en gym y deja que el producto se sienta natural.
-            </p>
           </div>
         </article>
       </section>

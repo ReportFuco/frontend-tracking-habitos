@@ -5,6 +5,7 @@ import { AxiosError } from "axios"
 import { getFriendlyErrorMessage } from "@/lib/error-messages"
 import { EntrenamientosAPI } from "@/modules/entrenamientos/api/entrenamientos.api"
 import {
+  EjercicioResponse,
   EntrenoFuerzaCreate,
   EntrenoFuerzaResponse,
   EntrenoFuerzaSerieResponse,
@@ -20,6 +21,8 @@ type EntrenamientosContextValue = ReturnType<typeof useEntrenamientosState>
 const EntrenamientosContext = createContext<EntrenamientosContextValue | null>(null)
 
 const useEntrenamientosState = () => {
+  const [ejercicios, setEjercicios] = useState<EjercicioResponse[]>([])
+  const [tiposMusculares, setTiposMusculares] = useState<string[]>([])
   const [gimnasios, setGimnasios] = useState<GimnasioResponse[]>([])
   const [entrenamientosFuerza, setEntrenamientosFuerza] = useState<EntrenoFuerzaResponse[]>([])
   const [entrenamientoActivo, setEntrenamientoActivo] = useState<EntrenoFuerzaSerieResponse | null>(
@@ -72,6 +75,40 @@ const useEntrenamientosState = () => {
     try {
       const data = await EntrenamientosAPI.getGimnasios(q)
       setGimnasios(data)
+      return data
+    } catch (err) {
+      const message = getFriendlyErrorMessage(err)
+      setError(message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const fetchEjercicios = useCallback(async (params?: { q?: string; tipo?: string }) => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const data = await EntrenamientosAPI.getEjercicios(params)
+      setEjercicios(data)
+      return data
+    } catch (err) {
+      const message = getFriendlyErrorMessage(err)
+      setError(message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const fetchTiposMusculares = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const data = await EntrenamientosAPI.getTiposMusculares()
+      setTiposMusculares(data)
       return data
     } catch (err) {
       const message = getFriendlyErrorMessage(err)
@@ -171,6 +208,8 @@ const useEntrenamientosState = () => {
   }, [fetchResumen])
 
   return {
+    ejercicios,
+    tiposMusculares,
     gimnasios,
     entrenamientosFuerza,
     entrenamientoActivo,
@@ -178,7 +217,9 @@ const useEntrenamientosState = () => {
     submitting,
     error,
     fetchResumen,
+    fetchEjercicios,
     fetchGimnasios,
+    fetchTiposMusculares,
     fetchEntrenamientoActivo,
     fetchDetalleEntrenoFuerza,
     crearGimnasio,

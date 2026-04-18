@@ -1,11 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { FormEvent, useState } from "react"
-import { Dumbbell, PencilLine, Trash2 } from "lucide-react"
+import { FormEvent, useEffect, useMemo, useState } from "react"
+import { PencilLine, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { FieldGroup, FormNote, FormPanel } from "@/components/forms/editorial-form"
+import { EditorialSelect, FieldGroup, FormNote, FormPanel } from "@/components/forms/editorial-form"
 import { useEntrenamientos } from "@/modules/entrenamientos/hooks/useEntrenamientos"
 import {
   serieFuerzaCreateSchema,
@@ -15,6 +15,7 @@ import { SerieFuerzaResponse } from "@/modules/entrenamientos/types/entrenamient
 
 const initialForm = {
   id_ejercicio: "",
+  tipo: "",
   es_calentamiento: false,
   cantidad_peso: "",
   repeticiones: "",
@@ -23,15 +24,11 @@ const initialForm = {
 const inputClassName =
   "h-13 w-full rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-b-2 focus:border-[color:var(--module-entrenamientos)]"
 
-const getPayload = (form: typeof initialForm) => ({
-  id_ejercicio: Number(form.id_ejercicio),
-  es_calentamiento: form.es_calentamiento,
-  cantidad_peso: Number(form.cantidad_peso),
-  repeticiones: Number(form.repeticiones),
-})
+const normalizeText = (value: string | null | undefined) => (value ?? "").trim().toLowerCase()
 
 const getEditableForm = (serie: SerieFuerzaResponse) => ({
   id_ejercicio: "",
+  tipo: normalizeText(serie.tipo_ejercicio),
   es_calentamiento: serie.es_calentamiento,
   cantidad_peso: String(serie.cantidad_peso),
   repeticiones: String(serie.repeticiones),
@@ -40,7 +37,12 @@ const getEditableForm = (serie: SerieFuerzaResponse) => ({
 export function EntrenamientoActivoCard() {
   const {
     entrenamientoActivo,
+    ejercicios,
+    tiposMusculares,
+    loading,
     submitting,
+    fetchEjercicios,
+    fetchTiposMusculares,
     agregarSerieFuerza,
     editarSerieFuerza,
     eliminarSerieFuerza,
@@ -50,10 +52,45 @@ export function EntrenamientoActivoCard() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editingForm, setEditingForm] = useState(initialForm)
 
+  useEffect(() => {
+    if (ejercicios.length === 0) {
+      void fetchEjercicios()
+    }
+
+    if (tiposMusculares.length === 0) {
+      void fetchTiposMusculares()
+    }
+  }, [ejercicios.length, fetchEjercicios, fetchTiposMusculares, tiposMusculares.length])
+
+  const ejerciciosFiltrados = useMemo(() => {
+    if (!form.tipo) {
+      return ejercicios
+    }
+
+    return ejercicios.filter((ejercicio) => normalizeText(ejercicio.tipo) === normalizeText(form.tipo))
+  }, [ejercicios, form.tipo])
+
+  const ejerciciosFiltradosEdicion = useMemo(() => {
+    if (!editingForm.tipo) {
+      return ejercicios
+    }
+
+    return ejercicios.filter(
+      (ejercicio) => normalizeText(ejercicio.tipo) === normalizeText(editingForm.tipo)
+    )
+  }, [editingForm.tipo, ejercicios])
+
+  const totalSeries = entrenamientoActivo?.series?.length ?? 0
+
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    const parsed = serieFuerzaCreateSchema.safeParse(getPayload(form))
+    const parsed = serieFuerzaCreateSchema.safeParse({
+      id_ejercicio: Number(form.id_ejercicio),
+      es_calentamiento: form.es_calentamiento,
+      cantidad_peso: Number(form.cantidad_peso),
+      repeticiones: Number(form.repeticiones),
+    })
 
     if (!parsed.success) {
       toast.error("Revisa la serie", {
@@ -67,7 +104,7 @@ export function EntrenamientoActivoCard() {
     if (result.ok) {
       setForm(initialForm)
       toast.success("Serie agregada", {
-        description: "La serie se guardo correctamente.",
+        description: "Tu registro ya quedo guardado en esta sesion.",
       })
       return
     }
@@ -100,7 +137,7 @@ export function EntrenamientoActivoCard() {
       setEditingId(null)
       setEditingForm(initialForm)
       toast.success("Serie actualizada", {
-        description: "Los cambios quedaron guardados.",
+        description: "Los cambios ya quedaron guardados.",
       })
       return
     }
@@ -115,7 +152,7 @@ export function EntrenamientoActivoCard() {
 
     if (result.ok) {
       toast.success("Serie eliminada", {
-        description: "La serie fue eliminada correctamente.",
+        description: "La quitamos de esta sesion.",
       })
       return
     }
@@ -130,7 +167,7 @@ export function EntrenamientoActivoCard() {
 
     if (result.ok) {
       toast.success("Sesion cerrada", {
-        description: "El entrenamiento paso al historico.",
+        description: "Tu entrenamiento ya paso al historico.",
       })
       return
     }
@@ -151,14 +188,14 @@ export function EntrenamientoActivoCard() {
             Todavia no hay un entrenamiento en curso.
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-            El registro de series vive dentro de una sesion activa. Primero abre tu entrenamiento y despues vuelve aqui para cargar cada serie.
+            Primero abre tu entrenamiento y luego vuelve aqui para empezar a registrar tus series.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <Button asChild className="bg-[color:var(--module-entrenamientos)] text-[color:var(--tertiary-foreground)] hover:bg-[color:var(--module-entrenamientos)]/90">
+            <Button
+              asChild
+              className="bg-[color:var(--module-entrenamientos)] text-[color:var(--tertiary-foreground)] hover:bg-[color:var(--module-entrenamientos)]/90"
+            >
               <Link href="/app/entrenamientos/registrar">Registrar entrenamiento</Link>
-            </Button>
-            <Button asChild variant="ghost" className="text-foreground hover:text-[color:var(--module-entrenamientos)]">
-              <Link href="/app/entrenamientos/historico">Ver entrenamientos anteriores</Link>
             </Button>
           </div>
         </div>
@@ -167,158 +204,30 @@ export function EntrenamientoActivoCard() {
   }
 
   return (
-    <section className="grid gap-6 xl:grid-cols-[0.96fr_1.04fr]">
-      <div className="space-y-6">
-        <FormPanel
-          eyebrow="Activo"
-          title="Sesion en curso"
-          description="Este es el espacio para registrar series mientras entrenas. La sesion ya esta abierta; ahora el protagonismo lo tienen las cargas, repeticiones y ajustes."
-          accent="tertiary"
-          aside={
-            <div className="space-y-4">
-              <div className="rounded-[1.25rem] bg-white/70 p-4">
-                <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
-                  Gimnasio
-                </p>
-                <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                  {entrenamientoActivo.nombre_gimnasio ?? "Sin gimnasio"}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {entrenamientoActivo.nombre_cadena ?? "Cadena no informada"}
-                </p>
-              </div>
-
-              <div className="rounded-[1.25rem] bg-white/70 p-4">
-                <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
-                  Series
-                </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-                  {entrenamientoActivo.series?.length ?? 0}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Total cargado en la sesion actual.
-                </p>
-              </div>
-            </div>
-          }
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[1.5rem] bg-[color:var(--surface-low)] p-5">
-              <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
-                Inicio
-              </p>
-              <p className="mt-3 text-lg font-semibold tracking-tight text-foreground">
-                {entrenamientoActivo.inicio_at}
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">{entrenamientoActivo.estado}</p>
-            </div>
-
-            <div className="rounded-[1.5rem] bg-[color:var(--surface-low)] p-5">
-              <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
-                Ubicacion
-              </p>
-              <p className="mt-3 text-sm leading-6 text-foreground">
-                {entrenamientoActivo.direccion ?? "Direccion no informada"}
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">{entrenamientoActivo.comuna ?? "-"}</p>
-            </div>
-          </div>
-
-          <FormNote>
-            El API actual sigue pidiendo <span className="font-medium text-foreground">id_ejercicio</span>.
-            Por ahora lo tratamos de forma honesta dentro del formulario, sin disfrazarlo como si ya existiera un catalogo completo.
-          </FormNote>
-
-          <div className="mt-5">
-            <Button
-              variant="destructive"
-              onClick={handleClose}
-              disabled={submitting}
-              className="bg-[color:var(--module-entrenamientos)] text-[color:var(--tertiary-foreground)] hover:bg-[color:var(--module-entrenamientos)]/90"
-            >
-              {submitting ? "Cerrando sesion..." : "Cerrar entrenamiento"}
-            </Button>
-          </div>
-        </FormPanel>
-
-        <FormPanel
-          eyebrow="Series"
-          title="Registrar serie"
-          description="Cada serie se registra dentro del entrenamiento activo. Este bloque reemplaza el formulario generico por una captura mas alineada con el contexto del modulo."
-          accent="tertiary"
-        >
-          <form onSubmit={handleCreate} className="space-y-5">
-            <FieldGroup label="Ejercicio" hint="ID requerido por API">
-              <input
-                type="number"
-                className={inputClassName}
-                placeholder="ID del ejercicio"
-                value={form.id_ejercicio}
-                onChange={(event) => setForm((prev) => ({ ...prev, id_ejercicio: event.target.value }))}
-              />
-            </FieldGroup>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              <FieldGroup label="Peso" hint="Kg">
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  className={inputClassName}
-                  placeholder="Ej: 60"
-                  value={form.cantidad_peso}
-                  onChange={(event) => setForm((prev) => ({ ...prev, cantidad_peso: event.target.value }))}
-                />
-              </FieldGroup>
-
-              <FieldGroup label="Repeticiones">
-                <input
-                  type="number"
-                  className={inputClassName}
-                  placeholder="Ej: 10"
-                  value={form.repeticiones}
-                  onChange={(event) => setForm((prev) => ({ ...prev, repeticiones: event.target.value }))}
-                />
-              </FieldGroup>
-            </div>
-
-            <label className="flex items-center gap-3 rounded-[1rem] bg-[color:var(--surface-low)] px-4 py-3 text-sm text-foreground">
-              <input
-                type="checkbox"
-                className="size-4 accent-[color:var(--module-entrenamientos)]"
-                checked={form.es_calentamiento}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, es_calentamiento: event.target.checked }))
-                }
-              />
-              Marcar como serie de calentamiento
-            </label>
-
-            <div className="flex flex-wrap gap-3">
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="bg-[color:var(--module-entrenamientos)] text-[color:var(--tertiary-foreground)] hover:bg-[color:var(--module-entrenamientos)]/90"
-              >
-                {submitting ? "Guardando..." : "Agregar serie"}
-              </Button>
-            </div>
-          </form>
-        </FormPanel>
-      </div>
-
+    <section className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
       <section className="rounded-[1.75rem] bg-[color:var(--surface-low)] p-6">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="font-label text-[0.7rem] uppercase tracking-[0.22em] text-muted-foreground">
-              Registro actual
+              Sesion actual
             </p>
-            <h3 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-              Series cargadas
-            </h3>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+              Series registradas
+            </h2>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Aqui puedes corregir o eliminar series sin salir de la sesion.
-          </p>
+          <div className="flex items-center gap-3">
+            <span className="rounded-full bg-tertiary/12 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-tertiary">
+              {totalSeries} serie{totalSeries === 1 ? "" : "s"}
+            </span>
+            <Button
+              variant="ghost"
+              onClick={handleClose}
+              disabled={submitting}
+              className="text-foreground hover:text-[color:var(--module-entrenamientos)]"
+            >
+              {submitting ? "Cerrando..." : "Cerrar entrenamiento"}
+            </Button>
+          </div>
         </div>
 
         <div className="mt-6 space-y-4">
@@ -330,17 +239,45 @@ export function EntrenamientoActivoCard() {
               >
                 {editingId === serie.id_fuerza_detalle ? (
                   <div className="space-y-5">
-                    <FieldGroup label="Ejercicio" hint="Opcional en edicion">
-                      <input
-                        type="number"
-                        className={inputClassName}
-                        placeholder="ID del ejercicio"
-                        value={editingForm.id_ejercicio}
-                        onChange={(event) =>
-                          setEditingForm((prev) => ({ ...prev, id_ejercicio: event.target.value }))
-                        }
-                      />
-                    </FieldGroup>
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <FieldGroup label="Musculo">
+                        <EditorialSelect
+                          value={editingForm.tipo}
+                          onChange={(event) =>
+                            setEditingForm((prev) => ({
+                              ...prev,
+                              tipo: event.target.value,
+                              id_ejercicio: "",
+                            }))
+                          }
+                          className="focus:border-[color:var(--module-entrenamientos)]"
+                        >
+                          <option value="">Selecciona un grupo muscular</option>
+                          {tiposMusculares.map((tipo) => (
+                            <option key={tipo} value={tipo}>
+                              {tipo}
+                            </option>
+                          ))}
+                        </EditorialSelect>
+                      </FieldGroup>
+
+                      <FieldGroup label="Ejercicio">
+                        <EditorialSelect
+                          value={editingForm.id_ejercicio}
+                          onChange={(event) =>
+                            setEditingForm((prev) => ({ ...prev, id_ejercicio: event.target.value }))
+                          }
+                          className="focus:border-[color:var(--module-entrenamientos)]"
+                        >
+                          <option value="">Mantener ejercicio actual</option>
+                          {ejerciciosFiltradosEdicion.map((ejercicio) => (
+                            <option key={ejercicio.id_ejercicio} value={ejercicio.id_ejercicio}>
+                              {ejercicio.nombre}
+                            </option>
+                          ))}
+                        </EditorialSelect>
+                      </FieldGroup>
+                    </div>
 
                     <div className="grid gap-5 sm:grid-cols-2">
                       <FieldGroup label="Peso" hint="Kg">
@@ -406,6 +343,9 @@ export function EntrenamientoActivoCard() {
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                            {serie.tipo_ejercicio ?? "grupo no informado"}
+                          </span>
                           <span
                             className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em] ${
                               serie.es_calentamiento
@@ -415,12 +355,9 @@ export function EntrenamientoActivoCard() {
                           >
                             {serie.es_calentamiento ? "calentamiento" : "trabajo"}
                           </span>
-                          <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                            {serie.tipo_ejercicio ?? "tipo no informado"}
-                          </span>
                         </div>
                         <p className="text-lg font-semibold tracking-tight text-foreground">
-                          {serie.nombre_ejercicio ?? `Ejercicio #${serie.id_fuerza_detalle}`}
+                          {serie.nombre_ejercicio ?? `Serie #${serie.id_fuerza_detalle}`}
                         </p>
                       </div>
                       <div className="text-right">
@@ -441,7 +378,7 @@ export function EntrenamientoActivoCard() {
                         className="text-foreground hover:text-[color:var(--module-entrenamientos)]"
                       >
                         <PencilLine className="mr-2 size-4" />
-                        Editar serie
+                        Editar
                       </Button>
                       <Button variant="ghost" onClick={() => handleDelete(serie.id_fuerza_detalle)}>
                         <Trash2 className="mr-2 size-4" />
@@ -454,21 +391,117 @@ export function EntrenamientoActivoCard() {
             ))
           ) : (
             <div className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-6 text-sm leading-6 text-muted-foreground shadow-[var(--shadow-airy)]">
-              Aun no registras series en esta sesion. Empieza con la primera carga desde el panel de la izquierda.
+              Aun no registras series en esta sesion. Cuando agregues la primera, la veras aqui de inmediato.
             </div>
           )}
         </div>
-
-        <div className="mt-6 rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-5 shadow-[var(--shadow-airy)]">
-          <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Dumbbell className="size-4 text-[color:var(--module-entrenamientos)]" />
-            Recordatorio del flujo
-          </p>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Registrar entrenamiento abre la sesion. Entrenamiento activo administra las series. Cuando cierres la sesion, la veras dentro de entrenamientos anteriores.
-          </p>
-        </div>
       </section>
+
+      <div className="space-y-6">
+        <FormPanel
+          eyebrow="Nueva serie"
+          title="Registrar serie"
+          description="Elige el grupo muscular, luego el ejercicio y por ultimo registra tu carga y repeticiones."
+          accent="tertiary"
+        >
+          <form onSubmit={handleCreate} className="space-y-5">
+            <div className="grid gap-5">
+              <FieldGroup label="Grupo muscular">
+                <EditorialSelect
+                  value={form.tipo}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      tipo: event.target.value,
+                      id_ejercicio: "",
+                    }))
+                  }
+                  disabled={submitting || loading}
+                  className="focus:border-[color:var(--module-entrenamientos)]"
+                >
+                  <option value="">Selecciona un grupo muscular</option>
+                  {tiposMusculares.map((tipo) => (
+                    <option key={tipo} value={tipo}>
+                      {tipo}
+                    </option>
+                  ))}
+                </EditorialSelect>
+              </FieldGroup>
+
+              <FieldGroup label="Ejercicio" hint={form.tipo ? "Disponible para el grupo elegido" : ""}>
+                <EditorialSelect
+                  value={form.id_ejercicio}
+                  onChange={(event) => setForm((prev) => ({ ...prev, id_ejercicio: event.target.value }))}
+                  disabled={submitting || ejerciciosFiltrados.length === 0}
+                  className="focus:border-[color:var(--module-entrenamientos)]"
+                >
+                  <option value="">
+                    {form.tipo ? "Selecciona un ejercicio" : "Primero elige un grupo muscular"}
+                  </option>
+                  {ejerciciosFiltrados.map((ejercicio) => (
+                    <option key={ejercicio.id_ejercicio} value={ejercicio.id_ejercicio}>
+                      {ejercicio.nombre}
+                    </option>
+                  ))}
+                </EditorialSelect>
+              </FieldGroup>
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <FieldGroup label="Peso" hint="Kg">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  className={inputClassName}
+                  placeholder="Ej: 60"
+                  value={form.cantidad_peso}
+                  onChange={(event) => setForm((prev) => ({ ...prev, cantidad_peso: event.target.value }))}
+                />
+              </FieldGroup>
+
+              <FieldGroup label="Repeticiones">
+                <input
+                  type="number"
+                  className={inputClassName}
+                  placeholder="Ej: 10"
+                  value={form.repeticiones}
+                  onChange={(event) => setForm((prev) => ({ ...prev, repeticiones: event.target.value }))}
+                />
+              </FieldGroup>
+            </div>
+
+            <label className="flex items-center gap-3 rounded-[1rem] bg-[color:var(--surface-low)] px-4 py-3 text-sm text-foreground">
+              <input
+                type="checkbox"
+                className="size-4 accent-[color:var(--module-entrenamientos)]"
+                checked={form.es_calentamiento}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, es_calentamiento: event.target.checked }))
+                }
+              />
+              Marcar como serie de calentamiento
+            </label>
+
+            <FormNote>
+              Esta sesion se esta registrando en{" "}
+              <span className="font-medium text-foreground">
+                {entrenamientoActivo.nombre_gimnasio ?? "tu gimnasio actual"}
+              </span>
+              .
+            </FormNote>
+
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="submit"
+                disabled={submitting || !form.id_ejercicio}
+                className="bg-[color:var(--module-entrenamientos)] text-[color:var(--tertiary-foreground)] hover:bg-[color:var(--module-entrenamientos)]/90"
+              >
+                {submitting ? "Guardando..." : "Agregar serie"}
+              </Button>
+            </div>
+          </form>
+        </FormPanel>
+      </div>
     </section>
   )
 }
