@@ -10,6 +10,8 @@ export function FinanzasMenuLinks() {
       ? "Cuentas bancarias"
       : pathname === "/app/finanzas/registrar-movimiento"
         ? "Registrar movimientos"
+        : pathname.startsWith("/app/finanzas/movimientos/")
+          ? "Detalle de movimiento"
         : pathname === "/app/finanzas/movimientos"
           ? "Movimientos"
           : pathname === "/app/finanzas/historico"

@@ -1,4 +1,5 @@
-import { CuentaFormCard } from "@/modules/finanzas/components/cuenta-form"
+import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 import { CuentasManager } from "@/modules/finanzas/components/cuentas-manager"
 import { FinanzasProvider } from "@/modules/finanzas/hooks/useFinanzas"
 import { FinanzasMenuLinks } from "@/modules/finanzas/components/menu-links"
@@ -10,15 +11,21 @@ export default function CuentasPage() {
       <PageHeader
         eyebrow="Finanzas"
         title="Cuentas bancarias"
-        description="Registra, edita y revisa las cuentas bancarias con las que trabajas en el modulo."
+        description="Vista dedicada a revisar tus cuentas bancarias. El registro queda separado en su propio flujo."
+        actions={
+          <Link
+            href="/app/finanzas/registrar-cuenta"
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+          >
+            Registrar cuenta bancaria
+            <ArrowRight className="size-4" />
+          </Link>
+        }
       />
       <FinanzasMenuLinks />
 
       <FinanzasProvider>
-        <section className="grid gap-6 lg:grid-cols-2">
-          <CuentaFormCard />
-          <CuentasManager />
-        </section>
+        <CuentasManager />
       </FinanzasProvider>
     </div>
   )

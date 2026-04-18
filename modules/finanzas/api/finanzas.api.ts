@@ -76,6 +76,11 @@ export const FinanzasAPI = {
     return data
   },
 
+  getMovimientoById: async (idMovimiento: number): Promise<MovimientoResponse> => {
+    const { data } = await api.get(`/api/finanzas/movimientos/${idMovimiento}`)
+    return data
+  },
+
   createMovimiento: async (payload: MovimientoCreate): Promise<MovimientoResponse> => {
     const { data } = await api.post("/api/finanzas/movimientos/", payload)
     return data

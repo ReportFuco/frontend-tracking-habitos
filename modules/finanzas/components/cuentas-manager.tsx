@@ -1,114 +1,216 @@
 "use client"
 
-import { useState } from "react"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { Building2, Landmark, Wallet } from "lucide-react"
+import Link from "next/link"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { cn } from "@/lib/utils"
 import { useFinanzas } from "@/modules/finanzas/hooks/useFinanzas"
-import { TIPOS_CUENTA } from "@/modules/finanzas/schemas/finanzas.schema"
-import { TipoCuenta } from "@/modules/finanzas/types/finanzas"
 
 export function CuentasManager() {
-  const { cuentas, editarCuenta, eliminarCuenta } = useFinanzas()
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [editingName, setEditingName] = useState("")
-  const [editingTipo, setEditingTipo] = useState<TipoCuenta>("Cuenta Corriente")
+  const { cuentas, loadingCatalogos } = useFinanzas()
 
-  const onSave = async (idCuenta: number) => {
-    const result = await editarCuenta(idCuenta, {
-      nombre_cuenta: editingName.trim() || null,
-      tipo_cuenta: editingTipo,
-    })
+  const cuentasCorrientes = cuentas.filter((cuenta) => cuenta.tipo_cuenta === "Cuenta Corriente").length
+  const bancosAsociados = new Set(cuentas.map((cuenta) => cuenta.nombre_banco).filter(Boolean)).size
 
-    if (result.ok) {
-      toast.success("Cuenta actualizada", {
-        description: "Los cambios de la cuenta se guardaron correctamente.",
-      })
-      setEditingId(null)
-      setEditingName("")
-      return
+  const formatDate = (value: string) => {
+    try {
+      return new Intl.DateTimeFormat("es-CL", {
+        dateStyle: "medium",
+      }).format(new Date(value))
+    } catch {
+      return value
     }
-
-    toast.error("No pudimos actualizar la cuenta", {
-      description: result.message,
-    })
   }
 
-  const onDelete = async (idCuenta: number) => {
-    const result = await eliminarCuenta(idCuenta)
-
-    if (result.ok) {
-      toast.success("Cuenta desactivada", {
-        description: "La cuenta fue desactivada correctamente.",
-      })
-      return
-    }
-
-    toast.error("No pudimos desactivar la cuenta", {
-      description: result.message,
-    })
-  }
+  const getCuentaTone = (tipoCuenta: string) =>
+    tipoCuenta === "Cuenta Corriente"
+      ? "bg-[color:var(--module-finanzas)]"
+      : tipoCuenta === "Cuenta ahorro"
+        ? "bg-secondary"
+        : "bg-[color:var(--primary-container)]"
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Cuentas</CardTitle>
-        <CardDescription>Editar o desactivar cuentas existentes.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          {cuentas.map((cuenta) => (
-            <div key={cuenta.id_cuenta} className="rounded-md border p-3">
-              {editingId === cuenta.id_cuenta ? (
-                <div className="space-y-2">
-                  <Input value={editingName} onChange={(event) => setEditingName(event.target.value)} />
-                  <select
-                    className="border-input h-10 w-full rounded-md border bg-transparent px-3 text-sm"
-                    value={editingTipo}
-                    onChange={(event) => setEditingTipo(event.target.value as TipoCuenta)}
-                  >
-                    {TIPOS_CUENTA.map((tipo) => (
-                      <option key={tipo} value={tipo}>
-                        {tipo}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="flex gap-2">
-                    <Button onClick={() => onSave(cuenta.id_cuenta)}>Guardar</Button>
-                    <Button variant="outline" onClick={() => setEditingId(null)}>
-                      Cancelar
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-medium">{cuenta.nombre_cuenta}</p>
-                    <p className="text-sm text-muted-foreground">{cuenta.tipo_cuenta}</p>
-                    <p className="text-xs text-muted-foreground">Banco: {cuenta.nombre_banco ?? "-"}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setEditingId(cuenta.id_cuenta)
-                        setEditingName(cuenta.nombre_cuenta)
-                        setEditingTipo(cuenta.tipo_cuenta)
-                      }}
-                    >
-                      Editar
-                    </Button>
-                    <Button variant="destructive" onClick={() => onDelete(cuenta.id_cuenta)}>
-                      Desactivar
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+    <section className="flex flex-col gap-6">
+      <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr_0.9fr]">
+        <article className="rounded-[1.75rem] bg-[color:var(--surface-low)] p-6">
+          <p className="font-label text-[0.7rem] uppercase tracking-[0.22em] text-muted-foreground">
+            Base financiera
+          </p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-foreground">
+            Tus cuentas bancarias toman el protagonismo aqui.
+          </h2>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+            Esta vista se enfoca en revisar las cuentas disponibles dentro del modulo. La creacion queda en su flujo dedicado para mantener una lectura mas limpia.
+          </p>
+        </article>
+
+        <article className="rounded-[1.75rem] bg-[color:var(--surface-lowest)] p-6 shadow-[var(--shadow-airy)]">
+          <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Wallet className="size-4 text-[color:var(--module-finanzas)]" />
+            Total de cuentas
+          </p>
+          <p className="mt-4 text-3xl font-semibold tracking-tight text-foreground">
+            {cuentas.length}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Cuentas cargadas actualmente para registrar movimientos.
+          </p>
+        </article>
+
+        <article className="rounded-[1.75rem] bg-[color:var(--surface-lowest)] p-6 shadow-[var(--shadow-airy)]">
+          <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Building2 className="size-4 text-[color:var(--module-finanzas)]" />
+            Bancos y corrientes
+          </p>
+          <p className="mt-4 text-3xl font-semibold tracking-tight text-foreground">
+            {bancosAsociados} / {cuentasCorrientes}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Bancos distintos y cantidad de cuentas corrientes dentro del modulo.
+          </p>
+        </article>
+      </section>
+
+      <section className="rounded-[1.75rem] bg-[color:var(--surface-low)] p-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="font-label text-[0.7rem] uppercase tracking-[0.22em] text-muted-foreground">
+              Registro actual
+            </p>
+            <h3 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+              Cuentas disponibles
+            </h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            En desktop se muestran como tabla. En pantallas pequenas, como cards editoriales.
+          </p>
         </div>
-      </CardContent>
-    </Card>
+
+        {loadingCatalogos ? (
+          <div className="mt-6 rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-6 text-sm text-muted-foreground shadow-[var(--shadow-airy)]">
+            Cargando cuentas bancarias...
+          </div>
+        ) : cuentas.length === 0 ? (
+          <div className="mt-6 rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-6 text-sm leading-6 text-muted-foreground shadow-[var(--shadow-airy)]">
+            Aun no tienes cuentas bancarias registradas. Usa el flujo de <span className="font-medium text-foreground">Registrar cuenta bancaria</span> para crear la primera.
+          </div>
+        ) : (
+          <>
+            <div className="mt-6 hidden overflow-hidden rounded-[1.5rem] bg-[color:var(--surface-low)] shadow-[0_8px_48px_-12px_rgba(0,0,0,0.05)] lg:block">
+              <Table>
+                <TableHeader className="bg-[color:var(--primary)] text-[color:var(--primary-foreground)]">
+                  <TableRow className="border-0 hover:bg-transparent">
+                    <TableHead className="px-8 py-5 font-label text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--primary-foreground)]">
+                      Cuenta
+                    </TableHead>
+                    <TableHead className="px-6 py-5 font-label text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--primary-foreground)]">
+                      Tipo
+                    </TableHead>
+                    <TableHead className="px-6 py-5 font-label text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--primary-foreground)]">
+                      Banco
+                    </TableHead>
+                    <TableHead className="px-6 py-5 font-label text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--primary-foreground)]">
+                      Creacion
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="[&_tr:not(:last-child)]:border-b [&_tr:not(:last-child)]:border-[color:var(--border)]/30">
+                  {cuentas.map((cuenta, index) => (
+                    <TableRow
+                      key={cuenta.id_cuenta}
+                      className={cn(
+                        "border-0 transition-colors hover:bg-primary/8",
+                        index % 2 === 0
+                          ? "bg-[color:var(--surface-lowest)]"
+                          : "bg-[color:var(--surface-low)]"
+                      )}
+                    >
+                      <TableCell className="px-8 py-6">
+                        <div className="space-y-1">
+                          <p className="text-base font-semibold text-[color:var(--primary)]">
+                            {cuenta.nombre_cuenta}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            ID #{cuenta.id_cuenta}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-6">
+                        <div className="flex items-center gap-2">
+                          <span className={cn("h-2 w-2 rounded-full", getCuentaTone(cuenta.tipo_cuenta))} />
+                          <span>{cuenta.tipo_cuenta}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-6">{cuenta.nombre_banco ?? "-"}</TableCell>
+                      <TableCell className="px-6 py-6 text-sm text-muted-foreground">
+                        {formatDate(cuenta.created_at)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <footer className="flex items-center justify-between border-t border-[color:var(--border)]/30 bg-[color:var(--surface-low)] px-8 py-4">
+                <span className="font-label text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  Mostrando {cuentas.length} cuenta{cuentas.length === 1 ? "" : "s"}
+                </span>
+                <Link
+                  href="/app/finanzas/registrar-cuenta"
+                  className="text-xs font-medium text-foreground transition hover:text-[color:var(--module-finanzas)]"
+                >
+                  Registrar otra cuenta
+                </Link>
+              </footer>
+            </div>
+
+            <div className="mt-6 grid gap-4 lg:hidden">
+              {cuentas.map((cuenta) => (
+                <article
+                  key={cuenta.id_cuenta}
+                  className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-5 shadow-[var(--shadow-airy)]"
+                >
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex rounded-full bg-primary/12 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-primary">
+                          {cuenta.tipo_cuenta}
+                        </span>
+                      </div>
+                      <p className="text-lg font-semibold tracking-tight text-foreground">
+                        {cuenta.nombre_cuenta}
+                      </p>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4">
+                        <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
+                          Banco
+                        </p>
+                        <p className="mt-2 flex items-center gap-2 text-sm text-foreground">
+                          <Landmark className="size-4 text-[color:var(--module-finanzas)]" />
+                          {cuenta.nombre_banco ?? "-"}
+                        </p>
+                      </div>
+                      <div className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4">
+                        <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
+                          Creacion
+                        </p>
+                        <p className="mt-2 text-sm text-foreground">{formatDate(cuenta.created_at)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
+    </section>
   )
 }

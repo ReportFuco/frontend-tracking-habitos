@@ -1,10 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { ArrowUpRight, Landmark, PencilLine, Wallet } from "lucide-react"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useRouter } from "next/navigation"
+import { ArrowUpRight, Landmark, Wallet } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -15,40 +12,11 @@ import {
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import { useFinanzas } from "@/modules/finanzas/hooks/useFinanzas"
-import { TIPOS_GASTO, TIPOS_MOVIMIENTO } from "@/modules/finanzas/schemas/finanzas.schema"
-import { TipoGasto, TipoMovimiento } from "@/modules/finanzas/types/finanzas"
+import { TipoMovimiento } from "@/modules/finanzas/types/finanzas"
 
 export function MovimientosManager() {
-  const { categorias, cuentas, movimientos, editarMovimiento, loadingCatalogos } = useFinanzas()
-
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [idCategoria, setIdCategoria] = useState("")
-  const [idCuenta, setIdCuenta] = useState("")
-  const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimiento>("gasto")
-  const [tipoGasto, setTipoGasto] = useState<TipoGasto>("variable")
-  const [monto, setMonto] = useState("")
-
-  const onSave = async (idMovimiento: number) => {
-    const result = await editarMovimiento(idMovimiento, {
-      id_categoria: Number(idCategoria),
-      id_cuenta: Number(idCuenta),
-      tipo_movimiento: tipoMovimiento,
-      tipo_gasto: tipoGasto,
-      monto: Number(monto),
-    })
-
-    if (result.ok) {
-      toast.success("Movimiento actualizado", {
-        description: "Los cambios del movimiento se guardaron correctamente.",
-      })
-      setEditingId(null)
-      return
-    }
-
-    toast.error("No pudimos actualizar el movimiento", {
-      description: result.message,
-    })
-  }
+  const router = useRouter()
+  const { movimientos, loadingCatalogos } = useFinanzas()
 
   const totalIngresos = movimientos
     .filter((movimiento) => movimiento.tipo_movimiento === "ingreso")
@@ -76,90 +44,8 @@ export function MovimientosManager() {
     }
   }
 
-  const startEditing = (idTransaccion: number, categoriaNombre?: string | null, cuentaNombre?: string | null, movimientoTipo?: TipoMovimiento, gastoTipo?: TipoGasto, movimientoMonto?: number) => {
-    const categoria = categorias.find((item) => item.nombre === categoriaNombre)
-    const cuenta = cuentas.find((item) => item.nombre_cuenta === cuentaNombre)
-
-    setEditingId(idTransaccion)
-    setIdCategoria(String(categoria?.id_categoria ?? categorias[0]?.id_categoria ?? ""))
-    setIdCuenta(String(cuenta?.id_cuenta ?? cuentas[0]?.id_cuenta ?? ""))
-    setTipoMovimiento(movimientoTipo ?? "gasto")
-    setTipoGasto(gastoTipo ?? "variable")
-    setMonto(String(movimientoMonto ?? ""))
-  }
-
-  const renderEditFields = (idMovimiento: number) => (
-    <div className="space-y-3 rounded-[1.25rem] bg-[color:var(--surface-low)] p-4">
-      <div className="grid gap-3 lg:grid-cols-2">
-        <select
-          className="h-11 w-full rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 text-sm outline-none"
-          value={idCategoria}
-          onChange={(event) => setIdCategoria(event.target.value)}
-        >
-          {categorias.map((categoria) => (
-            <option key={categoria.id_categoria} value={categoria.id_categoria}>
-              {categoria.nombre}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="h-11 w-full rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 text-sm outline-none"
-          value={idCuenta}
-          onChange={(event) => setIdCuenta(event.target.value)}
-        >
-          {cuentas.map((cuenta) => (
-            <option key={cuenta.id_cuenta} value={cuenta.id_cuenta}>
-              {cuenta.nombre_cuenta}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-3">
-        <select
-          className="h-11 w-full rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 text-sm outline-none"
-          value={tipoMovimiento}
-          onChange={(event) => setTipoMovimiento(event.target.value as TipoMovimiento)}
-        >
-          {TIPOS_MOVIMIENTO.map((tipo) => (
-            <option key={tipo} value={tipo}>
-              {tipo}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="h-11 w-full rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 text-sm outline-none"
-          value={tipoGasto}
-          onChange={(event) => setTipoGasto(event.target.value as TipoGasto)}
-        >
-          {TIPOS_GASTO.map((tipo) => (
-            <option key={tipo} value={tipo}>
-              {tipo}
-            </option>
-          ))}
-        </select>
-
-        <Input
-          type="number"
-          min={1}
-          value={monto}
-          onChange={(event) => setMonto(event.target.value)}
-          className="h-11 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 shadow-none focus-visible:border-b-2 focus-visible:border-primary focus-visible:ring-0"
-        />
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => onSave(idMovimiento)} className="rounded-xl">
-          Guardar cambios
-        </Button>
-        <Button variant="ghost" onClick={() => setEditingId(null)} className="rounded-xl">
-          Cancelar
-        </Button>
-      </div>
-    </div>
-  )
+  const getCategoryTone = (tipo: TipoMovimiento) =>
+    tipo === "ingreso" ? "bg-secondary" : "bg-[color:var(--module-finanzas)]"
 
   return (
     <section className="flex flex-col gap-6">
@@ -228,99 +114,50 @@ export function MovimientosManager() {
           </div>
         ) : (
           <>
-            <div className="mt-6 hidden overflow-hidden rounded-[1.5rem] bg-[color:var(--surface-lowest)] shadow-[var(--shadow-airy)] lg:block">
+            <div className="mt-6 hidden overflow-hidden rounded-[1.5rem] bg-[color:var(--surface-low)] shadow-[0_8px_48px_-12px_rgba(0,0,0,0.05)] lg:block">
               <Table>
-                <TableHeader className="bg-[color:var(--surface-low)]">
+                <TableHeader className="bg-[color:var(--primary)] text-[color:var(--primary-foreground)]">
                   <TableRow className="border-0 hover:bg-transparent">
-                    <TableHead className="px-5 py-4">Movimiento</TableHead>
-                    <TableHead className="px-5 py-4">Categoria</TableHead>
-                    <TableHead className="px-5 py-4">Cuenta</TableHead>
-                    <TableHead className="px-5 py-4">Fecha</TableHead>
-                    <TableHead className="px-5 py-4 text-right">Monto</TableHead>
-                    <TableHead className="px-5 py-4 text-right">Accion</TableHead>
+                    <TableHead className="px-8 py-5 font-label text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--primary-foreground)]">
+                      Movimiento
+                    </TableHead>
+                    <TableHead className="px-6 py-5 font-label text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--primary-foreground)]">
+                      Categoria
+                    </TableHead>
+                    <TableHead className="px-6 py-5 font-label text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--primary-foreground)]">
+                      Cuenta
+                    </TableHead>
+                    <TableHead className="px-6 py-5 font-label text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--primary-foreground)]">
+                      Fecha
+                    </TableHead>
+                    <TableHead className="px-6 py-5 text-right font-label text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--primary-foreground)]">
+                      Monto
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {movimientos.map((movimiento) => (
-                    <TableRow key={movimiento.id_transaccion} className="border-0 hover:bg-[color:var(--surface-low)]/70">
-                      <TableCell className="px-5 py-4 align-top">
-                        {editingId === movimiento.id_transaccion ? (
-                          renderEditFields(movimiento.id_transaccion)
-                        ) : (
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={cn(
-                                  "inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em]",
-                                  movimiento.tipo_movimiento === "ingreso"
-                                    ? "bg-secondary/12 text-secondary"
-                                    : "bg-primary/12 text-primary"
-                                )}
-                              >
-                                {movimiento.tipo_movimiento}
-                              </span>
-                              <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                                {movimiento.tipo_gasto}
-                              </span>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {movimiento.descripcion || "Sin descripcion"}
-                            </p>
-                          </div>
-                        )}
-                      </TableCell>
-                      {editingId === movimiento.id_transaccion ? (
-                        <TableCell colSpan={5} className="px-5 py-4" />
-                      ) : (
-                        <>
-                          <TableCell className="px-5 py-4">{movimiento.categoria ?? "-"}</TableCell>
-                          <TableCell className="px-5 py-4">{movimiento.nombre_cuenta ?? "-"}</TableCell>
-                          <TableCell className="px-5 py-4 text-sm text-muted-foreground">
-                            {formatDate(movimiento.created_at)}
-                          </TableCell>
-                          <TableCell className="px-5 py-4 text-right font-semibold">
-                            {formatCurrency(movimiento.monto)}
-                          </TableCell>
-                          <TableCell className="px-5 py-4 text-right">
-                            <Button
-                              variant="ghost"
-                              className="rounded-full"
-                              onClick={() =>
-                                startEditing(
-                                  movimiento.id_transaccion,
-                                  movimiento.categoria,
-                                  movimiento.nombre_cuenta,
-                                  movimiento.tipo_movimiento,
-                                  movimiento.tipo_gasto,
-                                  movimiento.monto
-                                )
-                              }
-                            >
-                              <PencilLine className="size-4" />
-                              Editar
-                            </Button>
-                          </TableCell>
-                        </>
+                <TableBody className="[&_tr:not(:last-child)]:border-b [&_tr:not(:last-child)]:border-[color:var(--border)]/30">
+                  {movimientos.map((movimiento, index) => (
+                    <TableRow
+                      key={movimiento.id_transaccion}
+                      role="link"
+                      tabIndex={0}
+                      className={cn(
+                        "cursor-pointer border-0 transition-colors hover:bg-primary/8 focus-visible:bg-primary/8",
+                        index % 2 === 0
+                          ? "bg-[color:var(--surface-lowest)]"
+                          : "bg-[color:var(--surface-low)]"
                       )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            <div className="mt-6 grid gap-4 lg:hidden">
-              {movimientos.map((movimiento) => (
-                <article
-                  key={movimiento.id_transaccion}
-                  className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-5 shadow-[var(--shadow-airy)]"
-                >
-                  {editingId === movimiento.id_transaccion ? (
-                    renderEditFields(movimiento.id_transaccion)
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap items-center gap-2">
+                      onClick={() => router.push(`/app/finanzas/movimientos/${movimiento.id_transaccion}`)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault()
+                          router.push(`/app/finanzas/movimientos/${movimiento.id_transaccion}`)
+                        }
+                      }}
+                    >
+                      <TableCell className="px-5 py-4 align-top">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
                             <span
                               className={cn(
                                 "inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em]",
@@ -335,52 +172,100 @@ export function MovimientosManager() {
                               {movimiento.tipo_gasto}
                             </span>
                           </div>
-                          <p className="text-lg font-semibold tracking-tight text-foreground">
-                            {formatCurrency(movimiento.monto)}
+                          <p className="text-sm text-muted-foreground">
+                            {movimiento.descripcion || "Sin descripcion"}
                           </p>
                         </div>
-                        <Button
-                          variant="ghost"
-                          className="rounded-full"
-                          onClick={() =>
-                            startEditing(
-                              movimiento.id_transaccion,
-                              movimiento.categoria,
-                              movimiento.nombre_cuenta,
-                              movimiento.tipo_movimiento,
-                              movimiento.tipo_gasto,
-                              movimiento.monto
-                            )
-                          }
-                        >
-                          <PencilLine className="size-4" />
-                        </Button>
-                      </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-6">
+                        <div className="flex items-center gap-2">
+                          <span className={cn("h-2 w-2 rounded-full", getCategoryTone(movimiento.tipo_movimiento))} />
+                          <span>{movimiento.categoria ?? "-"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-6">{movimiento.nombre_cuenta ?? "-"}</TableCell>
+                      <TableCell className="px-5 py-4 text-sm text-muted-foreground">
+                        {formatDate(movimiento.created_at)}
+                      </TableCell>
+                      <TableCell className="px-8 py-6 text-right font-mono font-semibold tracking-tight">
+                        {formatCurrency(movimiento.monto)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <footer className="flex items-center justify-between border-t border-[color:var(--border)]/30 bg-[color:var(--surface-low)] px-8 py-4">
+                <span className="font-label text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  Mostrando {movimientos.length} movimiento{movimientos.length === 1 ? "" : "s"}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Diario financiero activo
+                </span>
+              </footer>
+            </div>
 
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4">
-                          <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
-                            Categoria
-                          </p>
-                          <p className="mt-2 text-sm text-foreground">{movimiento.categoria ?? "-"}</p>
+            <div className="mt-6 grid gap-4 lg:hidden">
+              {movimientos.map((movimiento) => (
+                <article
+                  key={movimiento.id_transaccion}
+                  className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-5 shadow-[var(--shadow-airy)]"
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => router.push(`/app/finanzas/movimientos/${movimiento.id_transaccion}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault()
+                      router.push(`/app/finanzas/movimientos/${movimiento.id_transaccion}`)
+                    }
+                  }}
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={cn(
+                              "inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em]",
+                              movimiento.tipo_movimiento === "ingreso"
+                                ? "bg-secondary/12 text-secondary"
+                                : "bg-primary/12 text-primary"
+                            )}
+                          >
+                            {movimiento.tipo_movimiento}
+                          </span>
+                          <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                            {movimiento.tipo_gasto}
+                          </span>
                         </div>
-                        <div className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4">
-                          <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
-                            Cuenta
-                          </p>
-                          <p className="mt-2 flex items-center gap-2 text-sm text-foreground">
-                            <Landmark className="size-4 text-[color:var(--module-finanzas)]" />
-                            {movimiento.nombre_cuenta ?? "-"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 text-sm text-muted-foreground">
-                        <p>{movimiento.descripcion || "Sin descripcion"}</p>
-                        <p>{formatDate(movimiento.created_at)}</p>
+                        <p className="text-lg font-semibold tracking-tight text-foreground">
+                          {formatCurrency(movimiento.monto)}
+                        </p>
                       </div>
                     </div>
-                  )}
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4">
+                        <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
+                          Categoria
+                        </p>
+                        <p className="mt-2 text-sm text-foreground">{movimiento.categoria ?? "-"}</p>
+                      </div>
+                      <div className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4">
+                        <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
+                          Cuenta
+                        </p>
+                        <p className="mt-2 flex items-center gap-2 text-sm text-foreground">
+                          <Landmark className="size-4 text-[color:var(--module-finanzas)]" />
+                          {movimiento.nombre_cuenta ?? "-"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p>{movimiento.descripcion || "Sin descripcion"}</p>
+                      <p>{formatDate(movimiento.created_at)}</p>
+                    </div>
+                  </div>
                 </article>
               ))}
             </div>
