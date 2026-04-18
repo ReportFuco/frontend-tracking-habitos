@@ -2,6 +2,8 @@ import Link from "next/link"
 import { ArrowRight, Dumbbell } from "lucide-react"
 import { ContextNav } from "@/components/shell/context-nav"
 import { PageHeader } from "@/components/shell/page-header"
+import { EntrenamientosHomeOverview } from "@/modules/entrenamientos/components/entrenamientos-home-overview"
+import { EntrenamientosProvider } from "@/modules/entrenamientos/hooks/useEntrenamientos"
 
 export default function EntrenamientosHomePage() {
   return (
@@ -47,31 +49,9 @@ export default function EntrenamientosHomePage() {
             </Link>
           </article>
 
-          <article className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-6 shadow-[var(--shadow-airy)]">
-            <p className="font-label text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
-              Frente 02
-            </p>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight">Registrar entrenamiento</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Abre tu entrenamiento en gym y deja la sesion marcada como activa para administrar ahi mismo las series.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link
-                href="/app/entrenamientos/registrar"
-                className="inline-flex items-center gap-2 text-sm font-medium text-foreground transition hover:text-[color:var(--module-entrenamientos)]"
-              >
-                Ir a registrar entrenamiento
-                <ArrowRight className="size-4" />
-              </Link>
-              <Link
-                href="/app/entrenamientos/activo"
-                className="inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-foreground"
-              >
-                Ver entrenamiento activo
-                <ArrowRight className="size-4" />
-              </Link>
-            </div>
-          </article>
+          <EntrenamientosProvider>
+            <EntrenamientosHomeOverview />
+          </EntrenamientosProvider>
 
           <article className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-6 shadow-[var(--shadow-airy)]">
             <p className="font-label text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
