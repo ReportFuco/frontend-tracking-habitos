@@ -2,7 +2,7 @@ import axios from "axios"
 import { clearStoredSession, getValidStoredToken } from "@/lib/auth-session"
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
-const LOGIN_PATH = "/usuarios"
+const LOGIN_PATH = "/login"
 
 let isHandlingUnauthorized = false
 

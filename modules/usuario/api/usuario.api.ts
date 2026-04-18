@@ -1,16 +1,27 @@
-// src/modules/usuarios/api/usuarios.api.ts
 import { api } from "@/lib/api"
-import { Usuario } from "@/modules/usuario/types/usuario"
-import { UsuarioCreate } from "@/modules/usuario/schemas/usuario.schema"
+import { Usuario, UsuarioPerfilPatch } from "@/modules/usuario/types/usuario"
 
 export const UsuariosAPI = {
   getAll: async (): Promise<Usuario[]> => {
-    const { data } = await api.get("/usuarios/usuario/")
+    const { data } = await api.get("/api/usuarios/")
     return data
   },
 
-  create: async (payload: UsuarioCreate): Promise<Usuario> => {
-    const { data } = await api.post("/usuarios/usuario/", payload)
+  getPerfil: async (): Promise<Usuario> => {
+    const { data } = await api.get("/api/usuarios/perfil")
     return data
+  },
+
+  updatePerfil: async (payload: UsuarioPerfilPatch): Promise<Usuario> => {
+    const { data } = await api.patch("/api/usuarios/perfil", payload)
+    return data
+  },
+
+  desactivar: async (idUsuario: number): Promise<void> => {
+    await api.delete(`/api/usuarios/${idUsuario}`)
+  },
+
+  eliminarPermanente: async (idUsuario: number): Promise<void> => {
+    await api.delete(`/api/usuarios/${idUsuario}/permanente`)
   },
 }

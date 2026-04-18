@@ -10,7 +10,7 @@ interface AuthGuardProps {
   redirectTo?: string
 }
 
-export function AuthGuard({ children, redirectTo = "/usuarios" }: AuthGuardProps) {
+export function AuthGuard({ children, redirectTo = "/login" }: AuthGuardProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [status, setStatus] = useState<"checking" | "authorized" | "unauthorized">("checking")

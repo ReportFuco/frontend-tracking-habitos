@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, ReactNode, useContext, useEffect, useState } from "react"
+import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react"
 import { AxiosError } from "axios"
 import { getFriendlyErrorMessage } from "@/lib/error-messages"
 import { EntrenamientosAPI } from "@/modules/entrenamientos/api/entrenamientos.api"
@@ -44,7 +44,7 @@ const useEntrenamientosState = () => {
     }
   }
 
-  const fetchResumen = async () => {
+  const fetchResumen = useCallback(async () => {
     setLoading(true)
     setError(null)
 
@@ -63,7 +63,7 @@ const useEntrenamientosState = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const fetchGimnasios = async (q?: string) => {
     setLoading(true)
@@ -148,7 +148,7 @@ const useEntrenamientosState = () => {
     }, 0)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [fetchResumen])
 
   return {
     gimnasios,

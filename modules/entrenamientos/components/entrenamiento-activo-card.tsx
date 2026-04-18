@@ -142,7 +142,7 @@ export function EntrenamientoActivoCard() {
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-            Inicia un entrenamiento desde la seccion "Iniciar Fuerza" para registrar series aqui.
+            Inicia un entrenamiento desde la seccion &quot;Iniciar Fuerza&quot; para registrar series aqui.
           </div>
         </CardContent>
       </Card>

@@ -1,8 +1,11 @@
 import { z } from "zod"
 
-export const usuarioCreateSchema = z.object({
-  nombre: z.string().min(2),
-  telefono: z.string().min(8),
+export const usuarioPerfilPatchSchema = z.object({
+  username: z.string().max(20).optional(),
+  nombre: z.string().max(20).optional(),
+  apellido: z.string().max(20).optional(),
+  telefono: z.string().max(11).optional(),
+  email: z.string().email().optional(),
 })
 
-export type UsuarioCreate = z.infer<typeof usuarioCreateSchema>
+export type UsuarioPerfilPatchInput = z.infer<typeof usuarioPerfilPatchSchema>

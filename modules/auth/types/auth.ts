@@ -32,5 +32,7 @@ export interface UsuarioProfile {
   apellido: string
   telefono: string
   email: string
+  is_active?: boolean
+  is_superuser?: boolean
   created_at: string
 }

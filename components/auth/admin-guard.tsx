@@ -27,7 +27,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
           if (error instanceof AxiosError) {
             if (error.response?.status === 401) {
               const next = pathname ? `?next=${encodeURIComponent(pathname)}` : ""
-              router.replace(`/usuarios${next}`)
+              router.replace(`/login${next}`)
               return
             }
 
