@@ -114,7 +114,7 @@ export function MovimientoFormCard() {
 
   return (
     <FormPanel
-      eyebrow="Finanzas"
+      eyebrow="Nuevo movimiento"
       aside={
         <div className="space-y-4">
           <div className="flex items-center gap-3">

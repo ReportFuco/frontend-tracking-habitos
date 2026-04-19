@@ -16,7 +16,25 @@ const initialForm = {
 }
 
 const textareaClassName =
-  "min-h-32 w-full rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-b-2 focus:border-[color:var(--module-entrenamientos)]"
+  "min-h-28 w-full rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-b-2 focus:border-[color:var(--module-entrenamientos)] sm:min-h-32"
+
+const steps = [
+  {
+    index: "01",
+    title: "Elige el gimnasio",
+    description: "Selecciona el lugar donde vas a entrenar hoy.",
+  },
+  {
+    index: "02",
+    title: "Abre la sesion",
+    description: "El entrenamiento queda activo y listo para empezar.",
+  },
+  {
+    index: "03",
+    title: "Registra tus series",
+    description: "Continua en entrenamiento activo mientras avanzas.",
+  },
+]
 
 export function EntrenoFuerzaFormCard() {
   const { gimnasios, entrenamientoActivo, submitting, iniciarEntrenoFuerza } = useEntrenamientos()
@@ -63,36 +81,33 @@ export function EntrenoFuerzaFormCard() {
   )
 
   return (
-    <section className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
-      <FormPanel
-        eyebrow="Registro"
-        title="Registrar entrenamiento en gym"
-        description="Abre tu sesion, elige el gimnasio y deja listo el espacio donde despues iras registrando tus series."
-        accent="tertiary"
-      >
-        <div className="space-y-6">
+    <section className="grid gap-4 sm:gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+      <FormPanel eyebrow="Registro" accent="tertiary">
+        <div className="space-y-5 sm:space-y-6">
           {entrenamientoActivo ? (
-            <div className="rounded-[1.5rem] bg-[color:var(--surface-low)] p-5">
-              <p className="font-label text-[0.72rem] uppercase tracking-[0.24em] text-muted-foreground">
+            <div className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4 sm:rounded-[1.5rem] sm:p-5">
+              <p className="font-label text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground sm:text-[0.72rem] sm:tracking-[0.24em]">
                 Sesion activa
               </p>
-              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+              <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground sm:mt-3 sm:text-2xl">
                 Ya tienes un entrenamiento en curso.
               </h3>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              <p className="mt-2 text-sm leading-6 text-muted-foreground sm:mt-3">
                 Tu sesion actual ya esta asociada a {entrenamientoActivo.nombre_gimnasio ?? "un gimnasio"}.
-                Desde aqui te llevamos directo al espacio donde se registran las series.
+                Desde aqui te llevamos al espacio donde se registran las series.
               </p>
-              <Link
-                href="/app/entrenamientos/activo"
-                className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-foreground transition hover:text-[color:var(--module-entrenamientos)]"
+              <Button
+                asChild
+                className="mt-4 bg-[color:var(--module-entrenamientos)] text-[color:var(--tertiary-foreground)] hover:bg-[color:var(--module-entrenamientos)]/90 sm:mt-5"
               >
-                Ir a entrenamiento activo
-                <ArrowRight className="size-4" />
-              </Link>
+                <Link href="/app/entrenamientos/activo">
+                  Ir a entrenamiento activo
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
               <FieldGroup
                 label="Gimnasio"
                 hint={availableGimnasios.length ? "Contexto de la sesion" : "Sin opciones activas"}
@@ -117,32 +132,37 @@ export function EntrenoFuerzaFormCard() {
               <FieldGroup label="Observacion" hint="Opcional">
                 <textarea
                   className={textareaClassName}
-                  placeholder="Ej: enfasis en torso, energia media, tecnica limpia, molestias leves..."
+                  placeholder="Ej: enfasis en torso, energia media, tecnica limpia..."
                   value={form.observacion}
                   onChange={(event) => setForm((prev) => ({ ...prev, observacion: event.target.value }))}
                 />
               </FieldGroup>
 
-              <FormNote>
-                Cuando actives esta sesion, el entrenamiento quedara vinculado a este gimnasio y tus registros se iran armando desde ese contexto.
-              </FormNote>
-
               {selectedGym ? (
                 <FormNote>
-                  Vas a abrir la sesion en <span className="font-medium text-foreground">{selectedGym.nombre_gimnasio}</span>
+                  Vas a abrir la sesion en{" "}
+                  <span className="font-medium text-foreground">{selectedGym.nombre_gimnasio}</span>
                   {selectedGym.comuna ? `, ${selectedGym.comuna}` : ""}.
                 </FormNote>
-              ) : null}
+              ) : (
+                <FormNote>
+                  Cuando actives esta sesion, el entrenamiento quedara vinculado al gimnasio y tus registros se armaran desde ese contexto.
+                </FormNote>
+              )}
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
                 <Button
                   type="submit"
                   disabled={submitting || availableGimnasios.length === 0}
-                  className="bg-[color:var(--module-entrenamientos)] text-[color:var(--tertiary-foreground)] hover:bg-[color:var(--module-entrenamientos)]/90"
+                  className="w-full bg-[color:var(--module-entrenamientos)] text-[color:var(--tertiary-foreground)] hover:bg-[color:var(--module-entrenamientos)]/90 sm:w-auto"
                 >
                   {submitting ? "Abriendo sesion..." : "Registrar entrenamiento"}
                 </Button>
-                <Button asChild variant="ghost" className="text-foreground hover:text-[color:var(--module-entrenamientos)]">
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="w-full text-foreground hover:text-[color:var(--module-entrenamientos)] sm:w-auto"
+                >
                   <Link href="/app/entrenamientos/gimnasios">Ver gimnasios</Link>
                 </Button>
               </div>
@@ -151,45 +171,63 @@ export function EntrenoFuerzaFormCard() {
 
           {availableGimnasios.length === 0 ? (
             <FormNote>
-              Aun no hay gimnasios disponibles para elegir. Cuando aparezcan, podras volver aqui y abrir tu siguiente sesion.
+              Aun no hay gimnasios disponibles para elegir. Cuando aparezcan, podras volver y abrir tu siguiente sesion.
             </FormNote>
           ) : null}
         </div>
       </FormPanel>
 
       <section className="space-y-4">
-        <article className="rounded-[1.75rem] bg-[color:var(--surface-lowest)] p-6 shadow-[var(--shadow-airy)]">
+        <article className="hidden rounded-[1.75rem] bg-[color:var(--surface-lowest)] p-6 shadow-[var(--shadow-airy)] xl:block">
           <p className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Flame className="size-4 text-[color:var(--module-entrenamientos)]" />
             Paso a paso
           </p>
           <div className="mt-4 space-y-3">
-            <div className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4">
-              <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
-                1. Elige el gimnasio
-              </p>
-              <p className="mt-2 text-sm leading-6 text-foreground">
-                Selecciona el lugar donde vas a entrenar hoy.
-              </p>
-            </div>
-            <div className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4">
-              <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
-                2. Abre la sesion
-              </p>
-              <p className="mt-2 text-sm leading-6 text-foreground">
-                El entrenamiento queda activo y listo para empezar.
-              </p>
-            </div>
-            <div className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4">
-              <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
-                3. Registra tus series
-              </p>
-              <p className="mt-2 text-sm leading-6 text-foreground">
-                Continua en entrenamiento activo mientras avanzas en tu rutina.
-              </p>
-            </div>
+            {steps.map((step) => (
+              <div key={step.index} className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4">
+                <p className="font-label text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
+                  {step.index[0] === "0" ? `${Number(step.index)}. ${step.title}` : step.title}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-foreground">{step.description}</p>
+              </div>
+            ))}
           </div>
         </article>
+
+        <details className="group rounded-[1.25rem] bg-[color:var(--surface-low)] p-4 xl:hidden">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Flame className="size-4 text-[color:var(--module-entrenamientos)]" />
+              Paso a paso
+            </span>
+            <span className="font-label text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground transition group-open:rotate-180">
+              Ver
+            </span>
+          </summary>
+          <ol className="mt-4 space-y-2.5">
+            {steps.map((step) => (
+              <li
+                key={step.index}
+                className="flex items-start gap-3 rounded-[1rem] bg-[color:var(--surface-lowest)] p-3"
+              >
+                <span
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full font-label text-[0.65rem] font-semibold tracking-[0.1em]"
+                  style={{
+                    background: "color-mix(in oklch, var(--module-entrenamientos) 12%, transparent)",
+                    color: "var(--module-entrenamientos)",
+                  }}
+                >
+                  {Number(step.index)}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">{step.title}</p>
+                  <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{step.description}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </details>
       </section>
     </section>
   )

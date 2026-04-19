@@ -11,9 +11,9 @@ export function FormPanel({
   children,
   accent = "primary",
 }: {
-  eyebrow: string
-  title: string
-  description: string
+  eyebrow?: string
+  title?: string
+  description?: string
   aside?: ReactNode
   children: ReactNode
   accent?: "primary" | "tertiary"
@@ -22,29 +22,71 @@ export function FormPanel({
     accent === "tertiary"
       ? "from-tertiary/12 via-tertiary/6 to-transparent"
       : "from-primary/12 via-primary/6 to-transparent"
+  const accentColor =
+    accent === "tertiary" ? "var(--module-entrenamientos)" : "var(--primary)"
+
+  const hasFullHeader = Boolean(title || description)
+  const showCompactEyebrow = !hasFullHeader && Boolean(eyebrow)
 
   return (
     <section className="overflow-hidden rounded-[1.5rem] bg-[color:var(--surface-lowest)] shadow-[var(--shadow-airy-lg)] sm:rounded-[1.75rem]">
-      <div className={cn("bg-gradient-to-br px-4 py-5 sm:px-8 sm:py-6", accentClass)}>
-        <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-6">
-          <div className="space-y-2 sm:space-y-3">
-            <p className="font-label text-[0.65rem] uppercase tracking-[0.22em] text-muted-foreground sm:text-[0.72rem] sm:tracking-[0.24em]">
-              {eyebrow}
-            </p>
-            <h2 className="text-xl font-semibold tracking-[-0.02em] text-foreground sm:text-3xl sm:tracking-[-0.03em]">
-              {title}
-            </h2>
-            <p className="max-w-xl text-sm leading-6 text-muted-foreground">{description}</p>
-          </div>
-          {aside ? (
-            <div className="hidden rounded-[1.5rem] bg-white/70 p-5 backdrop-blur-sm lg:block">
-              {aside}
+      {hasFullHeader ? (
+        <div className={cn("bg-gradient-to-br px-4 py-5 sm:px-8 sm:py-6", accentClass)}>
+          <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-6">
+            <div className="space-y-2 sm:space-y-3">
+              {eyebrow ? (
+                <p className="font-label text-[0.65rem] uppercase tracking-[0.22em] text-muted-foreground sm:text-[0.72rem] sm:tracking-[0.24em]">
+                  {eyebrow}
+                </p>
+              ) : null}
+              {title ? (
+                <h2 className="text-xl font-semibold tracking-[-0.02em] text-foreground sm:text-3xl sm:tracking-[-0.03em]">
+                  {title}
+                </h2>
+              ) : null}
+              {description ? (
+                <p className="max-w-xl text-sm leading-6 text-muted-foreground">{description}</p>
+              ) : null}
             </div>
-          ) : null}
+            {aside ? (
+              <div className="hidden rounded-[1.5rem] bg-white/70 p-5 backdrop-blur-sm lg:block">
+                {aside}
+              </div>
+            ) : null}
+          </div>
         </div>
-      </div>
+      ) : null}
 
-      <div className="px-4 py-5 sm:px-8 sm:py-8">{children}</div>
+      <div
+        className={cn(
+          "px-4 py-5 sm:px-8 sm:py-7",
+          showCompactEyebrow || aside ? "pt-4 sm:pt-6" : null
+        )}
+      >
+        {showCompactEyebrow || aside ? (
+          <div className="mb-5 flex items-center justify-between gap-3 sm:mb-6">
+            {showCompactEyebrow ? (
+              <span
+                className="inline-flex items-center gap-1.5 font-label text-[0.62rem] uppercase tracking-[0.2em] text-muted-foreground sm:text-[0.68rem] sm:tracking-[0.22em]"
+              >
+                <span
+                  aria-hidden
+                  className="size-1.5 rounded-full"
+                  style={{ background: accentColor }}
+                />
+                {eyebrow}
+              </span>
+            ) : (
+              <span />
+            )}
+            {aside ? (
+              <div className="hidden lg:block">{aside}</div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {children}
+      </div>
     </section>
   )
 }

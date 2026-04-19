@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { FormEvent, useEffect, useMemo, useState } from "react"
-import { PencilLine, Trash2 } from "lucide-react"
+import { ArrowRight, PencilLine, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { EditorialSelect, FieldGroup, FormNote, FormPanel } from "@/components/forms/editorial-form"
@@ -30,7 +30,7 @@ const initialForm = {
 }
 
 const inputClassName =
-  "h-13 w-full rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-b-2 focus:border-[color:var(--module-entrenamientos)]"
+  "h-12 w-full rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-b-2 focus:border-[color:var(--module-entrenamientos)] sm:h-13"
 
 const normalizeText = (value: string | null | undefined) => (value ?? "").trim().toLowerCase()
 
@@ -90,6 +90,9 @@ export function EntrenamientoActivoCard() {
   }, [editingForm.tipo, ejercicios])
 
   const totalSeries = entrenamientoActivo?.series?.length ?? 0
+  const seriesTrabajo =
+    entrenamientoActivo?.series?.filter((serie) => !serie.es_calentamiento).length ?? 0
+  const seriesCalentamiento = totalSeries - seriesTrabajo
 
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -188,67 +191,111 @@ export function EntrenamientoActivoCard() {
 
   if (!entrenamientoActivo) {
     return (
-      <section className="rounded-[1.75rem] bg-[color:var(--surface-low)] p-6">
-        <div className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-6 shadow-[var(--shadow-airy)]">
-          <p className="font-label text-[0.72rem] uppercase tracking-[0.24em] text-muted-foreground">
+      <section className="rounded-[1.5rem] bg-[color:var(--surface-low)] p-4 sm:rounded-[1.75rem] sm:p-6">
+        <div className="rounded-[1.25rem] bg-[color:var(--surface-lowest)] p-5 shadow-[var(--shadow-airy)] sm:rounded-[1.5rem] sm:p-6">
+          <p className="font-label text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground sm:text-[0.72rem] sm:tracking-[0.24em]">
             Sin sesion activa
           </p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-foreground">
+          <h2 className="mt-2 text-xl font-semibold leading-tight tracking-[-0.02em] text-foreground sm:mt-3 sm:text-3xl sm:tracking-[-0.03em]">
             Todavia no hay un entrenamiento en curso.
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
             Primero abre tu entrenamiento y luego vuelve aqui para empezar a registrar tus series.
           </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Button
-              asChild
-              className="bg-[color:var(--module-entrenamientos)] text-[color:var(--tertiary-foreground)] hover:bg-[color:var(--module-entrenamientos)]/90"
-            >
-              <Link href="/app/entrenamientos/registrar">Registrar entrenamiento</Link>
-            </Button>
-          </div>
+          <Button
+            asChild
+            className="mt-5 bg-[color:var(--module-entrenamientos)] text-[color:var(--tertiary-foreground)] hover:bg-[color:var(--module-entrenamientos)]/90"
+          >
+            <Link href="/app/entrenamientos/registrar">
+              Registrar entrenamiento
+              <ArrowRight className="size-4" />
+            </Link>
+          </Button>
         </div>
       </section>
     )
   }
 
   return (
-    <section className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
-      <section className="rounded-[1.75rem] bg-[color:var(--surface-low)] p-6">
+    <section className="grid gap-4 sm:gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+      <section className="order-2 rounded-[1.5rem] bg-[color:var(--surface-low)] p-4 sm:rounded-[1.75rem] sm:p-6 xl:order-none">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="font-label text-[0.7rem] uppercase tracking-[0.22em] text-muted-foreground">
+            <p className="font-label text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground sm:text-[0.7rem] sm:tracking-[0.22em]">
               Sesion actual
             </p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+            <h2 className="mt-1.5 text-lg font-semibold tracking-tight text-foreground sm:mt-2 sm:text-2xl">
               Series registradas
             </h2>
+            {entrenamientoActivo.nombre_gimnasio ? (
+              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                {entrenamientoActivo.nombre_gimnasio}
+              </p>
+            ) : null}
           </div>
-          <div className="flex items-center gap-3">
-            <span className="rounded-full bg-secondary/12 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-secondary">
+          <div className="flex items-center justify-between gap-2 sm:gap-3">
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.16em] sm:px-3 sm:tracking-[0.18em]"
+              style={{
+                background: "color-mix(in oklch, var(--module-entrenamientos) 10%, transparent)",
+                color: "var(--module-entrenamientos)",
+              }}
+            >
               {totalSeries} serie{totalSeries === 1 ? "" : "s"}
             </span>
             <Button
               variant="ghost"
+              size="sm"
               onClick={() => setCloseDialogOpen(true)}
               disabled={submitting}
               className="text-foreground hover:text-primary"
             >
-              {submitting ? "Cerrando..." : "Cerrar entrenamiento"}
+              {submitting ? "Cerrando..." : "Cerrar"}
             </Button>
           </div>
         </div>
 
-        <div className="mt-6 space-y-4">
+        {totalSeries > 0 ? (
+          <div className="mt-4 space-y-2 rounded-[1rem] bg-[color:var(--surface-lowest)] p-3 sm:mt-5 sm:rounded-[1.25rem] sm:p-4">
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground sm:text-xs">
+              <span className="font-label uppercase tracking-[0.18em]">Reparto</span>
+              <span>
+                {seriesTrabajo} trabajo · {seriesCalentamiento} calentamiento
+              </span>
+            </div>
+            <div className="flex h-2 overflow-hidden rounded-full bg-[color:var(--surface-variant)]">
+              {seriesTrabajo > 0 ? (
+                <div
+                  className="h-full"
+                  style={{
+                    width: `${(seriesTrabajo / totalSeries) * 100}%`,
+                    background: "var(--module-entrenamientos)",
+                  }}
+                />
+              ) : null}
+              {seriesCalentamiento > 0 ? (
+                <div
+                  className="h-full"
+                  style={{
+                    width: `${(seriesCalentamiento / totalSeries) * 100}%`,
+                    background: "color-mix(in oklch, var(--module-entrenamientos) 35%, transparent)",
+                  }}
+                />
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="mt-4 space-y-3 sm:mt-6 sm:space-y-4">
           {entrenamientoActivo.series?.length ? (
             entrenamientoActivo.series.map((serie) => (
               <article
                 key={serie.id_fuerza_detalle}
-                className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-5 shadow-[var(--shadow-airy)] ring-1 ring-primary/6"
+                className="rounded-[1.25rem] bg-[color:var(--surface-lowest)] p-4 shadow-[var(--shadow-airy)] sm:rounded-[1.5rem] sm:p-5"
               >
                 {editingId === serie.id_fuerza_detalle ? (
-                  <div className="space-y-5">
-                    <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="space-y-4 sm:space-y-5">
+                    <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
                       <FieldGroup label="Musculo">
                         <EditorialSelect
                           value={editingForm.tipo}
@@ -259,7 +306,7 @@ export function EntrenamientoActivoCard() {
                               id_ejercicio: "",
                             }))
                           }
-                          className="focus:border-primary"
+                          className="focus:border-[color:var(--module-entrenamientos)]"
                         >
                           <option value="">Selecciona un grupo muscular</option>
                           {tiposMusculares.map((tipo) => (
@@ -276,7 +323,7 @@ export function EntrenamientoActivoCard() {
                           onChange={(event) =>
                             setEditingForm((prev) => ({ ...prev, id_ejercicio: event.target.value }))
                           }
-                          className="focus:border-primary"
+                          className="focus:border-[color:var(--module-entrenamientos)]"
                         >
                           <option value="">Mantener ejercicio actual</option>
                           {ejerciciosFiltradosEdicion.map((ejercicio) => (
@@ -288,7 +335,7 @@ export function EntrenamientoActivoCard() {
                       </FieldGroup>
                     </div>
 
-                    <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
                       <FieldGroup label="Peso" hint="Kg">
                         <input
                           type="number"
@@ -328,7 +375,7 @@ export function EntrenamientoActivoCard() {
                       Serie de calentamiento
                     </label>
 
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-2 sm:gap-3">
                       <Button
                         onClick={() => handleSave(serie.id_fuerza_detalle)}
                         disabled={submitting}
@@ -348,49 +395,57 @@ export function EntrenamientoActivoCard() {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                            {serie.tipo_ejercicio ?? "grupo no informado"}
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground sm:text-xs sm:tracking-[0.18em]">
+                            {serie.tipo_ejercicio ?? "sin grupo"}
                           </span>
                           <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em] ${
+                            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] sm:text-[11px] sm:tracking-[0.18em] ${
                               serie.es_calentamiento
-                                ? "bg-primary/12 text-primary"
-                                : "bg-primary/8 text-foreground"
+                                ? "bg-primary/10 text-primary"
+                                : "bg-foreground/5 text-foreground"
                             }`}
                           >
                             {serie.es_calentamiento ? "calentamiento" : "trabajo"}
                           </span>
                         </div>
-                        <p className="text-lg font-semibold tracking-tight text-foreground">
+                        <p className="truncate text-base font-semibold tracking-tight text-foreground sm:text-lg">
                           {serie.nombre_ejercicio ?? `Serie #${serie.id_fuerza_detalle}`}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-semibold tracking-tight text-foreground">
-                          {serie.cantidad_peso} kg
+                      <div className="shrink-0 text-right">
+                        <p className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                          {serie.cantidad_peso} <span className="text-sm text-muted-foreground">kg</span>
                         </p>
-                        <p className="text-sm text-muted-foreground">{serie.repeticiones} repeticiones</p>
+                        <p className="text-xs text-muted-foreground sm:text-sm">
+                          {serie.repeticiones} reps
+                        </p>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-1 sm:gap-2">
                       <Button
                         variant="ghost"
+                        size="sm"
                         onClick={() => {
                           setEditingId(serie.id_fuerza_detalle)
                           setEditingForm(getEditableForm(serie))
                         }}
                         className="text-foreground hover:text-primary"
                       >
-                        <PencilLine className="mr-2 size-4" />
+                        <PencilLine className="size-3.5" />
                         Editar
                       </Button>
-                      <Button variant="ghost" onClick={() => handleDelete(serie.id_fuerza_detalle)}>
-                        <Trash2 className="mr-2 size-4" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(serie.id_fuerza_detalle)}
+                        className="text-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
                         Eliminar
                       </Button>
                     </div>
@@ -399,22 +454,20 @@ export function EntrenamientoActivoCard() {
               </article>
             ))
           ) : (
-            <div className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-6 text-sm leading-6 text-muted-foreground shadow-[var(--shadow-airy)] ring-1 ring-primary/6">
-              Aun no registras series en esta sesion. Cuando agregues la primera, la veras aqui de inmediato.
+            <div className="rounded-[1.25rem] bg-[color:var(--surface-lowest)] p-5 text-sm leading-6 text-muted-foreground shadow-[var(--shadow-airy)] sm:rounded-[1.5rem] sm:p-6">
+              Aun no registras series en esta sesion. Agrega la primera desde el panel {""}
+              <span className="sm:hidden">de arriba</span>
+              <span className="hidden sm:inline">lateral</span>
+              {" "}y aparecera aqui al instante.
             </div>
           )}
         </div>
       </section>
 
-      <div className="space-y-6">
-        <FormPanel
-          eyebrow="Nueva serie"
-          title="Registrar serie"
-          description="Elige el grupo muscular, luego el ejercicio y por ultimo registra tu carga y repeticiones."
-          accent="primary"
-        >
-          <form onSubmit={handleCreate} className="space-y-5">
-            <div className="grid gap-5">
+      <div className="order-1 space-y-4 sm:space-y-6 xl:order-none">
+        <FormPanel eyebrow="Nueva serie" accent="tertiary">
+          <form onSubmit={handleCreate} className="space-y-4 sm:space-y-5">
+            <div className="grid gap-4 sm:gap-5">
               <FieldGroup label="Grupo muscular">
                 <EditorialSelect
                   value={form.tipo}
@@ -426,7 +479,7 @@ export function EntrenamientoActivoCard() {
                     }))
                   }
                   disabled={submitting || loading}
-                  className="focus:border-primary"
+                  className="focus:border-[color:var(--module-entrenamientos)]"
                 >
                   <option value="">Selecciona un grupo muscular</option>
                   {tiposMusculares.map((tipo) => (
@@ -437,15 +490,15 @@ export function EntrenamientoActivoCard() {
                 </EditorialSelect>
               </FieldGroup>
 
-              <FieldGroup label="Ejercicio" hint={form.tipo ? "Disponible para el grupo elegido" : ""}>
+              <FieldGroup label="Ejercicio" hint={form.tipo ? "Disponibles para el grupo" : ""}>
                 <EditorialSelect
                   value={form.id_ejercicio}
                   onChange={(event) => setForm((prev) => ({ ...prev, id_ejercicio: event.target.value }))}
                   disabled={submitting || ejerciciosFiltrados.length === 0}
-                  className="focus:border-primary"
+                  className="focus:border-[color:var(--module-entrenamientos)]"
                 >
                   <option value="">
-                    {form.tipo ? "Selecciona un ejercicio" : "Primero elige un grupo muscular"}
+                    {form.tipo ? "Selecciona un ejercicio" : "Primero elige un grupo"}
                   </option>
                   {ejerciciosFiltrados.map((ejercicio) => (
                     <option key={ejercicio.id_ejercicio} value={ejercicio.id_ejercicio}>
@@ -456,7 +509,7 @@ export function EntrenamientoActivoCard() {
               </FieldGroup>
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
               <FieldGroup label="Peso" hint="Kg">
                 <input
                   type="number"
@@ -479,10 +532,13 @@ export function EntrenamientoActivoCard() {
               </FieldGroup>
             </div>
 
-            <label className="flex items-center gap-3 rounded-[1rem] bg-primary/6 px-4 py-3 text-sm text-foreground">
+            <label
+              className="flex items-center gap-3 rounded-[1rem] px-4 py-3 text-sm text-foreground"
+              style={{ background: "color-mix(in oklch, var(--module-entrenamientos) 8%, transparent)" }}
+            >
               <input
                 type="checkbox"
-                className="size-4 accent-primary"
+                className="size-4 accent-[color:var(--module-entrenamientos)]"
                 checked={form.es_calentamiento}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, es_calentamiento: event.target.checked }))
@@ -499,38 +555,37 @@ export function EntrenamientoActivoCard() {
               .
             </FormNote>
 
-            <div className="flex flex-wrap gap-3">
-              <Button
-                type="submit"
-                disabled={submitting || !form.id_ejercicio}
-                className="bg-primary text-[color:var(--primary-foreground)] hover:bg-primary/90"
-              >
-                {submitting ? "Guardando..." : "Agregar serie"}
-              </Button>
-            </div>
+            <Button
+              type="submit"
+              disabled={submitting || !form.id_ejercicio}
+              className="w-full bg-[color:var(--module-entrenamientos)] text-[color:var(--tertiary-foreground)] hover:bg-[color:var(--module-entrenamientos)]/90 sm:w-auto"
+            >
+              <Plus className="size-4" />
+              {submitting ? "Guardando..." : "Agregar serie"}
+            </Button>
           </form>
         </FormPanel>
       </div>
 
       <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
-        <DialogContent className="max-w-xl rounded-[1.75rem] border-0 bg-[color:var(--surface-lowest)] p-0 shadow-[var(--shadow-airy-lg)]">
-          <div className="bg-[linear-gradient(135deg,color-mix(in_oklch,var(--primary)_14%,white),transparent_70%)] px-6 py-6 sm:px-7">
+        <DialogContent className="max-w-xl rounded-[1.5rem] border-0 bg-[color:var(--surface-lowest)] p-0 shadow-[var(--shadow-airy-lg)] sm:rounded-[1.75rem]">
+          <div className="bg-[linear-gradient(135deg,color-mix(in_oklch,var(--primary)_14%,white),transparent_70%)] px-5 py-5 sm:px-7 sm:py-6">
             <DialogHeader className="text-left">
-              <p className="font-label text-[0.72rem] uppercase tracking-[0.24em] text-muted-foreground">
+              <p className="font-label text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground sm:text-[0.72rem] sm:tracking-[0.24em]">
                 Confirmacion
               </p>
-              <DialogTitle className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-foreground">
+              <DialogTitle className="mt-2 text-xl font-semibold tracking-[-0.02em] text-foreground sm:text-2xl sm:tracking-[-0.03em]">
                 Estas seguro de cerrar el entrenamiento?
               </DialogTitle>
-              <DialogDescription className="mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
+              <DialogDescription className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground sm:mt-3">
                 Si cierras la sesion ahora, este entrenamiento pasara al historico y dejaras de registrar series en curso.
               </DialogDescription>
             </DialogHeader>
           </div>
 
-          <div className="px-6 pb-6 sm:px-7">
-            <div className="rounded-[1.5rem] bg-[color:var(--surface-low)] p-5">
-              <p className="text-lg font-semibold tracking-tight text-foreground">
+          <div className="px-5 pb-5 sm:px-7 sm:pb-6">
+            <div className="rounded-[1.25rem] bg-[color:var(--surface-low)] p-4 sm:rounded-[1.5rem] sm:p-5">
+              <p className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
                 {entrenamientoActivo.nombre_gimnasio ?? "Entrenamiento actual"}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -538,7 +593,7 @@ export function EntrenamientoActivoCard() {
               </p>
             </div>
 
-            <DialogFooter className="mt-5">
+            <DialogFooter className="mt-4 sm:mt-5">
               <Button variant="ghost" onClick={() => setCloseDialogOpen(false)}>
                 Seguir entrenando
               </Button>

@@ -122,9 +122,7 @@ export function CuentaFormCard() {
 
   return (
     <FormPanel
-      eyebrow="Finanzas"
-      title="Crear una cuenta bancaria"
-      description="Esta cuenta sera la base para registrar tus movimientos. Elige primero el banco y luego el producto financiero que corresponde."
+      eyebrow="Nueva cuenta"
       aside={
         <div className="space-y-4">
           <div className="flex items-center gap-3">
