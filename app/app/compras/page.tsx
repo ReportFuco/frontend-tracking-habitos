@@ -1,17 +1,26 @@
-import { ComingSoon } from "@/components/shell/coming-soon"
+import { PageHeader } from "@/components/shell/page-header"
+import { ContextNav } from "@/components/shell/context-nav"
+import { ComprasManager } from "@/modules/compras/components/compras-manager"
+import { ComprasProvider } from "@/modules/compras/hooks/useCompras"
 
 export default function ComprasPage() {
   return (
-    <ComingSoon
-      eyebrow="Modulo"
-      title="Compras"
-      description="Registra tus compras con su detalle, local y lista de productos."
-      accentColor="var(--module-compras)"
-      bullets={[
-        "Nueva compra con monto total y local",
-        "Detalle por producto, marca y precio",
-        "Historico de compras y filtros por cadena / local",
-      ]}
-    />
+    <div className="flex flex-col gap-5">
+      <ContextNav
+        crumbs={[
+          { label: "Inicio", href: "/app/dashboard" },
+          { label: "Compras" },
+        ]}
+      />
+      <PageHeader
+        eyebrow="Modulo"
+        title="Compras"
+        description="Registra compras por local y consulta tu historial."
+      />
+
+      <ComprasProvider>
+        <ComprasManager />
+      </ComprasProvider>
+    </div>
   )
 }

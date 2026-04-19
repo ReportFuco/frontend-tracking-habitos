@@ -37,43 +37,43 @@ export function CuentasManager() {
         : "bg-[color:var(--primary-container)]"
 
   return (
-    <section className="flex flex-col gap-6">
-      <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr_0.9fr]">
-        <article className="rounded-[1.75rem] bg-[color:var(--surface-low)] p-6">
+    <section className="flex flex-col gap-4 sm:gap-6">
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.1fr_0.9fr_0.9fr]">
+        <article className="hidden rounded-[1.5rem] bg-[color:var(--surface-low)] p-4 sm:block sm:col-span-2 sm:p-6 lg:col-span-1">
           <p className="font-label text-[0.7rem] uppercase tracking-[0.22em] text-muted-foreground">
             Base financiera
           </p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-foreground">
+          <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-foreground sm:text-2xl lg:text-3xl">
             Tus cuentas bancarias toman el protagonismo aqui.
           </h2>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-            Esta vista se enfoca en revisar las cuentas disponibles dentro del modulo. La creacion queda en su flujo dedicado para mantener una lectura mas limpia.
+          <p className="mt-2 max-w-xl text-sm leading-5 text-muted-foreground sm:leading-6">
+            Esta vista se enfoca en revisar las cuentas disponibles dentro del modulo.
           </p>
         </article>
 
-        <article className="rounded-[1.75rem] bg-[color:var(--surface-lowest)] p-6 shadow-[var(--shadow-airy)]">
-          <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Wallet className="size-4 text-[color:var(--module-finanzas)]" />
-            Total de cuentas
+        <article className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-4 shadow-[var(--shadow-airy)] sm:p-5">
+          <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground sm:text-sm sm:normal-case sm:tracking-normal">
+            <Wallet className="size-3.5 text-[color:var(--module-finanzas)] sm:size-4" />
+            Total cuentas
           </p>
-          <p className="mt-4 text-3xl font-semibold tracking-tight text-foreground">
+          <p className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:mt-4 sm:text-3xl">
             {cuentas.length}
           </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Cuentas cargadas actualmente para registrar movimientos.
+          <p className="mt-1 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
+            Disponibles para movimientos.
           </p>
         </article>
 
-        <article className="rounded-[1.75rem] bg-[color:var(--surface-lowest)] p-6 shadow-[var(--shadow-airy)]">
-          <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Building2 className="size-4 text-[color:var(--module-finanzas)]" />
-            Bancos y corrientes
+        <article className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-4 shadow-[var(--shadow-airy)] sm:p-5">
+          <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground sm:text-sm sm:normal-case sm:tracking-normal">
+            <Building2 className="size-3.5 text-[color:var(--module-finanzas)] sm:size-4" />
+            Bancos / corrientes
           </p>
-          <p className="mt-4 text-3xl font-semibold tracking-tight text-foreground">
+          <p className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:mt-4 sm:text-3xl">
             {bancosAsociados} / {cuentasCorrientes}
           </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Bancos distintos y cantidad de cuentas corrientes dentro del modulo.
+          <p className="mt-1 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
+            Bancos y cuentas corrientes.
           </p>
         </article>
       </section>

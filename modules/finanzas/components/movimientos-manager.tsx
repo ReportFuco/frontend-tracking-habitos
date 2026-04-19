@@ -48,43 +48,43 @@ export function MovimientosManager() {
     tipo === "ingreso" ? "bg-secondary" : "bg-[color:var(--module-finanzas)]"
 
   return (
-    <section className="flex flex-col gap-6">
-      <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr_0.9fr]">
-        <article className="rounded-[1.75rem] bg-[color:var(--surface-low)] p-6">
+    <section className="flex flex-col gap-4 sm:gap-6">
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.1fr_0.9fr_0.9fr]">
+        <article className="hidden rounded-[1.5rem] bg-[color:var(--surface-low)] p-4 sm:block sm:p-6 lg:col-span-1 sm:col-span-2">
           <p className="font-label text-[0.7rem] uppercase tracking-[0.22em] text-muted-foreground">
             Diario financiero
           </p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-foreground">
+          <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-foreground sm:text-2xl lg:text-3xl">
             Tus movimientos toman el protagonismo aqui.
           </h2>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-            Esta vista se concentra en revisar, leer y ajustar movimientos existentes. El registro de nuevos gastos o ingresos queda en su flujo dedicado.
+          <p className="mt-2 max-w-xl text-sm leading-5 text-muted-foreground sm:leading-6">
+            Esta vista se concentra en revisar, leer y ajustar movimientos existentes.
           </p>
         </article>
 
-        <article className="rounded-[1.75rem] bg-[color:var(--surface-lowest)] p-6 shadow-[var(--shadow-airy)]">
-          <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <ArrowUpRight className="size-4 text-[color:var(--module-finanzas)]" />
+        <article className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-4 shadow-[var(--shadow-airy)] sm:p-5">
+          <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground sm:text-sm sm:normal-case sm:tracking-normal">
+            <ArrowUpRight className="size-3.5 text-[color:var(--module-finanzas)] sm:size-4" />
             Ingresos
           </p>
-          <p className="mt-4 text-3xl font-semibold tracking-tight text-foreground">
+          <p className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:mt-4 sm:text-3xl">
             {formatCurrency(totalIngresos)}
           </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Total acumulado de movimientos marcados como ingreso.
+          <p className="mt-1 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
+            Acumulado de ingresos.
           </p>
         </article>
 
-        <article className="rounded-[1.75rem] bg-[color:var(--surface-lowest)] p-6 shadow-[var(--shadow-airy)]">
-          <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Wallet className="size-4 text-[color:var(--module-finanzas)]" />
+        <article className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-4 shadow-[var(--shadow-airy)] sm:p-5">
+          <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground sm:text-sm sm:normal-case sm:tracking-normal">
+            <Wallet className="size-3.5 text-[color:var(--module-finanzas)] sm:size-4" />
             Gastos
           </p>
-          <p className="mt-4 text-3xl font-semibold tracking-tight text-foreground">
+          <p className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:mt-4 sm:text-3xl">
             {formatCurrency(totalGastos)}
           </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Total acumulado de movimientos marcados como gasto.
+          <p className="mt-1 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
+            Acumulado de gastos.
           </p>
         </article>
       </section>

@@ -11,7 +11,13 @@ interface MobileBottomNavProps {
 
 export function MobileBottomNav({ items }: MobileBottomNavProps) {
   const pathname = usePathname() ?? ""
-  const preferredOrder = ["/app/dashboard", "/app/finanzas", "/app/entrenamientos", "/app/perfil"]
+  const preferredOrder = [
+    "/app/dashboard",
+    "/app/finanzas",
+    "/app/entrenamientos",
+    "/app/nutricion",
+    "/app/compras",
+  ]
   const visibleItems = preferredOrder
     .map((href) => items.find((item) => item.href === href))
     .filter((item): item is NavItem => Boolean(item))
