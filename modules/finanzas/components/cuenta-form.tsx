@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useEffect, useMemo, useState } from "react"
+import { FormEvent, useMemo, useRef, useState } from "react"
 import { Building2, Landmark, Package } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -23,31 +23,7 @@ export function CuentaFormCard() {
   const [form, setForm] = useState(initialCuentaForm)
   const [productos, setProductos] = useState<ProductoFinancieroResponse[]>([])
   const [loadingProductos, setLoadingProductos] = useState(false)
-
-  useEffect(() => {
-    if (!form.id_banco) {
-      setProductos([])
-      return
-    }
-
-    let cancelled = false
-    const idBanco = Number(form.id_banco)
-
-    setLoadingProductos(true)
-
-    getProductosByBanco(idBanco)
-      .then((result) => {
-        if (cancelled) return
-        setProductos(result)
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingProductos(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [form.id_banco, getProductosByBanco])
+  const productosRequestRef = useRef(0)
 
   const bancoOptions = useMemo(
     () =>
@@ -73,11 +49,33 @@ export function CuentaFormCard() {
   )
 
   const handleBancoChange = (value: string) => {
+    const requestId = productosRequestRef.current + 1
+    productosRequestRef.current = requestId
+
+    setProductos([])
     setForm((prev) => ({
       ...prev,
       id_banco: value,
       id_producto_financiero: "",
     }))
+
+    if (!value) {
+      setLoadingProductos(false)
+      return
+    }
+
+    setLoadingProductos(true)
+
+    void getProductosByBanco(Number(value))
+      .then((result) => {
+        if (productosRequestRef.current !== requestId) return
+        setProductos(result)
+      })
+      .finally(() => {
+        if (productosRequestRef.current === requestId) {
+          setLoadingProductos(false)
+        }
+      })
   }
 
   const handleProductoChange = (value: string) => {

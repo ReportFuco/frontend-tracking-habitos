@@ -49,7 +49,6 @@ export function SearchableCombobox({
   allowClear = true,
   leadingIcon,
   className,
-  required,
   id,
   searchPlaceholder = "Buscar...",
 }: SearchableComboboxProps) {
@@ -77,6 +76,13 @@ export function SearchableCombobox({
       return haystack.includes(normalized)
     })
   }, [options, query])
+  const highlightedIndex = Math.min(highlighted, Math.max(filtered.length - 1, 0))
+
+  const closeCombobox = () => {
+    setOpen(false)
+    setQuery("")
+    setHighlighted(0)
+  }
 
   useEffect(() => {
     if (!open) return
@@ -84,7 +90,7 @@ export function SearchableCombobox({
     const handleClickOutside = (event: MouseEvent) => {
       if (!containerRef.current) return
       if (!containerRef.current.contains(event.target as Node)) {
-        setOpen(false)
+        closeCombobox()
       }
     }
 
@@ -93,26 +99,19 @@ export function SearchableCombobox({
   }, [open])
 
   useEffect(() => {
-    if (open) {
-      const frame = requestAnimationFrame(() => {
-        searchInputRef.current?.focus()
-      })
-      return () => cancelAnimationFrame(frame)
-    }
+    if (!open) return
 
-    setQuery("")
-    setHighlighted(0)
+    const frame = requestAnimationFrame(() => {
+      searchInputRef.current?.focus()
+    })
+    return () => cancelAnimationFrame(frame)
   }, [open])
-
-  useEffect(() => {
-    setHighlighted(0)
-  }, [query, options])
 
   const disabledState = disabled || loading
 
   const handleSelect = (option: ComboboxOption) => {
     onChange(option.value)
-    setOpen(false)
+    closeCombobox()
   }
 
   const handleClear = (event: React.MouseEvent) => {
@@ -135,14 +134,14 @@ export function SearchableCombobox({
 
     if (event.key === "Enter") {
       event.preventDefault()
-      const option = filtered[highlighted]
+      const option = filtered[highlightedIndex]
       if (option) handleSelect(option)
       return
     }
 
     if (event.key === "Escape") {
       event.preventDefault()
-      setOpen(false)
+      closeCombobox()
     }
   }
 
@@ -153,9 +152,16 @@ export function SearchableCombobox({
         id={triggerId}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-required={required}
         disabled={disabledState}
-        onClick={() => !disabledState && setOpen((prev) => !prev)}
+        onClick={() => {
+          if (disabledState) return
+          if (open) {
+            closeCombobox()
+            return
+          }
+          setOpen(true)
+          setHighlighted(0)
+        }}
         className={cn(
           "flex h-13 w-full items-center gap-3 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 text-left text-sm text-foreground shadow-none outline-none transition",
           "focus-visible:border-b-2 focus-visible:border-primary",
@@ -230,7 +236,10 @@ export function SearchableCombobox({
             <input
               ref={searchInputRef}
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                setHighlighted(0)
+              }}
               onKeyDown={handleKeyDown}
               placeholder={searchPlaceholder}
               className="h-9 flex-1 border-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
@@ -258,7 +267,7 @@ export function SearchableCombobox({
             >
               {filtered.map((option, index) => {
                 const isSelected = option.value === value
-                const isHighlighted = index === highlighted
+                const isHighlighted = index === highlightedIndex
 
                 return (
                   <li key={option.value} role="option" aria-selected={isSelected}>

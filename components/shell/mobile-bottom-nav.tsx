@@ -30,7 +30,7 @@ export function MobileBottomNav({ items }: MobileBottomNavProps) {
   const indicatorWidth = visibleItems.length > 0 ? `${100 / visibleItems.length}%` : "0%"
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--border)]/30 bg-background/88 px-2 pb-[calc(env(safe-area-inset-bottom)+0.55rem)] pt-2 backdrop-blur-xl md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--border)]/30 bg-background/88 px-2 pb-[calc(env(safe-area-inset-bottom)+0.55rem)] pt-2 backdrop-blur-xl lg:hidden">
       <div className="relative mx-auto max-w-md">
         <div
           aria-hidden

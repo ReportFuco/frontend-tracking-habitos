@@ -25,7 +25,7 @@ export function AppShell({ children, variant = "user", sections }: AppShellProps
   const mobileNavItems = navSections.flatMap((section) => section.items)
   const usesMobileBottomNav = variant === "user"
   const asideClassName = usesMobileBottomNav
-    ? "hidden w-72 shrink-0 bg-[color:var(--sidebar)] md:sticky md:top-0 md:z-10 md:flex md:h-screen md:flex-col"
+    ? "hidden w-72 shrink-0 bg-[color:var(--sidebar)] lg:sticky lg:top-0 lg:z-10 lg:flex lg:h-screen lg:flex-col"
     : cn(
         "fixed inset-y-0 left-0 z-40 w-72 shrink-0 bg-[color:var(--sidebar)] transition-transform duration-200 md:sticky md:top-0 md:z-10 md:flex md:h-screen md:flex-col md:translate-x-0",
         open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
@@ -75,7 +75,12 @@ export function AppShell({ children, variant = "user", sections }: AppShellProps
             variant={variant}
             showMenuButton={!usesMobileBottomNav}
           />
-          <main className="flex-1 px-4 py-6 pb-24 sm:px-8 sm:py-10 sm:pb-10">
+          <main
+            className={cn(
+              "flex-1 px-4 py-6 sm:px-8 sm:py-10",
+              usesMobileBottomNav ? "pb-[calc(env(safe-area-inset-bottom)+7.5rem)] lg:pb-10" : "pb-10"
+            )}
+          >
             <div className="mx-auto w-full max-w-6xl">{children}</div>
           </main>
         </div>

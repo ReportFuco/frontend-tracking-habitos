@@ -115,8 +115,6 @@ export function MovimientoFormCard() {
   return (
     <FormPanel
       eyebrow="Finanzas"
-      title="Registrar un movimiento"
-      description="Anota cada ingreso o gasto como una entrada clara del diario financiero."
       aside={
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -265,7 +263,7 @@ export function MovimientoFormCard() {
               type="datetime-local"
               value={form.created_at}
               onChange={(event) => setForm((prev) => ({ ...prev, created_at: event.target.value }))}
-              className="h-13 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 pr-11 shadow-none focus-visible:border-b-2 focus-visible:border-primary focus-visible:ring-0"
+              className="h-13 appearance-none rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 pr-11 text-sm leading-none shadow-none focus-visible:border-b-2 focus-visible:border-primary focus-visible:ring-0 sm:text-base [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-4 [&::-webkit-calendar-picker-indicator]:h-4 [&::-webkit-calendar-picker-indicator]:w-4 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-date-and-time-value]:text-left [&::-webkit-datetime-edit]:leading-none"
             />
             <CalendarClock className="pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 text-muted-foreground" />
           </div>
