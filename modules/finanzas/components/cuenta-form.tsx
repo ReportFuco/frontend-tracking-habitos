@@ -4,7 +4,7 @@ import { FormEvent, useMemo, useRef, useState } from "react"
 import { Building2, Landmark, Package } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { FormNote, FormPanel, FieldGroup } from "@/components/forms/editorial-form"
+import { FormNote, FormPanel, FieldGroup, FormSubmitBar } from "@/components/forms/editorial-form"
 import { SearchableCombobox } from "@/components/forms/searchable-combobox"
 import { Input } from "@/components/ui/input"
 import { useFinanzas } from "@/modules/finanzas/hooks/useFinanzas"
@@ -197,14 +197,16 @@ export function CuentaFormCard() {
           un administrador lo cargue en el catalogo.
         </FormNote>
 
-        <Button
-          type="submit"
-          size="lg"
-          className="h-12 w-full rounded-xl sm:w-auto"
-          disabled={submittingCuenta || loadingCatalogos}
-        >
-          {submittingCuenta ? "Guardando..." : "Crear cuenta bancaria"}
-        </Button>
+        <FormSubmitBar>
+          <Button
+            type="submit"
+            size="lg"
+            className="h-12 w-full rounded-xl sm:w-auto"
+            disabled={submittingCuenta || loadingCatalogos}
+          >
+            {submittingCuenta ? "Guardando..." : "Crear cuenta bancaria"}
+          </Button>
+        </FormSubmitBar>
       </form>
     </FormPanel>
   )

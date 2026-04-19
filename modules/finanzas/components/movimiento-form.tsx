@@ -4,7 +4,7 @@ import { FormEvent, useMemo, useState } from "react"
 import { ArrowDownLeft, ArrowUpRight, CalendarClock, Folder, ReceiptText, Repeat, Wallet, Zap } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { FieldGroup, FormPanel } from "@/components/forms/editorial-form"
+import { FieldGroup, FormPanel, FormSubmitBar } from "@/components/forms/editorial-form"
 import { SearchableCombobox } from "@/components/forms/searchable-combobox"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -269,18 +269,20 @@ export function MovimientoFormCard() {
           </div>
         </FieldGroup>
 
-        <Button
-          type="submit"
-          size="lg"
-          className="h-13 w-full rounded-xl text-sm font-semibold"
-          disabled={submittingMovimiento || loadingCatalogos}
-        >
-          {submittingMovimiento
-            ? "Guardando..."
-            : esIngreso
-              ? "Registrar ingreso"
-              : "Registrar gasto"}
-        </Button>
+        <FormSubmitBar>
+          <Button
+            type="submit"
+            size="lg"
+            className="h-13 w-full rounded-xl text-sm font-semibold"
+            disabled={submittingMovimiento || loadingCatalogos}
+          >
+            {submittingMovimiento
+              ? "Guardando..."
+              : esIngreso
+                ? "Registrar ingreso"
+                : "Registrar gasto"}
+          </Button>
+        </FormSubmitBar>
       </form>
     </FormPanel>
   )

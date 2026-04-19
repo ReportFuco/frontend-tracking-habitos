@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation"
 import { ArrowRight, Flame } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { EditorialSelect, FieldGroup, FormNote, FormPanel } from "@/components/forms/editorial-form"
+import { EditorialSelect, FieldGroup, FormNote, FormPanel, FormSubmitBar } from "@/components/forms/editorial-form"
 import { entrenoFuerzaCreateSchema } from "@/modules/entrenamientos/schemas/entrenamientos.schema"
 import { useEntrenamientos } from "@/modules/entrenamientos/hooks/useEntrenamientos"
 
@@ -150,22 +150,24 @@ export function EntrenoFuerzaFormCard() {
                 </FormNote>
               )}
 
-              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
-                <Button
-                  type="submit"
-                  disabled={submitting || availableGimnasios.length === 0}
-                  className="w-full bg-[color:var(--module-entrenamientos)] text-[color:var(--tertiary-foreground)] hover:bg-[color:var(--module-entrenamientos)]/90 sm:w-auto"
-                >
-                  {submitting ? "Abriendo sesion..." : "Registrar entrenamiento"}
-                </Button>
-                <Button
-                  asChild
-                  variant="ghost"
-                  className="w-full text-foreground hover:text-[color:var(--module-entrenamientos)] sm:w-auto"
-                >
-                  <Link href="/app/entrenamientos/gimnasios">Ver gimnasios</Link>
-                </Button>
-              </div>
+              <FormSubmitBar>
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
+                  <Button
+                    type="submit"
+                    disabled={submitting || availableGimnasios.length === 0}
+                    className="w-full bg-[color:var(--module-entrenamientos)] text-[color:var(--tertiary-foreground)] hover:bg-[color:var(--module-entrenamientos)]/90 sm:w-auto"
+                  >
+                    {submitting ? "Abriendo sesion..." : "Registrar entrenamiento"}
+                  </Button>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    className="w-full text-foreground hover:text-[color:var(--module-entrenamientos)] sm:w-auto"
+                  >
+                    <Link href="/app/entrenamientos/gimnasios">Ver gimnasios</Link>
+                  </Button>
+                </div>
+              </FormSubmitBar>
             </form>
           )}
 
