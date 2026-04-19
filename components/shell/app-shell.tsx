@@ -79,7 +79,7 @@ export function AppShell({ children, variant = "user", sections }: AppShellProps
             className={cn(
               "flex-1 px-4 py-6 sm:px-8 sm:py-10",
               usesMobileBottomNav
-                ? "pb-[calc(env(safe-area-inset-bottom)+6.5rem)] md:pb-[calc(env(safe-area-inset-bottom)+7.5rem)] lg:pb-10"
+                ? "pb-[calc(env(safe-area-inset-bottom)+5.25rem)] md:pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:pb-10"
                 : "pb-10"
             )}
           >

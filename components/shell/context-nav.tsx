@@ -23,7 +23,7 @@ export function ContextNav({ crumbs, className }: ContextNavProps) {
   return (
     <div
       className={cn(
-        "sticky top-16 z-20 -mx-4 border-b border-white/30 bg-[color:var(--background)]/92 px-4 py-3 backdrop-blur-md sm:-mx-8 sm:px-8 md:static md:z-auto md:m-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none",
+        "-mx-4 border-b border-white/30 bg-[color:var(--background)] px-4 py-3 sm:-mx-8 sm:px-8 md:static md:z-auto md:m-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none",
         className
       )}
     >

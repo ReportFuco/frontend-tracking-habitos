@@ -40,7 +40,7 @@ export function Topbar({
     : "?"
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 bg-[color:var(--background)]/85 px-4 backdrop-blur-md sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-transparent bg-[color:var(--background)] px-4 sm:bg-[color:var(--background)]/85 sm:backdrop-blur-md sm:px-6">
       {showMenuButton ? (
         <Button
           type="button"
