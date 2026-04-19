@@ -32,7 +32,7 @@ export function HistoricoCards() {
             {cuentas.map((cuenta) => (
               <div key={cuenta.id_cuenta} className="rounded-lg border p-3">
                 <p className="font-medium">{cuenta.nombre_cuenta}</p>
-                <p className="text-sm text-muted-foreground">{cuenta.tipo_cuenta}</p>
+                <p className="text-sm text-muted-foreground">{cuenta.nombre_producto ?? "-"}</p>
                 <p className="text-sm text-muted-foreground">{cuenta.nombre_banco ?? "-"}</p>
               </div>
             ))}
@@ -43,7 +43,7 @@ export function HistoricoCards() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Cuenta</TableHead>
-                  <TableHead>Tipo</TableHead>
+                  <TableHead>Producto</TableHead>
                   <TableHead>Banco</TableHead>
                 </TableRow>
               </TableHeader>
@@ -51,7 +51,7 @@ export function HistoricoCards() {
                 {cuentas.map((cuenta) => (
                   <TableRow key={cuenta.id_cuenta}>
                     <TableCell>{cuenta.nombre_cuenta}</TableCell>
-                    <TableCell>{cuenta.tipo_cuenta}</TableCell>
+                    <TableCell>{cuenta.nombre_producto ?? "-"}</TableCell>
                     <TableCell>{cuenta.nombre_banco ?? "-"}</TableCell>
                   </TableRow>
                 ))}

@@ -24,23 +24,27 @@ export function FormPanel({
       : "from-primary/12 via-primary/6 to-transparent"
 
   return (
-    <section className="overflow-hidden rounded-[1.75rem] bg-[color:var(--surface-lowest)] shadow-[var(--shadow-airy-lg)]">
-      <div className={cn("bg-gradient-to-br px-6 py-6 sm:px-8", accentClass)}>
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-          <div className="space-y-3">
-            <p className="font-label text-[0.72rem] uppercase tracking-[0.24em] text-muted-foreground">
+    <section className="overflow-hidden rounded-[1.5rem] bg-[color:var(--surface-lowest)] shadow-[var(--shadow-airy-lg)] sm:rounded-[1.75rem]">
+      <div className={cn("bg-gradient-to-br px-4 py-5 sm:px-8 sm:py-6", accentClass)}>
+        <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-6">
+          <div className="space-y-2 sm:space-y-3">
+            <p className="font-label text-[0.65rem] uppercase tracking-[0.22em] text-muted-foreground sm:text-[0.72rem] sm:tracking-[0.24em]">
               {eyebrow}
             </p>
-            <h2 className="text-3xl font-semibold tracking-[-0.03em] text-foreground">{title}</h2>
+            <h2 className="text-xl font-semibold tracking-[-0.02em] text-foreground sm:text-3xl sm:tracking-[-0.03em]">
+              {title}
+            </h2>
             <p className="max-w-xl text-sm leading-6 text-muted-foreground">{description}</p>
           </div>
           {aside ? (
-            <div className="rounded-[1.5rem] bg-white/70 p-5 backdrop-blur-sm">{aside}</div>
+            <div className="hidden rounded-[1.5rem] bg-white/70 p-5 backdrop-blur-sm lg:block">
+              {aside}
+            </div>
           ) : null}
         </div>
       </div>
 
-      <div className="px-6 py-6 sm:px-8 sm:py-8">{children}</div>
+      <div className="px-4 py-5 sm:px-8 sm:py-8">{children}</div>
     </section>
   )
 }
@@ -55,12 +59,12 @@ export function FieldGroup({
   children: ReactNode
 }) {
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2 sm:space-y-2.5">
       <div className="flex items-center justify-between gap-3">
-        <label className="font-label text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+        <label className="font-label text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground sm:text-[11px] sm:tracking-[0.24em]">
           {label}
         </label>
-        {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
+        {hint ? <span className="text-[11px] text-muted-foreground sm:text-xs">{hint}</span> : null}
       </div>
       {children}
     </div>

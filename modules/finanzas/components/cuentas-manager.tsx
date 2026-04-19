@@ -16,7 +16,9 @@ import { useFinanzas } from "@/modules/finanzas/hooks/useFinanzas"
 export function CuentasManager() {
   const { cuentas, loadingCatalogos } = useFinanzas()
 
-  const cuentasCorrientes = cuentas.filter((cuenta) => cuenta.tipo_cuenta === "Cuenta Corriente").length
+  const productosAsociados = new Set(
+    cuentas.map((cuenta) => cuenta.nombre_producto).filter(Boolean)
+  ).size
   const bancosAsociados = new Set(cuentas.map((cuenta) => cuenta.nombre_banco).filter(Boolean)).size
 
   const formatDate = (value: string) => {
@@ -29,12 +31,14 @@ export function CuentasManager() {
     }
   }
 
-  const getCuentaTone = (tipoCuenta: string) =>
-    tipoCuenta === "Cuenta Corriente"
-      ? "bg-[color:var(--module-finanzas)]"
-      : tipoCuenta === "Cuenta ahorro"
-        ? "bg-secondary"
-        : "bg-[color:var(--primary-container)]"
+  const getCuentaTone = (nombreProducto: string | null | undefined) => {
+    const normalized = (nombreProducto ?? "").toLocaleLowerCase("es")
+
+    if (normalized.includes("corriente")) return "bg-[color:var(--module-finanzas)]"
+    if (normalized.includes("ahorro")) return "bg-secondary"
+
+    return "bg-[color:var(--primary-container)]"
+  }
 
   return (
     <section className="flex flex-col gap-4 sm:gap-6">
@@ -67,13 +71,13 @@ export function CuentasManager() {
         <article className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-4 shadow-[var(--shadow-airy)] sm:p-5">
           <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground sm:text-sm sm:normal-case sm:tracking-normal">
             <Building2 className="size-3.5 text-[color:var(--module-finanzas)] sm:size-4" />
-            Bancos / corrientes
+            Bancos / productos
           </p>
           <p className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:mt-4 sm:text-3xl">
-            {bancosAsociados} / {cuentasCorrientes}
+            {bancosAsociados} / {productosAsociados}
           </p>
           <p className="mt-1 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
-            Bancos y cuentas corrientes.
+            Bancos y productos distintos.
           </p>
         </article>
       </section>
@@ -111,7 +115,7 @@ export function CuentasManager() {
                       Cuenta
                     </TableHead>
                     <TableHead className="px-6 py-5 font-label text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--primary-foreground)]">
-                      Tipo
+                      Producto
                     </TableHead>
                     <TableHead className="px-6 py-5 font-label text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--primary-foreground)]">
                       Banco
@@ -144,8 +148,8 @@ export function CuentasManager() {
                       </TableCell>
                       <TableCell className="px-6 py-6">
                         <div className="flex items-center gap-2">
-                          <span className={cn("h-2 w-2 rounded-full", getCuentaTone(cuenta.tipo_cuenta))} />
-                          <span>{cuenta.tipo_cuenta}</span>
+                          <span className={cn("h-2 w-2 rounded-full", getCuentaTone(cuenta.nombre_producto))} />
+                          <span>{cuenta.nombre_producto ?? "-"}</span>
                         </div>
                       </TableCell>
                       <TableCell className="px-6 py-6">{cuenta.nombre_banco ?? "-"}</TableCell>
@@ -179,7 +183,7 @@ export function CuentasManager() {
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="inline-flex rounded-full bg-primary/12 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-primary">
-                          {cuenta.tipo_cuenta}
+                          {cuenta.nombre_producto ?? "Producto"}
                         </span>
                       </div>
                       <p className="text-lg font-semibold tracking-tight text-foreground">

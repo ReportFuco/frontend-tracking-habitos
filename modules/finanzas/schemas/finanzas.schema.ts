@@ -1,13 +1,14 @@
 import { z } from "zod"
 
-export const TIPOS_CUENTA = ["Cuenta Corriente", "Cuenta vista", "Cuenta ahorro"] as const
 export const TIPOS_MOVIMIENTO = ["gasto", "ingreso"] as const
 export const TIPOS_GASTO = ["variable", "fijo"] as const
 
 export const cuentaCreateSchema = z.object({
-  id_banco: z.number().int().positive(),
+  id_producto_financiero: z
+    .number({ message: "Selecciona un producto financiero" })
+    .int()
+    .positive("Selecciona un producto financiero"),
   nombre_cuenta: z.string().min(2, "El nombre de la cuenta debe tener al menos 2 caracteres"),
-  tipo_cuenta: z.enum(TIPOS_CUENTA),
 })
 
 export const movimientoCreateSchema = z.object({

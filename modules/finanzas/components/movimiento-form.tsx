@@ -1,17 +1,15 @@
 "use client"
 
-import { FormEvent, useState } from "react"
-import { CalendarClock, ReceiptText, Wallet } from "lucide-react"
+import { FormEvent, useMemo, useState } from "react"
+import { ArrowDownLeft, ArrowUpRight, CalendarClock, Folder, ReceiptText, Repeat, Wallet, Zap } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { EditorialSelect, FieldGroup, FormNote, FormPanel } from "@/components/forms/editorial-form"
+import { FieldGroup, FormPanel } from "@/components/forms/editorial-form"
+import { SearchableCombobox } from "@/components/forms/searchable-combobox"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 import { useFinanzas } from "@/modules/finanzas/hooks/useFinanzas"
-import {
-  movimientoCreateSchema,
-  TIPOS_GASTO,
-  TIPOS_MOVIMIENTO,
-} from "@/modules/finanzas/schemas/finanzas.schema"
+import { movimientoCreateSchema } from "@/modules/finanzas/schemas/finanzas.schema"
 import { TipoGasto, TipoMovimiento } from "@/modules/finanzas/types/finanzas"
 
 const initialMovimientoForm = {
@@ -24,6 +22,21 @@ const initialMovimientoForm = {
   created_at: "",
 }
 
+const tipoMovimientoOpts: {
+  value: TipoMovimiento
+  label: string
+  icon: typeof ArrowDownLeft
+  tone: string
+}[] = [
+  { value: "gasto", label: "Gasto", icon: ArrowUpRight, tone: "tertiary" },
+  { value: "ingreso", label: "Ingreso", icon: ArrowDownLeft, tone: "secondary" },
+]
+
+const tipoGastoOpts: { value: TipoGasto; label: string; icon: typeof Zap }[] = [
+  { value: "variable", label: "Variable", icon: Zap },
+  { value: "fijo", label: "Fijo", icon: Repeat },
+]
+
 export function MovimientoFormCard() {
   const {
     categorias,
@@ -34,6 +47,29 @@ export function MovimientoFormCard() {
   } = useFinanzas()
 
   const [form, setForm] = useState(initialMovimientoForm)
+
+  const categoriaOptions = useMemo(
+    () =>
+      categorias.map((categoria) => ({
+        value: String(categoria.id_categoria),
+        label: categoria.nombre,
+      })),
+    [categorias]
+  )
+
+  const cuentaOptions = useMemo(
+    () =>
+      cuentas.map((cuenta) => ({
+        value: String(cuenta.id_cuenta),
+        label: cuenta.nombre_cuenta,
+        description: [cuenta.nombre_banco, cuenta.nombre_producto]
+          .filter(Boolean)
+          .join(" · ") || undefined,
+      })),
+    [cuentas]
+  )
+
+  const esIngreso = form.tipo_movimiento === "ingreso"
 
   const handleCreateMovimiento = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -80,7 +116,7 @@ export function MovimientoFormCard() {
     <FormPanel
       eyebrow="Finanzas"
       title="Registrar un movimiento"
-      description="Anota cada ingreso o gasto como una entrada clara del diario financiero. Aqui importa tanto el contexto como el monto."
+      description="Anota cada ingreso o gasto como una entrada clara del diario financiero."
       aside={
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -102,92 +138,126 @@ export function MovimientoFormCard() {
         </div>
       }
     >
-      <form onSubmit={handleCreateMovimiento} className="space-y-5">
-        <div className="grid gap-5 lg:grid-cols-2">
+      <form onSubmit={handleCreateMovimiento} className="space-y-4 sm:space-y-5">
+        <FieldGroup label="Tipo de movimiento">
+          <div className="grid grid-cols-2 gap-2 rounded-[1rem] bg-[color:var(--surface-variant)] p-1">
+            {tipoMovimientoOpts.map((opt) => {
+              const Icon = opt.icon
+              const active = form.tipo_movimiento === opt.value
+              const toneClass =
+                opt.tone === "secondary"
+                  ? "bg-[color:var(--secondary)] text-[color:var(--secondary-foreground)]"
+                  : "bg-[color:var(--tertiary)] text-[color:var(--tertiary-foreground)]"
+
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() =>
+                    setForm((prev) => ({ ...prev, tipo_movimiento: opt.value }))
+                  }
+                  className={cn(
+                    "flex h-11 items-center justify-center gap-2 rounded-[0.75rem] text-sm font-medium transition",
+                    active
+                      ? cn("shadow-[var(--shadow-airy)]", toneClass)
+                      : "text-foreground/70 hover:text-foreground"
+                  )}
+                >
+                  <Icon className="size-4" />
+                  {opt.label}
+                </button>
+              )
+            })}
+          </div>
+        </FieldGroup>
+
+        <FieldGroup label="Monto" hint={esIngreso ? "Lo recibido" : "Lo que gastaste"}>
+          <div className="relative">
+            <span className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base font-semibold text-muted-foreground">
+              $
+            </span>
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              placeholder="0"
+              value={form.monto}
+              onChange={(event) => setForm((prev) => ({ ...prev, monto: event.target.value }))}
+              className="h-14 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] pl-9 pr-4 text-xl font-semibold shadow-none focus-visible:border-b-2 focus-visible:border-primary focus-visible:ring-0 sm:text-2xl"
+            />
+          </div>
+        </FieldGroup>
+
+        <div className="grid gap-4 sm:gap-5 lg:grid-cols-2">
           <FieldGroup label="Categoria">
-            <EditorialSelect
+            <SearchableCombobox
               value={form.id_categoria}
-              onChange={(event) => setForm((prev) => ({ ...prev, id_categoria: event.target.value }))}
+              onChange={(value) => setForm((prev) => ({ ...prev, id_categoria: value }))}
+              options={categoriaOptions}
+              placeholder="Selecciona una categoria"
+              searchPlaceholder="Buscar categoria..."
+              emptyMessage="No hay categorias"
+              loading={loadingCatalogos && categoriaOptions.length === 0}
+              loadingMessage="Cargando..."
+              leadingIcon={<Folder className="size-4" />}
               required
-            >
-              <option value="">Selecciona una categoria</option>
-              {categorias.map((categoria) => (
-                <option key={categoria.id_categoria} value={categoria.id_categoria}>
-                  {categoria.nombre}
-                </option>
-              ))}
-            </EditorialSelect>
+            />
           </FieldGroup>
 
           <FieldGroup label="Cuenta bancaria">
-            <EditorialSelect
+            <SearchableCombobox
               value={form.id_cuenta}
-              onChange={(event) => setForm((prev) => ({ ...prev, id_cuenta: event.target.value }))}
+              onChange={(value) => setForm((prev) => ({ ...prev, id_cuenta: value }))}
+              options={cuentaOptions}
+              placeholder="Selecciona una cuenta"
+              searchPlaceholder="Buscar cuenta..."
+              emptyMessage="No hay cuentas registradas"
+              loading={loadingCatalogos && cuentaOptions.length === 0}
+              loadingMessage="Cargando..."
+              leadingIcon={<Wallet className="size-4" />}
               required
-            >
-              <option value="">Selecciona una cuenta</option>
-              {cuentas.map((cuenta) => (
-                <option key={cuenta.id_cuenta} value={cuenta.id_cuenta}>
-                  {cuenta.nombre_cuenta}
-                </option>
-              ))}
-            </EditorialSelect>
-          </FieldGroup>
-        </div>
-
-        <div className="grid gap-5 lg:grid-cols-2">
-          <FieldGroup label="Tipo de movimiento">
-            <EditorialSelect
-              value={form.tipo_movimiento}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, tipo_movimiento: event.target.value as TipoMovimiento }))
-              }
-            >
-              {TIPOS_MOVIMIENTO.map((tipo) => (
-                <option key={tipo} value={tipo}>
-                  {tipo}
-                </option>
-              ))}
-            </EditorialSelect>
-          </FieldGroup>
-
-          <FieldGroup label="Tipo de gasto" hint="Solo clasifica el gasto">
-            <EditorialSelect
-              value={form.tipo_gasto}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, tipo_gasto: event.target.value as TipoGasto }))
-              }
-            >
-              {TIPOS_GASTO.map((tipo) => (
-                <option key={tipo} value={tipo}>
-                  {tipo}
-                </option>
-              ))}
-            </EditorialSelect>
-          </FieldGroup>
-        </div>
-
-        <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
-          <FieldGroup label="Monto" hint="Mayor a 0">
-            <Input
-              type="number"
-              min={1}
-              placeholder="3500"
-              value={form.monto}
-              onChange={(event) => setForm((prev) => ({ ...prev, monto: event.target.value }))}
-              className="h-13 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 shadow-none focus-visible:border-b-2 focus-visible:border-primary focus-visible:ring-0"
-            />
-          </FieldGroup>
-
-          <FieldGroup label="Descripcion" hint="Opcional">
-            <Input
-              placeholder="Detalle del movimiento"
-              value={form.descripcion}
-              onChange={(event) => setForm((prev) => ({ ...prev, descripcion: event.target.value }))}
-              className="h-13 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 shadow-none focus-visible:border-b-2 focus-visible:border-primary focus-visible:ring-0"
             />
           </FieldGroup>
         </div>
+
+        {esIngreso ? null : (
+          <FieldGroup label="Tipo de gasto" hint="Para clasificar">
+            <div className="grid grid-cols-2 gap-2 rounded-[1rem] bg-[color:var(--surface-variant)] p-1">
+              {tipoGastoOpts.map((opt) => {
+                const Icon = opt.icon
+                const active = form.tipo_gasto === opt.value
+
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() =>
+                      setForm((prev) => ({ ...prev, tipo_gasto: opt.value }))
+                    }
+                    className={cn(
+                      "flex h-10 items-center justify-center gap-2 rounded-[0.75rem] text-sm font-medium transition",
+                      active
+                        ? "bg-[color:var(--surface-lowest)] text-foreground shadow-[var(--shadow-airy)]"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Icon className="size-3.5" />
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+          </FieldGroup>
+        )}
+
+        <FieldGroup label="Descripcion" hint="Opcional">
+          <Input
+            placeholder="Ej: Farmacia del barrio"
+            value={form.descripcion}
+            onChange={(event) => setForm((prev) => ({ ...prev, descripcion: event.target.value }))}
+            className="h-13 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 shadow-none focus-visible:border-b-2 focus-visible:border-primary focus-visible:ring-0"
+          />
+        </FieldGroup>
 
         <FieldGroup label="Fecha" hint="Opcional">
           <div className="relative">
@@ -201,17 +271,17 @@ export function MovimientoFormCard() {
           </div>
         </FieldGroup>
 
-        <FormNote>
-          Si no indicas fecha, el movimiento se registrara con el momento actual. Usa descripciones cortas y concretas para que el historial sea mas legible.
-        </FormNote>
-
         <Button
           type="submit"
           size="lg"
-          className="h-12 w-full rounded-xl sm:w-auto"
+          className="h-13 w-full rounded-xl text-sm font-semibold"
           disabled={submittingMovimiento || loadingCatalogos}
         >
-          {submittingMovimiento ? "Guardando..." : "Registrar movimiento"}
+          {submittingMovimiento
+            ? "Guardando..."
+            : esIngreso
+              ? "Registrar ingreso"
+              : "Registrar gasto"}
         </Button>
       </form>
     </FormPanel>

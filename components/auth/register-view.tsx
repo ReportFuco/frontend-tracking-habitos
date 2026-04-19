@@ -74,15 +74,15 @@ export function RegisterView() {
           onLogout={logout}
         />
       ) : (
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <p className="font-label text-xs uppercase tracking-[0.26em] text-muted-foreground">
+        <div className="space-y-5 sm:space-y-6">
+          <div className="space-y-2 sm:space-y-3">
+            <p className="font-label text-[11px] uppercase tracking-[0.26em] text-muted-foreground sm:text-xs">
               Crear cuenta
             </p>
-            <h2 className="text-3xl font-semibold tracking-[-0.03em] text-foreground">
+            <h2 className="text-xl font-semibold tracking-[-0.02em] text-foreground sm:text-3xl sm:tracking-[-0.03em]">
               Empieza con una base simple y personal.
             </h2>
-            <p className="max-w-md text-sm leading-6 text-muted-foreground">
+            <p className="hidden max-w-md text-sm leading-6 text-muted-foreground sm:block">
               Este registro crea tu usuario para autenticacion y deja lista la entrada al panel protegido.
             </p>
           </div>
@@ -179,7 +179,7 @@ export function RegisterView() {
               </div>
             </div>
 
-            <div className="rounded-[1.5rem] bg-[color:var(--surface-low)] p-4">
+            <div className="hidden rounded-[1.5rem] bg-[color:var(--surface-low)] p-4 sm:block">
               <p className="text-sm leading-6 text-muted-foreground">
                 Una vez creado el usuario, te llevamos al login para entrar con tu nueva cuenta y continuar al panel.
               </p>
@@ -190,7 +190,7 @@ export function RegisterView() {
             </Button>
           </form>
 
-          <div className="flex items-center justify-between rounded-[1.5rem] bg-[color:var(--surface-low)] px-4 py-4">
+          <div className="hidden items-center justify-between rounded-[1.5rem] bg-[color:var(--surface-low)] px-4 py-4 sm:flex">
             <div>
               <p className="text-sm font-medium text-foreground">Ya tienes acceso?</p>
               <p className="text-sm text-muted-foreground">Puedes volver a la pantalla dedicada de ingreso.</p>

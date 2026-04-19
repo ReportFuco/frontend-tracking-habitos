@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, ReactNode, useContext, useEffect, useState } from "react"
+import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { getFriendlyErrorMessage } from "@/lib/error-messages"
 import { FinanzasAPI } from "@/modules/finanzas/api/finanzas.api"
@@ -16,6 +16,7 @@ import {
   MovimientoCreate,
   MovimientoPatch,
   MovimientoResponse,
+  ProductoFinancieroResponse,
 } from "@/modules/finanzas/types/finanzas"
 
 type FinanzasContextValue = ReturnType<typeof useFinanzasState>
@@ -126,6 +127,21 @@ const useFinanzasState = () => {
   const editarMovimiento = async (idMovimiento: number, payload: MovimientoPatch) =>
     runAction(() => FinanzasAPI.updateMovimiento(idMovimiento, payload))
 
+  const getProductosByBanco = useCallback(
+    async (idBanco: number): Promise<ProductoFinancieroResponse[]> => {
+      try {
+        return await FinanzasAPI.getProductosFinancieros({ id_banco: idBanco })
+      } catch (err) {
+        const message = getFriendlyErrorMessage(err)
+        toast.error("No pudimos cargar los productos del banco", {
+          description: message,
+        })
+        return []
+      }
+    },
+    []
+  )
+
   useEffect(() => {
     const timer = setTimeout(() => {
       void fetchCatalogos()
@@ -155,6 +171,7 @@ const useFinanzasState = () => {
     eliminarCuenta,
     crearMovimiento,
     editarMovimiento,
+    getProductosByBanco,
   }
 }
 

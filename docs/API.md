@@ -74,6 +74,7 @@ Authorization: Bearer <token>
 ### Endpoints de auth
 
 #### `POST /auth/register`
+
 Crea un usuario de autenticación y, según la lógica del proyecto, da soporte al perfil de usuario de la app.
 
 Payload base:
@@ -99,9 +100,11 @@ Campos esperados:
 - `telefono`: máximo 11 caracteres
 
 #### `POST /auth/jwt/login`
+
 Inicia sesión y devuelve el token JWT.
 
 #### Endpoints adicionales de auth
+
 `fastapi-users` suele exponer también rutas auxiliares del router JWT, dependiendo de la configuración activa del paquete.
 
 ## Convenciones globales
@@ -130,17 +133,18 @@ Hay 3 patrones principales:
 ## Módulos
 
 ### 1. Usuarios
+
 Prefijo: `/api/usuarios`
 
 #### Endpoints
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/usuarios/perfil` | usuario | Obtiene el perfil del usuario autenticado |
-| `PATCH` | `/api/usuarios/perfil` | usuario | Edita el perfil del usuario autenticado |
-| `GET` | `/api/usuarios/` | superuser | Lista usuarios |
-| `DELETE` | `/api/usuarios/{id_usuario}` | superuser | Desactiva usuario |
-| `DELETE` | `/api/usuarios/{id_usuario}/permanente` | superuser | Elimina usuario definitivamente |
+| Método   | Ruta                                    | Auth      | Descripción                               |
+| -------- | --------------------------------------- | --------- | ----------------------------------------- |
+| `GET`    | `/api/usuarios/perfil`                  | usuario   | Obtiene el perfil del usuario autenticado |
+| `PATCH`  | `/api/usuarios/perfil`                  | usuario   | Edita el perfil del usuario autenticado   |
+| `GET`    | `/api/usuarios/`                        | superuser | Lista usuarios                            |
+| `DELETE` | `/api/usuarios/{id_usuario}`            | superuser | Desactiva usuario                         |
+| `DELETE` | `/api/usuarios/{id_usuario}/permanente` | superuser | Elimina usuario definitivamente           |
 
 #### Payload útil
 
@@ -171,24 +175,26 @@ Prefijo: `/api/usuarios`
 ```
 
 ### 2. Finanzas
+
 Prefijo: `/api/finanzas`
 
 Submódulos:
 
 - `banco`
+- `producto-financiero`
 - `categoria`
 - `cuentas`
 - `movimientos`
 
 #### Bancos
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/finanzas/banco/` | usuario | Lista bancos |
-| `GET` | `/api/finanzas/banco/{id_banco}` | usuario | Obtiene banco por ID |
-| `POST` | `/api/finanzas/banco/` | superuser | Crea banco |
-| `PATCH` | `/api/finanzas/banco/{id_banco}` | superuser | Edita banco |
-| `DELETE` | `/api/finanzas/banco/{id_banco}` | superuser | Elimina banco |
+| Método   | Ruta                             | Auth      | Descripción          |
+| -------- | -------------------------------- | --------- | -------------------- |
+| `GET`    | `/api/finanzas/banco/`           | usuario   | Lista bancos         |
+| `GET`    | `/api/finanzas/banco/{id_banco}` | usuario   | Obtiene banco por ID |
+| `POST`   | `/api/finanzas/banco/`           | superuser | Crea banco           |
+| `PATCH`  | `/api/finanzas/banco/{id_banco}` | superuser | Edita banco          |
+| `DELETE` | `/api/finanzas/banco/{id_banco}` | superuser | Elimina banco        |
 
 Payload base:
 
@@ -198,15 +204,35 @@ Payload base:
 }
 ```
 
+#### Productos financieros
+
+| Método   | Ruta                                                         | Auth      | Descripción                                                               |
+| -------- | ------------------------------------------------------------ | --------- | ------------------------------------------------------------------------- |
+| `GET`    | `/api/finanzas/producto-financiero/`                         | usuario   | Lista productos financieros, acepta `id_banco`, `q` e `incluir_inactivos` |
+| `GET`    | `/api/finanzas/producto-financiero/{id_producto_financiero}` | usuario   | Obtiene producto financiero                                               |
+| `POST`   | `/api/finanzas/producto-financiero/`                         | superuser | Crea producto financiero para un banco                                    |
+| `PATCH`  | `/api/finanzas/producto-financiero/{id_producto_financiero}` | superuser | Edita producto financiero                                                 |
+| `DELETE` | `/api/finanzas/producto-financiero/{id_producto_financiero}` | superuser | Desactiva producto si no tiene cuentas activas                            |
+
+Payload base:
+
+```json
+{
+  "id_banco": 1,
+  "nombre_producto": "CuentaRUT",
+  "descripcion": "Producto principal de BancoEstado"
+}
+```
+
 #### Categorías financieras
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/finanzas/categoria/` | usuario | Lista categorías |
-| `GET` | `/api/finanzas/categoria/{id_categoria}` | usuario | Obtiene categoría por ID |
-| `POST` | `/api/finanzas/categoria/` | superuser | Crea categoría |
-| `PATCH` | `/api/finanzas/categoria/{id_categoria}` | superuser | Edita categoría |
-| `DELETE` | `/api/finanzas/categoria/{id_categoria}` | superuser | Elimina categoría |
+| Método   | Ruta                                     | Auth      | Descripción              |
+| -------- | ---------------------------------------- | --------- | ------------------------ |
+| `GET`    | `/api/finanzas/categoria/`               | usuario   | Lista categorías         |
+| `GET`    | `/api/finanzas/categoria/{id_categoria}` | usuario   | Obtiene categoría por ID |
+| `POST`   | `/api/finanzas/categoria/`               | superuser | Crea categoría           |
+| `PATCH`  | `/api/finanzas/categoria/{id_categoria}` | superuser | Edita categoría          |
+| `DELETE` | `/api/finanzas/categoria/{id_categoria}` | superuser | Elimina categoría        |
 
 Payload base:
 
@@ -216,44 +242,40 @@ Payload base:
 }
 ```
 
-#### Cuentas bancarias
+#### Cuentas de usuario
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/finanzas/cuentas/` | usuario | Lista las cuentas del usuario |
-| `GET` | `/api/finanzas/cuentas/{id_cuenta}` | usuario + ownership | Obtiene cuenta y movimientos |
-| `POST` | `/api/finanzas/cuentas/` | usuario | Crea una cuenta del usuario autenticado |
-| `PATCH` | `/api/finanzas/cuentas/{id_cuenta}` | usuario + ownership | Edita cuenta |
-| `DELETE` | `/api/finanzas/cuentas/{id_cuenta}` | usuario + ownership | Desactiva cuenta |
+| Método   | Ruta                                | Auth                | Descripción                                |
+| -------- | ----------------------------------- | ------------------- | ------------------------------------------ |
+| `GET`    | `/api/finanzas/cuentas/`            | usuario             | Lista las cuentas del usuario              |
+| `GET`    | `/api/finanzas/cuentas/{id_cuenta}` | usuario + ownership | Obtiene cuenta de usuario y movimientos    |
+| `POST`   | `/api/finanzas/cuentas/`            | usuario             | Crea una cuenta de usuario del autenticado |
+| `PATCH`  | `/api/finanzas/cuentas/{id_cuenta}` | usuario + ownership | Edita cuenta                               |
+| `DELETE` | `/api/finanzas/cuentas/{id_cuenta}` | usuario + ownership | Desactiva cuenta                           |
 
 Payload create:
 
 ```json
 {
-  "id_banco": 1,
-  "nombre_cuenta": "Cuenta principal",
-  "tipo_cuenta": "cuenta vista"
+  "id_producto_financiero": 1,
+  "nombre_cuenta": "Cuenta principal"
 }
 ```
 
 Campos importantes:
 
-- `id_banco`
+- `id_producto_financiero`
 - `nombre_cuenta`
-- `tipo_cuenta`: valores definidos por enum `EnumCuentas`
-  - `cuenta corriente`
-  - `cuenta vista`
-  - `cuenta ahorro`
-  - `cuenta credito`
+- el producto financiero define el banco y el tipo comercial real de la cuenta
+- ejemplos válidos dependen del catálogo cargado para cada banco: `CuentaRUT`, `Cuenta Corriente`, `CMR`, etc.
 
 #### Movimientos
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/finanzas/movimientos/` | usuario | Lista movimientos del usuario |
-| `GET` | `/api/finanzas/movimientos/{id_movimiento}` | usuario + ownership | Obtiene movimiento por ID |
-| `POST` | `/api/finanzas/movimientos/` | usuario | Crea movimiento |
-| `PATCH` | `/api/finanzas/movimientos/{id_movimiento}` | usuario + ownership | Edita movimiento |
+| Método  | Ruta                                        | Auth                           | Descripción                                                         |
+| ------- | ------------------------------------------- | ------------------------------ | ------------------------------------------------------------------- |
+| `GET`   | `/api/finanzas/movimientos/`                | usuario                        | Lista movimientos del usuario a partir de sus cuentas               |
+| `GET`   | `/api/finanzas/movimientos/{id_movimiento}` | usuario + ownership por cuenta | Obtiene movimiento por ID, incluyendo compras vinculadas si existen |
+| `POST`  | `/api/finanzas/movimientos/`                | usuario                        | Crea movimiento                                                     |
+| `PATCH` | `/api/finanzas/movimientos/{id_movimiento}` | usuario + ownership por cuenta | Edita movimiento                                                    |
 
 Payload create:
 
@@ -275,6 +297,7 @@ Enums usados:
 - `tipo_gasto`: `variable`, `fijo`
 
 ### 3. Entrenamientos
+
 Prefijo: `/api/entrenamientos`
 
 Submódulos:
@@ -286,13 +309,13 @@ Submódulos:
 
 #### Ejercicios
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/entrenamientos/ejercicios/` | usuario | Lista ejercicios, acepta filtros `q` y `tipo` |
-| `GET` | `/api/entrenamientos/ejercicios/musculos` | usuario | Lista los tipos musculares disponibles |
-| `GET` | `/api/entrenamientos/ejercicios/{id_ejercicio}` | usuario | Obtiene un ejercicio |
-| `POST` | `/api/entrenamientos/ejercicios/` | superuser | Crea ejercicio |
-| `PATCH` | `/api/entrenamientos/ejercicios/{id_ejercicio}` | superuser | Edita ejercicio |
+| Método   | Ruta                                            | Auth      | Descripción                                    |
+| -------- | ----------------------------------------------- | --------- | ---------------------------------------------- |
+| `GET`    | `/api/entrenamientos/ejercicios/`               | usuario   | Lista ejercicios, acepta filtros `q` y `tipo`  |
+| `GET`    | `/api/entrenamientos/ejercicios/musculos`       | usuario   | Lista los tipos musculares disponibles         |
+| `GET`    | `/api/entrenamientos/ejercicios/{id_ejercicio}` | usuario   | Obtiene un ejercicio                           |
+| `POST`   | `/api/entrenamientos/ejercicios/`               | superuser | Crea ejercicio                                 |
+| `PATCH`  | `/api/entrenamientos/ejercicios/{id_ejercicio}` | superuser | Edita ejercicio                                |
 | `DELETE` | `/api/entrenamientos/ejercicios/{id_ejercicio}` | superuser | Elimina ejercicio si no tiene series asociadas |
 
 Payload create:
@@ -307,13 +330,13 @@ Payload create:
 
 #### Gimnasios
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/entrenamientos/gimnasio/` | usuario | Lista gimnasios, acepta búsqueda `q` |
-| `GET` | `/api/entrenamientos/gimnasio/{id_gimnasio}` | usuario | Detalle de gimnasio |
-| `POST` | `/api/entrenamientos/gimnasio/` | superuser | Crea gimnasio |
-| `PATCH` | `/api/entrenamientos/gimnasio/{id_gimnasio}` | superuser | Edita gimnasio |
-| `DELETE` | `/api/entrenamientos/gimnasio/{id_gimnasio}` | superuser | Desactiva gimnasio |
+| Método   | Ruta                                         | Auth      | Descripción                          |
+| -------- | -------------------------------------------- | --------- | ------------------------------------ |
+| `GET`    | `/api/entrenamientos/gimnasio/`              | usuario   | Lista gimnasios, acepta búsqueda `q` |
+| `GET`    | `/api/entrenamientos/gimnasio/{id_gimnasio}` | usuario   | Detalle de gimnasio                  |
+| `POST`   | `/api/entrenamientos/gimnasio/`              | superuser | Crea gimnasio                        |
+| `PATCH`  | `/api/entrenamientos/gimnasio/{id_gimnasio}` | superuser | Edita gimnasio                       |
+| `DELETE` | `/api/entrenamientos/gimnasio/{id_gimnasio}` | superuser | Desactiva gimnasio                   |
 
 Payload create:
 
@@ -330,13 +353,13 @@ Payload create:
 
 #### Entrenamiento de fuerza
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/entrenamientos/fuerza/` | usuario | Lista sesiones de fuerza del usuario |
-| `GET` | `/api/entrenamientos/fuerza/activo` | usuario | Devuelve la sesión activa con series |
-| `GET` | `/api/entrenamientos/fuerza/{id_entrenamiento_fuerza}` | usuario + ownership | Detalle de una sesión |
-| `POST` | `/api/entrenamientos/fuerza/` | usuario | Inicia una sesión de fuerza |
-| `PATCH` | `/api/entrenamientos/fuerza/activo/cerrar` | usuario | Cierra la sesión activa |
+| Método  | Ruta                                                   | Auth                | Descripción                          |
+| ------- | ------------------------------------------------------ | ------------------- | ------------------------------------ |
+| `GET`   | `/api/entrenamientos/fuerza/`                          | usuario             | Lista sesiones de fuerza del usuario |
+| `GET`   | `/api/entrenamientos/fuerza/activo`                    | usuario             | Devuelve la sesión activa con series |
+| `GET`   | `/api/entrenamientos/fuerza/{id_entrenamiento_fuerza}` | usuario + ownership | Detalle de una sesión                |
+| `POST`  | `/api/entrenamientos/fuerza/`                          | usuario             | Inicia una sesión de fuerza          |
+| `PATCH` | `/api/entrenamientos/fuerza/activo/cerrar`             | usuario             | Cierra la sesión activa              |
 
 Payload create:
 
@@ -349,11 +372,11 @@ Payload create:
 
 #### Series de fuerza
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `POST` | `/api/entrenamientos/series/` | usuario | Agrega serie a la sesión activa |
-| `PATCH` | `/api/entrenamientos/series/{id_fuerza_detalle}` | usuario + ownership activa | Edita serie |
-| `DELETE` | `/api/entrenamientos/series/{id_fuerza_detalle}` | usuario + ownership activa | Elimina serie |
+| Método   | Ruta                                             | Auth                       | Descripción                     |
+| -------- | ------------------------------------------------ | -------------------------- | ------------------------------- |
+| `POST`   | `/api/entrenamientos/series/`                    | usuario                    | Agrega serie a la sesión activa |
+| `PATCH`  | `/api/entrenamientos/series/{id_fuerza_detalle}` | usuario + ownership activa | Edita serie                     |
+| `DELETE` | `/api/entrenamientos/series/{id_fuerza_detalle}` | usuario + ownership activa | Elimina serie                   |
 
 Payload create:
 
@@ -367,6 +390,7 @@ Payload create:
 ```
 
 ### 4. Catálogo
+
 Prefijo: `/api/catalogo`
 
 Submódulos:
@@ -376,12 +400,12 @@ Submódulos:
 
 #### Marcas
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/catalogo/marca/` | usuario | Lista marcas |
-| `GET` | `/api/catalogo/marca/{id_marca}` | usuario | Obtiene marca |
-| `POST` | `/api/catalogo/marca/` | superuser | Crea marca |
-| `PATCH` | `/api/catalogo/marca/{id_marca}` | superuser | Edita marca |
+| Método   | Ruta                             | Auth      | Descripción   |
+| -------- | -------------------------------- | --------- | ------------- |
+| `GET`    | `/api/catalogo/marca/`           | usuario   | Lista marcas  |
+| `GET`    | `/api/catalogo/marca/{id_marca}` | usuario   | Obtiene marca |
+| `POST`   | `/api/catalogo/marca/`           | superuser | Crea marca    |
+| `PATCH`  | `/api/catalogo/marca/{id_marca}` | superuser | Edita marca   |
 | `DELETE` | `/api/catalogo/marca/{id_marca}` | superuser | Elimina marca |
 
 Payload create:
@@ -394,12 +418,12 @@ Payload create:
 
 #### Productos
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/catalogo/producto/` | usuario | Lista productos |
-| `GET` | `/api/catalogo/producto/{id_producto}` | usuario | Obtiene producto |
-| `POST` | `/api/catalogo/producto/` | superuser | Crea producto |
-| `PATCH` | `/api/catalogo/producto/{id_producto}` | superuser | Edita producto |
+| Método   | Ruta                                   | Auth      | Descripción        |
+| -------- | -------------------------------------- | --------- | ------------------ |
+| `GET`    | `/api/catalogo/producto/`              | usuario   | Lista productos    |
+| `GET`    | `/api/catalogo/producto/{id_producto}` | usuario   | Obtiene producto   |
+| `POST`   | `/api/catalogo/producto/`              | superuser | Crea producto      |
+| `PATCH`  | `/api/catalogo/producto/{id_producto}` | superuser | Edita producto     |
 | `DELETE` | `/api/catalogo/producto/{id_producto}` | superuser | Desactiva producto |
 
 Payload create:
@@ -425,6 +449,7 @@ Notas:
 - `DELETE` marca el producto como inactivo, no lo borra físicamente
 
 ### 5. Compras
+
 Prefijo: `/api/compras`
 
 Submódulos:
@@ -436,12 +461,12 @@ Submódulos:
 
 #### Cadenas
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/compras/cadena/` | usuario | Lista cadenas |
-| `GET` | `/api/compras/cadena/{id_cadena}` | usuario | Obtiene cadena |
-| `POST` | `/api/compras/cadena/` | superuser | Crea cadena |
-| `PATCH` | `/api/compras/cadena/{id_cadena}` | superuser | Edita cadena |
+| Método   | Ruta                              | Auth      | Descripción    |
+| -------- | --------------------------------- | --------- | -------------- |
+| `GET`    | `/api/compras/cadena/`            | usuario   | Lista cadenas  |
+| `GET`    | `/api/compras/cadena/{id_cadena}` | usuario   | Obtiene cadena |
+| `POST`   | `/api/compras/cadena/`            | superuser | Crea cadena    |
+| `PATCH`  | `/api/compras/cadena/{id_cadena}` | superuser | Edita cadena   |
 | `DELETE` | `/api/compras/cadena/{id_cadena}` | superuser | Elimina cadena |
 
 Payload create:
@@ -454,12 +479,12 @@ Payload create:
 
 #### Locales
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/compras/local/` | usuario | Lista locales |
-| `GET` | `/api/compras/local/{id_local}` | usuario | Obtiene local |
-| `POST` | `/api/compras/local/` | superuser | Crea local |
-| `PATCH` | `/api/compras/local/{id_local}` | superuser | Edita local |
+| Método   | Ruta                            | Auth      | Descripción   |
+| -------- | ------------------------------- | --------- | ------------- |
+| `GET`    | `/api/compras/local/`           | usuario   | Lista locales |
+| `GET`    | `/api/compras/local/{id_local}` | usuario   | Obtiene local |
+| `POST`   | `/api/compras/local/`           | superuser | Crea local    |
+| `PATCH`  | `/api/compras/local/{id_local}` | superuser | Edita local   |
 | `DELETE` | `/api/compras/local/{id_local}` | superuser | Elimina local |
 
 Payload create:
@@ -474,15 +499,21 @@ Payload create:
 }
 ```
 
+Notas:
+
+- `id_cadena` ahora puede ser `null`
+- esto permite registrar locales de barrio o comercios independientes sin cadena
+
 #### Compras
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/compras/compra/` | usuario | Lista compras del usuario |
-| `GET` | `/api/compras/compra/{id_compra}` | usuario + ownership | Obtiene compra |
-| `POST` | `/api/compras/compra/` | usuario | Crea compra asociada al usuario autenticado |
-| `PATCH` | `/api/compras/compra/{id_compra}` | usuario + ownership | Edita compra |
-| `DELETE` | `/api/compras/compra/{id_compra}` | usuario + ownership | Elimina compra |
+| Método   | Ruta                              | Auth                | Descripción                                                                |
+| -------- | --------------------------------- | ------------------- | -------------------------------------------------------------------------- |
+| `GET`    | `/api/compras/compra/`            | usuario             | Lista compras del usuario                                                  |
+| `GET`    | `/api/compras/compra/{id_compra}` | usuario + ownership | Obtiene compra con local, total y movimientos vinculados si existen        |
+| `POST`   | `/api/compras/compra/`            | usuario             | Crea compra asociada al usuario autenticado                                |
+| `POST`   | `/api/compras/compra-completa/`   | usuario             | Crea compra, detalle y vínculo opcional a movimiento en una sola operación |
+| `PATCH`  | `/api/compras/compra/{id_compra}` | usuario + ownership | Edita compra                                                               |
+| `DELETE` | `/api/compras/compra/{id_compra}` | usuario + ownership | Elimina compra                                                             |
 
 Payload create:
 
@@ -493,15 +524,51 @@ Payload create:
 }
 ```
 
+Payload compra completa:
+
+```json
+{
+  "id_local": 1,
+  "fecha_compra": "2026-04-18T16:30:00",
+  "id_movimiento": 10,
+  "monto_asociado": 2980,
+  "detalles": [
+    {
+      "id_producto": 5,
+      "cantidad_comprada": 1,
+      "unidad_compra": "unidad",
+      "precio_unitario": 2980,
+      "precio_total": 2980,
+      "cantidad_unidades": 1
+    }
+  ]
+}
+```
+
+#### Vínculo movimiento-compra
+
+| Método   | Ruta                                                    | Auth                | Descripción                                          |
+| -------- | ------------------------------------------------------- | ------------------- | ---------------------------------------------------- |
+| `GET`    | `/api/compras/movimiento-compra/?id_movimiento={id}`    | usuario + ownership | Lista vínculos de un movimiento                      |
+| `GET`    | `/api/compras/movimiento-compra/?id_compra={id}`        | usuario + ownership | Lista vínculos de una compra                         |
+| `POST`   | `/api/compras/movimiento-compra/`                       | usuario + ownership | Vincula una compra existente con un movimiento gasto |
+| `DELETE` | `/api/compras/movimiento-compra/{id_movimiento_compra}` | usuario + ownership | Elimina el vínculo                                   |
+
+Reglas:
+
+- solo se pueden vincular movimientos de tipo `gasto`
+- compra y movimiento deben pertenecer al mismo usuario
+- no se permite duplicar el mismo par `movimiento + compra`
+
 #### Detalle de compra
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/compras/compra-detalle/?id_compra={id_compra}` | usuario + ownership | Lista detalles de una compra |
-| `GET` | `/api/compras/compra-detalle/{id_detalle}` | usuario + ownership | Obtiene detalle por ID |
-| `POST` | `/api/compras/compra-detalle/` | usuario + ownership | Crea detalle |
-| `PATCH` | `/api/compras/compra-detalle/{id_detalle}` | usuario + ownership | Edita detalle |
-| `DELETE` | `/api/compras/compra-detalle/{id_detalle}` | usuario + ownership | Elimina detalle |
+| Método   | Ruta                                                 | Auth                | Descripción                  |
+| -------- | ---------------------------------------------------- | ------------------- | ---------------------------- |
+| `GET`    | `/api/compras/compra-detalle/?id_compra={id_compra}` | usuario + ownership | Lista detalles de una compra |
+| `GET`    | `/api/compras/compra-detalle/{id_detalle}`           | usuario + ownership | Obtiene detalle por ID       |
+| `POST`   | `/api/compras/compra-detalle/`                       | usuario + ownership | Crea detalle                 |
+| `PATCH`  | `/api/compras/compra-detalle/{id_detalle}`           | usuario + ownership | Edita detalle                |
+| `DELETE` | `/api/compras/compra-detalle/{id_detalle}`           | usuario + ownership | Elimina detalle              |
 
 Payload create:
 
@@ -518,6 +585,7 @@ Payload create:
 ```
 
 ### 6. Nutrición
+
 Prefijo: `/api/nutricion`
 
 Submódulos:
@@ -530,13 +598,13 @@ Submódulos:
 
 #### Consumos
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/nutricion/consumo/` | usuario | Lista consumos del usuario |
-| `GET` | `/api/nutricion/consumo/{id_consumo}` | usuario + ownership | Obtiene consumo |
-| `POST` | `/api/nutricion/consumo/` | usuario | Crea consumo |
-| `PATCH` | `/api/nutricion/consumo/{id_consumo}` | usuario + ownership | Edita consumo |
-| `DELETE` | `/api/nutricion/consumo/{id_consumo}` | usuario + ownership | Elimina consumo |
+| Método   | Ruta                                  | Auth                | Descripción                |
+| -------- | ------------------------------------- | ------------------- | -------------------------- |
+| `GET`    | `/api/nutricion/consumo/`             | usuario             | Lista consumos del usuario |
+| `GET`    | `/api/nutricion/consumo/{id_consumo}` | usuario + ownership | Obtiene consumo            |
+| `POST`   | `/api/nutricion/consumo/`             | usuario             | Crea consumo               |
+| `PATCH`  | `/api/nutricion/consumo/{id_consumo}` | usuario + ownership | Edita consumo              |
+| `DELETE` | `/api/nutricion/consumo/{id_consumo}` | usuario + ownership | Elimina consumo            |
 
 Payload create:
 
@@ -550,13 +618,13 @@ Payload create:
 
 #### Detalle de consumo
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/nutricion/consumo-detalle/?id_consumo={id_consumo}` | usuario + ownership | Lista detalle de un consumo |
-| `GET` | `/api/nutricion/consumo-detalle/{id_consumo_detalle}` | usuario + ownership | Obtiene detalle |
-| `POST` | `/api/nutricion/consumo-detalle/` | usuario + ownership | Crea detalle |
-| `PATCH` | `/api/nutricion/consumo-detalle/{id_consumo_detalle}` | usuario + ownership | Edita detalle |
-| `DELETE` | `/api/nutricion/consumo-detalle/{id_consumo_detalle}` | usuario + ownership | Elimina detalle |
+| Método   | Ruta                                                      | Auth                | Descripción                 |
+| -------- | --------------------------------------------------------- | ------------------- | --------------------------- |
+| `GET`    | `/api/nutricion/consumo-detalle/?id_consumo={id_consumo}` | usuario + ownership | Lista detalle de un consumo |
+| `GET`    | `/api/nutricion/consumo-detalle/{id_consumo_detalle}`     | usuario + ownership | Obtiene detalle             |
+| `POST`   | `/api/nutricion/consumo-detalle/`                         | usuario + ownership | Crea detalle                |
+| `PATCH`  | `/api/nutricion/consumo-detalle/{id_consumo_detalle}`     | usuario + ownership | Edita detalle               |
+| `DELETE` | `/api/nutricion/consumo-detalle/{id_consumo_detalle}`     | usuario + ownership | Elimina detalle             |
 
 Payload create:
 
@@ -571,13 +639,13 @@ Payload create:
 
 #### Metas nutricionales
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/nutricion/meta/` | usuario | Lista metas del usuario |
-| `GET` | `/api/nutricion/meta/{id_meta}` | usuario + ownership | Obtiene meta |
-| `POST` | `/api/nutricion/meta/` | usuario | Crea meta |
-| `PATCH` | `/api/nutricion/meta/{id_meta}` | usuario + ownership | Edita meta |
-| `DELETE` | `/api/nutricion/meta/{id_meta}` | usuario + ownership | Elimina meta |
+| Método   | Ruta                            | Auth                | Descripción             |
+| -------- | ------------------------------- | ------------------- | ----------------------- |
+| `GET`    | `/api/nutricion/meta/`          | usuario             | Lista metas del usuario |
+| `GET`    | `/api/nutricion/meta/{id_meta}` | usuario + ownership | Obtiene meta            |
+| `POST`   | `/api/nutricion/meta/`          | usuario             | Crea meta               |
+| `PATCH`  | `/api/nutricion/meta/{id_meta}` | usuario + ownership | Edita meta              |
+| `DELETE` | `/api/nutricion/meta/{id_meta}` | usuario + ownership | Elimina meta            |
 
 Payload create:
 
@@ -594,13 +662,13 @@ Payload create:
 
 #### Registro de peso
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/nutricion/peso/` | usuario | Lista registros de peso |
-| `GET` | `/api/nutricion/peso/{id_peso}` | usuario + ownership | Obtiene registro |
-| `POST` | `/api/nutricion/peso/` | usuario | Crea registro de peso |
-| `PATCH` | `/api/nutricion/peso/{id_peso}` | usuario + ownership | Edita registro |
-| `DELETE` | `/api/nutricion/peso/{id_peso}` | usuario + ownership | Elimina registro |
+| Método   | Ruta                            | Auth                | Descripción             |
+| -------- | ------------------------------- | ------------------- | ----------------------- |
+| `GET`    | `/api/nutricion/peso/`          | usuario             | Lista registros de peso |
+| `GET`    | `/api/nutricion/peso/{id_peso}` | usuario + ownership | Obtiene registro        |
+| `POST`   | `/api/nutricion/peso/`          | usuario             | Crea registro de peso   |
+| `PATCH`  | `/api/nutricion/peso/{id_peso}` | usuario + ownership | Edita registro          |
+| `DELETE` | `/api/nutricion/peso/{id_peso}` | usuario + ownership | Elimina registro        |
 
 Payload create:
 
@@ -613,13 +681,13 @@ Payload create:
 
 #### Tabla nutricional
 
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `GET` | `/api/nutricion/tabla/` | usuario | Lista tablas nutricionales |
-| `GET` | `/api/nutricion/tabla/{id_tabla}` | usuario | Obtiene tabla |
-| `POST` | `/api/nutricion/tabla/` | superuser | Crea tabla nutricional |
-| `PATCH` | `/api/nutricion/tabla/{id_tabla}` | superuser | Edita tabla nutricional |
-| `DELETE` | `/api/nutricion/tabla/{id_tabla}` | superuser | Elimina tabla nutricional |
+| Método   | Ruta                              | Auth      | Descripción                |
+| -------- | --------------------------------- | --------- | -------------------------- |
+| `GET`    | `/api/nutricion/tabla/`           | usuario   | Lista tablas nutricionales |
+| `GET`    | `/api/nutricion/tabla/{id_tabla}` | usuario   | Obtiene tabla              |
+| `POST`   | `/api/nutricion/tabla/`           | superuser | Crea tabla nutricional     |
+| `PATCH`  | `/api/nutricion/tabla/{id_tabla}` | superuser | Edita tabla nutricional    |
+| `DELETE` | `/api/nutricion/tabla/{id_tabla}` | superuser | Elimina tabla nutricional  |
 
 Payload create:
 
@@ -639,6 +707,7 @@ Payload create:
 ```
 
 ### 7. Lecturas
+
 Prefijo: `/api/lecturas`
 
 Estado actual del módulo:
@@ -681,13 +750,28 @@ Esta sección resume los cuerpos más comunes para IA y automatizaciones.
 }
 ```
 
-### Cuenta create
+### Cuenta usuario create
+
+```json
+{
+  "id_producto_financiero": 1,
+  "nombre_cuenta": "Cuenta sueldo"
+}
+```
+
+Notas:
+
+- `movimiento` ya no guarda `id_usuario` directo
+- el ownership se resuelve por `id_cuenta`, porque cada cuenta pertenece a un único usuario
+- cambiar de cuenta en un `PATCH` solo permite cuentas activas del mismo usuario autenticado
+
+### Producto financiero create
 
 ```json
 {
   "id_banco": 1,
-  "nombre_cuenta": "Cuenta sueldo",
-  "tipo_cuenta": "cuenta vista"
+  "nombre_producto": "CMR",
+  "descripcion": "Tarjeta y linea comercial de Falabella"
 }
 ```
 
@@ -908,4 +992,3 @@ Sugerencias para agentes o automatizaciones:
 - `app/routes/**`
 - `app/schemas/**`
 - `docs/api.json`
-

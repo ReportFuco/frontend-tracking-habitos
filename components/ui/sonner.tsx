@@ -5,20 +5,20 @@ import { Toaster } from "sonner"
 export function AppToaster() {
   return (
     <Toaster
-      position="top-right"
+      position="top-center"
       closeButton
-      richColors
+      offset={16}
+      gap={10}
+      duration={4200}
       toastOptions={{
         classNames: {
-          toast: "border-border bg-card text-card-foreground shadow-lg",
-          title: "text-sm font-semibold",
-          description: "text-sm text-muted-foreground",
-          actionButton: "bg-primary text-primary-foreground",
-          cancelButton: "bg-secondary text-secondary-foreground",
-          error: "border-destructive/30",
-          success: "border-emerald-500/30",
-          warning: "border-amber-500/30",
-          info: "border-sky-500/30",
+          toast: "app-toast",
+          title: "app-toast__title",
+          description: "app-toast__description",
+          actionButton: "app-toast__action",
+          cancelButton: "app-toast__cancel",
+          closeButton: "app-toast__close",
+          icon: "app-toast__icon",
         },
       }}
     />

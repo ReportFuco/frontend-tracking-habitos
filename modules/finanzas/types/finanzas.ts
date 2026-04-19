@@ -1,5 +1,3 @@
-export type TipoCuenta = "Cuenta Corriente" | "Cuenta vista" | "Cuenta ahorro"
-
 export type TipoMovimiento = "gasto" | "ingreso"
 
 export type TipoGasto = "variable" | "fijo"
@@ -11,6 +9,28 @@ export interface BancoCreate {
 export interface BancoResponse {
   id_banco: number
   nombre_banco: string
+  created_at: string
+}
+
+export interface ProductoFinancieroCreate {
+  id_banco: number
+  nombre_producto: string
+  descripcion?: string | null
+}
+
+export interface ProductoFinancieroPatch {
+  nombre_producto?: string | null
+  descripcion?: string | null
+  activo?: boolean | null
+}
+
+export interface ProductoFinancieroResponse {
+  id_producto_financiero: number
+  id_banco: number
+  nombre_producto: string
+  descripcion?: string | null
+  nombre_banco?: string | null
+  activo?: boolean
   created_at: string
 }
 
@@ -29,21 +49,20 @@ export interface CategoriaResponse {
 }
 
 export interface CuentaCreate {
-  id_banco: number
+  id_producto_financiero: number
   nombre_cuenta: string
-  tipo_cuenta: TipoCuenta
 }
 
 export interface CuentaPatch {
   nombre_cuenta?: string | null
-  tipo_cuenta?: TipoCuenta | null
 }
 
 export interface CuentaResponse {
   id_cuenta: number
   nombre_cuenta: string
-  tipo_cuenta: TipoCuenta
   nombre_banco?: string | null
+  nombre_producto?: string | null
+  id_producto_financiero?: number | null
   created_at: string
 }
 

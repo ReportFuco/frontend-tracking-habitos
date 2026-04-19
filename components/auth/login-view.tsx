@@ -74,12 +74,12 @@ export function LoginView() {
           onLogout={logout}
         />
       ) : (
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <p className="font-label text-xs uppercase tracking-[0.26em] text-muted-foreground">
+        <div className="space-y-5 sm:space-y-6">
+          <div className="space-y-2 sm:space-y-3">
+            <p className="font-label text-[11px] uppercase tracking-[0.26em] text-muted-foreground sm:text-xs">
               Iniciar sesion
             </p>
-            <h2 className="text-3xl font-semibold tracking-[-0.03em] text-foreground">
+            <h2 className="text-xl font-semibold tracking-[-0.02em] text-foreground sm:text-3xl sm:tracking-[-0.03em]">
               Accede a tu espacio de trabajo.
             </h2>
             <p className="max-w-md text-sm leading-6 text-muted-foreground">
@@ -120,7 +120,7 @@ export function LoginView() {
               />
             </div>
 
-            <div className="rounded-[1.5rem] bg-[color:var(--surface-low)] p-4">
+            <div className="hidden rounded-[1.5rem] bg-[color:var(--surface-low)] p-4 sm:block">
               <p className="text-sm leading-6 text-muted-foreground">
                 Si intentas entrar a una ruta protegida, el sistema conservara el destino usando el parametro <code className="rounded bg-white/70 px-1.5 py-0.5 text-xs text-foreground">next</code>.
               </p>

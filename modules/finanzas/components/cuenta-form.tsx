@@ -1,32 +1,95 @@
 "use client"
 
-import { FormEvent, useState } from "react"
-import { Building2, Landmark } from "lucide-react"
+import { FormEvent, useEffect, useMemo, useState } from "react"
+import { Building2, Landmark, Package } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { FormNote, FormPanel, FieldGroup, EditorialSelect } from "@/components/forms/editorial-form"
+import { FormNote, FormPanel, FieldGroup } from "@/components/forms/editorial-form"
+import { SearchableCombobox } from "@/components/forms/searchable-combobox"
 import { Input } from "@/components/ui/input"
 import { useFinanzas } from "@/modules/finanzas/hooks/useFinanzas"
-import { cuentaCreateSchema, TIPOS_CUENTA } from "@/modules/finanzas/schemas/finanzas.schema"
-import { TipoCuenta } from "@/modules/finanzas/types/finanzas"
+import { cuentaCreateSchema } from "@/modules/finanzas/schemas/finanzas.schema"
+import { ProductoFinancieroResponse } from "@/modules/finanzas/types/finanzas"
 
 const initialCuentaForm = {
   id_banco: "",
+  id_producto_financiero: "",
   nombre_cuenta: "",
-  tipo_cuenta: "Cuenta Corriente" as TipoCuenta,
 }
 
 export function CuentaFormCard() {
-  const { bancos, loadingCatalogos, submittingCuenta, crearCuenta } = useFinanzas()
+  const { bancos, loadingCatalogos, submittingCuenta, crearCuenta, getProductosByBanco } =
+    useFinanzas()
   const [form, setForm] = useState(initialCuentaForm)
+  const [productos, setProductos] = useState<ProductoFinancieroResponse[]>([])
+  const [loadingProductos, setLoadingProductos] = useState(false)
+
+  useEffect(() => {
+    if (!form.id_banco) {
+      setProductos([])
+      return
+    }
+
+    let cancelled = false
+    const idBanco = Number(form.id_banco)
+
+    setLoadingProductos(true)
+
+    getProductosByBanco(idBanco)
+      .then((result) => {
+        if (cancelled) return
+        setProductos(result)
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingProductos(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [form.id_banco, getProductosByBanco])
+
+  const bancoOptions = useMemo(
+    () =>
+      bancos.map((banco) => ({
+        value: String(banco.id_banco),
+        label: banco.nombre_banco,
+      })),
+    [bancos]
+  )
+
+  const productoOptions = useMemo(
+    () =>
+      productos.map((producto) => ({
+        value: String(producto.id_producto_financiero),
+        label: producto.nombre_producto,
+        description: producto.descripcion ?? undefined,
+      })),
+    [productos]
+  )
+
+  const bancoSeleccionado = bancos.find(
+    (banco) => String(banco.id_banco) === form.id_banco
+  )
+
+  const handleBancoChange = (value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      id_banco: value,
+      id_producto_financiero: "",
+    }))
+  }
+
+  const handleProductoChange = (value: string) => {
+    setForm((prev) => ({ ...prev, id_producto_financiero: value }))
+  }
 
   const handleCreateCuenta = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
     const parsed = cuentaCreateSchema.safeParse({
-      id_banco: Number(form.id_banco),
+      id_producto_financiero: Number(form.id_producto_financiero),
       nombre_cuenta: form.nombre_cuenta,
-      tipo_cuenta: form.tipo_cuenta,
     })
 
     if (!parsed.success) {
@@ -40,6 +103,7 @@ export function CuentaFormCard() {
 
     if (result.ok) {
       setForm(initialCuentaForm)
+      setProductos([])
       toast.success("Cuenta creada", {
         description: "La cuenta bancaria fue creada correctamente.",
       })
@@ -51,11 +115,18 @@ export function CuentaFormCard() {
     })
   }
 
+  const productoDisabled = !form.id_banco || loadingProductos
+  const productoDisabledMessage = !form.id_banco
+    ? "Primero selecciona un banco"
+    : productos.length === 0 && !loadingProductos
+      ? "Este banco aun no tiene productos"
+      : undefined
+
   return (
     <FormPanel
       eyebrow="Finanzas"
       title="Crear una cuenta bancaria"
-      description="Esta cuenta sera la base para registrar tus movimientos. Dale un nombre claro y asociarla a su banco correcto."
+      description="Esta cuenta sera la base para registrar tus movimientos. Elige primero el banco y luego el producto financiero que corresponde."
       aside={
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -63,7 +134,7 @@ export function CuentaFormCard() {
               <Landmark className="size-4" />
             </span>
             <p className="text-sm leading-6 text-foreground/80">
-              Piensa esta vista como el punto de partida del modulo financiero.
+              Cada banco tiene sus propios productos, como CuentaRUT, CMR o Cuenta Corriente.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -71,27 +142,49 @@ export function CuentaFormCard() {
               <Building2 className="size-4" />
             </span>
             <p className="text-sm leading-6 text-foreground/80">
-              Mientras mas claro sea el nombre, mas facil sera registrar y leer movimientos despues.
+              Un nombre claro en la cuenta ayuda a reconocerla despues en cada movimiento.
             </p>
           </div>
         </div>
       }
     >
       <form onSubmit={handleCreateCuenta} className="space-y-5">
-        <FieldGroup label="Banco">
-          <EditorialSelect
-            value={form.id_banco}
-            onChange={(event) => setForm((prev) => ({ ...prev, id_banco: event.target.value }))}
-            required
+        <div className="grid gap-5 lg:grid-cols-2">
+          <FieldGroup label="Banco" hint="Requerido">
+            <SearchableCombobox
+              value={form.id_banco}
+              onChange={handleBancoChange}
+              options={bancoOptions}
+              placeholder="Selecciona un banco"
+              searchPlaceholder="Buscar banco..."
+              emptyMessage="No encontramos bancos"
+              loading={loadingCatalogos && bancoOptions.length === 0}
+              loadingMessage="Cargando bancos..."
+              leadingIcon={<Landmark className="size-4" />}
+              required
+            />
+          </FieldGroup>
+
+          <FieldGroup
+            label="Producto financiero"
+            hint={bancoSeleccionado ? `Productos de ${bancoSeleccionado.nombre_banco}` : "Depende del banco"}
           >
-            <option value="">Selecciona un banco</option>
-            {bancos.map((banco) => (
-              <option key={banco.id_banco} value={banco.id_banco}>
-                {banco.nombre_banco}
-              </option>
-            ))}
-          </EditorialSelect>
-        </FieldGroup>
+            <SearchableCombobox
+              value={form.id_producto_financiero}
+              onChange={handleProductoChange}
+              options={productoOptions}
+              placeholder="Selecciona un producto"
+              searchPlaceholder="Buscar producto..."
+              emptyMessage="Este banco no tiene productos disponibles"
+              disabled={productoDisabled}
+              disabledMessage={productoDisabledMessage}
+              loading={loadingProductos}
+              loadingMessage="Cargando productos..."
+              leadingIcon={<Package className="size-4" />}
+              required
+            />
+          </FieldGroup>
+        </div>
 
         <FieldGroup label="Nombre de la cuenta" hint="Visible en tus movimientos">
           <Input
@@ -102,23 +195,10 @@ export function CuentaFormCard() {
           />
         </FieldGroup>
 
-        <FieldGroup label="Tipo de cuenta">
-          <EditorialSelect
-            value={form.tipo_cuenta}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, tipo_cuenta: event.target.value as TipoCuenta }))
-            }
-          >
-            {TIPOS_CUENTA.map((tipo) => (
-              <option key={tipo} value={tipo}>
-                {tipo}
-              </option>
-            ))}
-          </EditorialSelect>
-        </FieldGroup>
-
         <FormNote>
-          Esta cuenta quedara disponible para usarla luego en el registro de ingresos y gastos.
+          El producto financiero define el banco y el tipo comercial real de la cuenta
+          (CuentaRUT, Cuenta Corriente, CMR, etc). Si no ves el producto que buscas, pide que
+          un administrador lo cargue en el catalogo.
         </FormNote>
 
         <Button

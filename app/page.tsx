@@ -39,76 +39,76 @@ const modules = [
 export default function Home() {
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <header className="flex items-center justify-between px-6 py-6 sm:px-10">
-        <Link href="/" className="font-semibold tracking-tight">
+      <header className="flex items-center justify-between gap-3 px-4 py-4 sm:px-10 sm:py-6">
+        <Link href="/" className="text-sm font-semibold tracking-tight sm:text-base">
           The Curated Life
         </Link>
-        <nav className="flex items-center gap-4 text-sm">
+        <nav className="flex items-center gap-2 text-sm sm:gap-4">
           <Link
             href="/login"
-            className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground"
+            className="font-[family-name:var(--font-label)] text-[10px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground sm:text-xs"
           >
             Iniciar sesion
           </Link>
           <Link
             href="/register"
-            className="inline-flex h-9 items-center rounded-lg bg-[color:var(--primary)] px-4 text-sm font-medium text-[color:var(--primary-foreground)] transition-colors hover:bg-[color:var(--primary)]/90"
+            className="inline-flex h-9 items-center rounded-lg bg-[color:var(--primary)] px-3 text-xs font-medium text-[color:var(--primary-foreground)] transition-colors hover:bg-[color:var(--primary)]/90 sm:px-4 sm:text-sm"
           >
             Crear cuenta
           </Link>
         </nav>
       </header>
 
-      <section className="relative overflow-hidden px-6 pt-10 pb-20 sm:px-10 sm:pt-16 sm:pb-28">
+      <section className="relative overflow-hidden px-4 pt-4 pb-10 sm:px-10 sm:pt-16 sm:pb-28">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-40 top-0 h-[520px] w-[520px] rounded-full opacity-40 blur-3xl"
+          className="pointer-events-none absolute -right-40 top-0 hidden h-[520px] w-[520px] rounded-full opacity-40 blur-3xl sm:block"
           style={{ background: "radial-gradient(circle, var(--module-nutricion), transparent 70%)" }}
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -left-20 bottom-0 h-[420px] w-[420px] rounded-full opacity-30 blur-3xl"
+          className="pointer-events-none absolute -left-20 bottom-0 hidden h-[420px] w-[420px] rounded-full opacity-30 blur-3xl sm:block"
           style={{ background: "radial-gradient(circle, var(--module-entrenamientos), transparent 70%)" }}
         />
 
-        <div className="relative mx-auto grid w-full max-w-6xl gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20">
-          <div className="flex flex-col gap-8">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[color:var(--surface-lowest)] px-4 py-1.5 font-[family-name:var(--font-label)] text-[0.7rem] uppercase tracking-[0.22em] text-muted-foreground shadow-[var(--shadow-airy)]">
+        <div className="relative mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20">
+          <div className="flex flex-col gap-5 sm:gap-8">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[color:var(--surface-lowest)] px-3 py-1.5 font-[family-name:var(--font-label)] text-[0.65rem] uppercase tracking-[0.22em] text-muted-foreground shadow-[var(--shadow-airy)] sm:px-4 sm:text-[0.7rem]">
               <Sparkles className="size-3" aria-hidden />
               Mindful editorial
             </span>
 
-            <h1 className="text-balance text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
+            <h1 className="text-balance text-3xl font-semibold leading-[1.1] tracking-tight sm:text-6xl sm:leading-[1.05] lg:text-7xl">
               Tu vida,{" "}
               <span className="italic text-[color:var(--secondary)]">organizada</span>
               <br />
               con calma.
             </h1>
 
-            <p className="max-w-xl text-base text-muted-foreground sm:text-lg">
+            <p className="max-w-xl text-sm text-muted-foreground sm:text-lg">
               Un espacio personal para seguir finanzas, entrenamientos, compras y nutricion.
               Sobrio, calido y sin ruido. Pensado como un diario premium, no como una hoja de
               calculo.
             </p>
 
-            <div className="flex flex-wrap items-center gap-3 pt-2">
+            <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap sm:items-center sm:pt-2">
               <Link
                 href="/register"
-                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[color:var(--primary)] px-6 text-sm font-medium text-[color:var(--primary-foreground)] shadow-[var(--shadow-airy)] transition-all hover:shadow-[var(--shadow-airy-lg)]"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[color:var(--primary)] px-6 text-sm font-medium text-[color:var(--primary-foreground)] shadow-[var(--shadow-airy)] transition-all hover:shadow-[var(--shadow-airy-lg)] sm:h-11"
               >
                 Empezar a registrar
                 <ArrowRight className="size-4" />
               </Link>
               <Link
                 href="/login"
-                className="inline-flex h-11 items-center rounded-xl bg-[color:var(--surface-lowest)] px-6 text-sm font-medium text-foreground shadow-[var(--shadow-airy)] transition-colors hover:bg-[color:var(--accent)]"
+                className="inline-flex h-12 items-center justify-center rounded-xl bg-[color:var(--surface-lowest)] px-6 text-sm font-medium text-foreground shadow-[var(--shadow-airy)] transition-colors hover:bg-[color:var(--accent)] sm:h-11"
               >
                 Ya tengo cuenta
               </Link>
             </div>
           </div>
 
-          <div className="relative flex flex-col gap-5 lg:pt-6">
+          <div className="relative hidden flex-col gap-5 lg:flex lg:pt-6">
             <div className="surface-card flex items-start gap-4">
               <span className="flex size-11 items-center justify-center rounded-lg bg-[color:var(--module-finanzas)]/10 text-[color:var(--module-finanzas)]">
                 <Gauge className="size-5" />
@@ -158,18 +158,18 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="px-6 pb-24 sm:px-10">
+      <section className="px-4 pb-14 sm:px-10 sm:pb-24">
         <div className="mx-auto w-full max-w-6xl">
-          <div className="mb-10 flex flex-col gap-2">
-            <span className="font-[family-name:var(--font-label)] text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
+          <div className="mb-6 flex flex-col gap-2 sm:mb-10">
+            <span className="font-[family-name:var(--font-label)] text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground sm:text-[0.7rem]">
               Modulos
             </span>
-            <h2 className="max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h2 className="max-w-2xl text-xl font-semibold tracking-tight sm:text-4xl">
               Cada area de tu vida, con un color propio dentro de la misma familia.
             </h2>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
             {modules.map((item) => {
               const Icon = item.icon
               return (
@@ -194,8 +194,8 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="border-t-0 bg-[color:var(--surface-low)] px-6 py-10 sm:px-10">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-start justify-between gap-4 text-sm text-muted-foreground sm:flex-row sm:items-center">
+      <footer className="border-t-0 bg-[color:var(--surface-low)] px-4 py-6 sm:px-10 sm:py-10">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-start justify-between gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:gap-4">
           <p>The Curated Life. Un diario digital para tu vida diaria.</p>
           <div className="flex items-center gap-5">
             <Link href="/administrador" className="hover:text-foreground">

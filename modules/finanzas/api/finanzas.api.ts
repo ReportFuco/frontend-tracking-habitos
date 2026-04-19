@@ -11,6 +11,9 @@ import {
   MovimientoCreate,
   MovimientoPatch,
   MovimientoResponse,
+  ProductoFinancieroCreate,
+  ProductoFinancieroPatch,
+  ProductoFinancieroResponse,
 } from "@/modules/finanzas/types/finanzas"
 
 export const FinanzasAPI = {
@@ -31,6 +34,41 @@ export const FinanzasAPI = {
 
   deleteBanco: async (idBanco: number): Promise<void> => {
     await api.delete(`/api/finanzas/banco/${idBanco}`)
+  },
+
+  getProductosFinancieros: async (params?: {
+    id_banco?: number
+    q?: string
+    incluir_inactivos?: boolean
+  }): Promise<ProductoFinancieroResponse[]> => {
+    const { data } = await api.get("/api/finanzas/producto-financiero/", { params })
+    return data
+  },
+
+  getProductoFinancieroById: async (
+    idProducto: number
+  ): Promise<ProductoFinancieroResponse> => {
+    const { data } = await api.get(`/api/finanzas/producto-financiero/${idProducto}`)
+    return data
+  },
+
+  createProductoFinanciero: async (
+    payload: ProductoFinancieroCreate
+  ): Promise<ProductoFinancieroResponse> => {
+    const { data } = await api.post("/api/finanzas/producto-financiero/", payload)
+    return data
+  },
+
+  updateProductoFinanciero: async (
+    idProducto: number,
+    payload: ProductoFinancieroPatch
+  ): Promise<ProductoFinancieroResponse> => {
+    const { data } = await api.patch(`/api/finanzas/producto-financiero/${idProducto}`, payload)
+    return data
+  },
+
+  deleteProductoFinanciero: async (idProducto: number): Promise<void> => {
+    await api.delete(`/api/finanzas/producto-financiero/${idProducto}`)
   },
 
   getCategorias: async (): Promise<CategoriaResponse[]> => {
