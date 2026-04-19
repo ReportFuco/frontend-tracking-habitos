@@ -13,9 +13,15 @@ interface TopbarProps {
   profile: UsuarioProfile | null
   onMenu: () => void
   variant?: "user" | "admin"
+  showMenuButton?: boolean
 }
 
-export function Topbar({ profile, onMenu, variant = "user" }: TopbarProps) {
+export function Topbar({
+  profile,
+  onMenu,
+  variant = "user",
+  showMenuButton = true,
+}: TopbarProps) {
   const router = useRouter()
 
   const handleLogout = async () => {
@@ -35,16 +41,18 @@ export function Topbar({ profile, onMenu, variant = "user" }: TopbarProps) {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 bg-[color:var(--background)]/85 px-4 backdrop-blur-md sm:px-6">
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="md:hidden"
-        onClick={onMenu}
-        aria-label="Abrir menu"
-      >
-        <Menu className="size-5" />
-      </Button>
+      {showMenuButton ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={onMenu}
+          aria-label="Abrir menu"
+        >
+          <Menu className="size-5" />
+        </Button>
+      ) : null}
 
       <div className="flex items-center gap-2">
         <Link
