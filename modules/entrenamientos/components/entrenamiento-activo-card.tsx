@@ -4,8 +4,9 @@ import Link from "next/link"
 import { FormEvent, useEffect, useMemo, useState } from "react"
 import { ArrowRight, PencilLine, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { SearchableCombobox } from "@/components/forms/searchable-combobox"
 import { Button } from "@/components/ui/button"
-import { EditorialSelect, FieldGroup, FormNote, FormPanel } from "@/components/forms/editorial-form"
+import { FieldGroup, FormNote, FormPanel } from "@/components/forms/editorial-form"
 import {
   Dialog,
   DialogContent,
@@ -36,7 +37,7 @@ const normalizeText = (value: string | null | undefined) => (value ?? "").trim()
 
 const getEditableForm = (serie: SerieFuerzaResponse) => ({
   id_ejercicio: "",
-  tipo: normalizeText(serie.tipo_ejercicio),
+  tipo: serie.tipo_ejercicio ?? "",
   es_calentamiento: serie.es_calentamiento,
   cantidad_peso: String(serie.cantidad_peso),
   repeticiones: String(serie.repeticiones),
@@ -73,7 +74,7 @@ export function EntrenamientoActivoCard() {
 
   const ejerciciosFiltrados = useMemo(() => {
     if (!form.tipo) {
-      return ejercicios
+      return []
     }
 
     return ejercicios.filter((ejercicio) => normalizeText(ejercicio.tipo) === normalizeText(form.tipo))
@@ -81,13 +82,42 @@ export function EntrenamientoActivoCard() {
 
   const ejerciciosFiltradosEdicion = useMemo(() => {
     if (!editingForm.tipo) {
-      return ejercicios
+      return []
     }
 
     return ejercicios.filter(
       (ejercicio) => normalizeText(ejercicio.tipo) === normalizeText(editingForm.tipo)
     )
   }, [editingForm.tipo, ejercicios])
+
+  const tipoMuscularOptions = useMemo(
+    () =>
+      tiposMusculares.map((tipo) => ({
+        value: tipo,
+        label: tipo,
+      })),
+    [tiposMusculares]
+  )
+
+  const ejercicioOptions = useMemo(
+    () =>
+      ejerciciosFiltrados.map((ejercicio) => ({
+        value: String(ejercicio.id_ejercicio),
+        label: ejercicio.nombre,
+        description: ejercicio.tipo || undefined,
+      })),
+    [ejerciciosFiltrados]
+  )
+
+  const ejercicioOptionsEdicion = useMemo(
+    () =>
+      ejerciciosFiltradosEdicion.map((ejercicio) => ({
+        value: String(ejercicio.id_ejercicio),
+        label: ejercicio.nombre,
+        description: ejercicio.tipo || undefined,
+      })),
+    [ejerciciosFiltradosEdicion]
+  )
 
   const totalSeries = entrenamientoActivo?.series?.length ?? 0
   const seriesTrabajo =
@@ -297,41 +327,39 @@ export function EntrenamientoActivoCard() {
                   <div className="space-y-4 sm:space-y-5">
                     <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
                       <FieldGroup label="Musculo">
-                        <EditorialSelect
+                        <SearchableCombobox
                           value={editingForm.tipo}
-                          onChange={(event) =>
+                          onChange={(value) =>
                             setEditingForm((prev) => ({
                               ...prev,
-                              tipo: event.target.value,
+                              tipo: value,
                               id_ejercicio: "",
                             }))
                           }
-                          className="focus:border-[color:var(--module-entrenamientos)]"
-                        >
-                          <option value="">Selecciona un grupo muscular</option>
-                          {tiposMusculares.map((tipo) => (
-                            <option key={tipo} value={tipo}>
-                              {tipo}
-                            </option>
-                          ))}
-                        </EditorialSelect>
+                          options={tipoMuscularOptions}
+                          placeholder="Selecciona un grupo muscular"
+                          searchPlaceholder="Buscar grupo muscular..."
+                          emptyMessage="No hay grupos musculares"
+                          loading={loading && tipoMuscularOptions.length === 0}
+                          loadingMessage="Cargando grupos..."
+                        />
                       </FieldGroup>
 
                       <FieldGroup label="Ejercicio">
-                        <EditorialSelect
+                        <SearchableCombobox
                           value={editingForm.id_ejercicio}
-                          onChange={(event) =>
-                            setEditingForm((prev) => ({ ...prev, id_ejercicio: event.target.value }))
+                          onChange={(value) =>
+                            setEditingForm((prev) => ({ ...prev, id_ejercicio: value }))
                           }
-                          className="focus:border-[color:var(--module-entrenamientos)]"
-                        >
-                          <option value="">Mantener ejercicio actual</option>
-                          {ejerciciosFiltradosEdicion.map((ejercicio) => (
-                            <option key={ejercicio.id_ejercicio} value={ejercicio.id_ejercicio}>
-                              {ejercicio.nombre}
-                            </option>
-                          ))}
-                        </EditorialSelect>
+                          options={ejercicioOptionsEdicion}
+                          placeholder="Mantener ejercicio actual"
+                          searchPlaceholder="Buscar ejercicio..."
+                          emptyMessage="No hay ejercicios para este grupo"
+                          disabled={submitting || !editingForm.tipo}
+                          disabledMessage="Primero elige un grupo"
+                          loading={loading && ejercicioOptionsEdicion.length === 0}
+                          loadingMessage="Cargando ejercicios..."
+                        />
                       </FieldGroup>
                     </div>
 
@@ -469,43 +497,38 @@ export function EntrenamientoActivoCard() {
           <form onSubmit={handleCreate} className="space-y-4 sm:space-y-5">
             <div className="grid gap-4 sm:gap-5">
               <FieldGroup label="Grupo muscular">
-                <EditorialSelect
+                <SearchableCombobox
                   value={form.tipo}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     setForm((prev) => ({
                       ...prev,
-                      tipo: event.target.value,
+                      tipo: value,
                       id_ejercicio: "",
                     }))
                   }
+                  options={tipoMuscularOptions}
                   disabled={submitting || loading}
-                  className="focus:border-[color:var(--module-entrenamientos)]"
-                >
-                  <option value="">Selecciona un grupo muscular</option>
-                  {tiposMusculares.map((tipo) => (
-                    <option key={tipo} value={tipo}>
-                      {tipo}
-                    </option>
-                  ))}
-                </EditorialSelect>
+                  placeholder="Selecciona un grupo muscular"
+                  searchPlaceholder="Buscar grupo muscular..."
+                  emptyMessage="No hay grupos musculares"
+                  loading={loading && tipoMuscularOptions.length === 0}
+                  loadingMessage="Cargando grupos..."
+                />
               </FieldGroup>
 
               <FieldGroup label="Ejercicio" hint={form.tipo ? "Disponibles para el grupo" : ""}>
-                <EditorialSelect
+                <SearchableCombobox
                   value={form.id_ejercicio}
-                  onChange={(event) => setForm((prev) => ({ ...prev, id_ejercicio: event.target.value }))}
-                  disabled={submitting || ejerciciosFiltrados.length === 0}
-                  className="focus:border-[color:var(--module-entrenamientos)]"
-                >
-                  <option value="">
-                    {form.tipo ? "Selecciona un ejercicio" : "Primero elige un grupo"}
-                  </option>
-                  {ejerciciosFiltrados.map((ejercicio) => (
-                    <option key={ejercicio.id_ejercicio} value={ejercicio.id_ejercicio}>
-                      {ejercicio.nombre}
-                    </option>
-                  ))}
-                </EditorialSelect>
+                  onChange={(value) => setForm((prev) => ({ ...prev, id_ejercicio: value }))}
+                  options={ejercicioOptions}
+                  disabled={submitting || !form.tipo}
+                  disabledMessage="Primero elige un grupo"
+                  placeholder={form.tipo ? "Selecciona un ejercicio" : "Primero elige un grupo"}
+                  searchPlaceholder="Buscar ejercicio..."
+                  emptyMessage="No hay ejercicios para este grupo"
+                  loading={loading && ejercicioOptions.length === 0}
+                  loadingMessage="Cargando ejercicios..."
+                />
               </FieldGroup>
             </div>
 
