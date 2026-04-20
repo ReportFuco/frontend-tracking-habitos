@@ -98,7 +98,7 @@ export function RegisterView() {
                   onChange={(event) =>
                     setRegisterForm((prev) => ({ ...prev, nombre: event.target.value }))
                   }
-                  placeholder="Francisco"
+                  placeholder="Valentina"
                   className="h-13 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 shadow-none focus-visible:border-b-2 focus-visible:border-tertiary focus-visible:ring-0"
                 />
               </div>
@@ -111,7 +111,7 @@ export function RegisterView() {
                   onChange={(event) =>
                     setRegisterForm((prev) => ({ ...prev, apellido: event.target.value }))
                   }
-                  placeholder="Arancibia"
+                  placeholder="Morales"
                   className="h-13 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 shadow-none focus-visible:border-b-2 focus-visible:border-tertiary focus-visible:ring-0"
                 />
               </div>
@@ -126,7 +126,7 @@ export function RegisterView() {
                 onChange={(event) =>
                   setRegisterForm((prev) => ({ ...prev, username: event.target.value }))
                 }
-                placeholder="tu_usuario"
+                placeholder="tu nombre de usuario"
                 className="h-13 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 shadow-none focus-visible:border-b-2 focus-visible:border-tertiary focus-visible:ring-0"
               />
             </div>
