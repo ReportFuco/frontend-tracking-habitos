@@ -1,5 +1,6 @@
 "use client"
 
+import { ContextNav } from "@/components/shell/context-nav"
 import { PageHeader } from "@/components/shell/page-header"
 import { usePerfil } from "@/modules/usuario/hooks/usePerfil"
 import { PerfilDangerZone } from "./perfil-danger-zone"
@@ -18,16 +19,26 @@ export function PerfilView() {
   } = usePerfil()
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-5 sm:gap-6">
+      <ContextNav
+        crumbs={[
+          { label: "Inicio", href: "/app/dashboard" },
+          { label: "Perfil" },
+        ]}
+      />
+
       <PageHeader
         eyebrow="Cuenta"
         title="Perfil"
-        description="Tus datos personales, tu username y las acciones sobre tu cuenta."
+        description="Tu espacio personal para revisar identidad, actualizar datos y administrar el estado de tu cuenta."
       />
 
       {error ? (
-        <div className="rounded-lg bg-[color:var(--destructive)]/10 px-4 py-3 text-sm text-[color:var(--destructive)]">
-          {error}
+        <div className="rounded-[1.25rem] bg-[color:var(--surface-lowest)] px-4 py-4 shadow-[var(--shadow-airy)] sm:px-5">
+          <p className="font-label text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--destructive)]">
+            Aviso
+          </p>
+          <p className="mt-2 text-sm leading-6 text-[color:var(--destructive)]">{error}</p>
         </div>
       ) : null}
 

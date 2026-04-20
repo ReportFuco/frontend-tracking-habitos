@@ -2,8 +2,8 @@
 
 import { FormEvent, useEffect, useState } from "react"
 import { toast } from "sonner"
+import { FieldGroup, FormNote, FormPanel } from "@/components/forms/editorial-form"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { usuarioPerfilPatchSchema } from "@/modules/usuario/schemas/usuario.schema"
 import type { Usuario, UsuarioPerfilPatch } from "@/modules/usuario/types/usuario"
@@ -78,19 +78,34 @@ export function PerfilEditForm({ perfil, submitting, onSubmit }: PerfilEditFormP
   const handleReset = () => setForm(original)
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Datos personales</CardTitle>
-        <CardDescription>
-          Actualiza tus datos. Solo se envian los campos modificados.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1">
-            <label className="text-sm font-medium" htmlFor="perfil-username">
-              Username
-            </label>
+    <FormPanel
+      eyebrow="Edicion"
+      title="Datos personales"
+      description="Actualiza tu informacion base. Solo se envian los campos que realmente cambian."
+      aside={
+        <div className="space-y-4">
+          <div>
+            <p className="font-label text-[0.64rem] uppercase tracking-[0.2em] text-muted-foreground">
+              Metodo
+            </p>
+            <p className="mt-2 text-sm leading-6 text-foreground/80">
+              Este formulario funciona como una ficha editorial: corrige solo lo necesario y deja el resto intacto.
+            </p>
+          </div>
+          <div>
+            <p className="font-label text-[0.64rem] uppercase tracking-[0.2em] text-muted-foreground">
+              Consejo
+            </p>
+            <p className="mt-2 text-sm leading-6 text-foreground/80">
+              Mantener email y telefono al dia ayuda a recuperar acceso y ordenar futuras notificaciones.
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
+          <FieldGroup label="Username" hint="Visible en tu perfil">
             <Input
               id="perfil-username"
               value={form.username}
@@ -98,13 +113,11 @@ export function PerfilEditForm({ perfil, submitting, onSubmit }: PerfilEditFormP
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, username: event.target.value }))
               }
+              className="h-13 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 shadow-none focus-visible:border-b-2 focus-visible:border-primary focus-visible:ring-0"
             />
-          </div>
+          </FieldGroup>
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium" htmlFor="perfil-email">
-              Email
-            </label>
+          <FieldGroup label="Email" hint="Canal principal">
             <Input
               id="perfil-email"
               type="email"
@@ -112,13 +125,11 @@ export function PerfilEditForm({ perfil, submitting, onSubmit }: PerfilEditFormP
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, email: event.target.value }))
               }
+              className="h-13 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 shadow-none focus-visible:border-b-2 focus-visible:border-primary focus-visible:ring-0"
             />
-          </div>
+          </FieldGroup>
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium" htmlFor="perfil-nombre">
-              Nombre
-            </label>
+          <FieldGroup label="Nombre">
             <Input
               id="perfil-nombre"
               value={form.nombre}
@@ -126,13 +137,11 @@ export function PerfilEditForm({ perfil, submitting, onSubmit }: PerfilEditFormP
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, nombre: event.target.value }))
               }
+              className="h-13 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 shadow-none focus-visible:border-b-2 focus-visible:border-primary focus-visible:ring-0"
             />
-          </div>
+          </FieldGroup>
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium" htmlFor="perfil-apellido">
-              Apellido
-            </label>
+          <FieldGroup label="Apellido">
             <Input
               id="perfil-apellido"
               value={form.apellido}
@@ -140,39 +149,50 @@ export function PerfilEditForm({ perfil, submitting, onSubmit }: PerfilEditFormP
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, apellido: event.target.value }))
               }
+              className="h-13 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 shadow-none focus-visible:border-b-2 focus-visible:border-primary focus-visible:ring-0"
             />
-          </div>
+          </FieldGroup>
+        </div>
 
-          <div className="space-y-1 sm:col-span-2">
-            <label className="text-sm font-medium" htmlFor="perfil-telefono">
-              Telefono
-            </label>
-            <Input
-              id="perfil-telefono"
-              value={form.telefono}
-              maxLength={11}
-              inputMode="tel"
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, telefono: event.target.value }))
-              }
-            />
-          </div>
+        <FieldGroup label="Telefono" hint="Opcional">
+          <Input
+            id="perfil-telefono"
+            value={form.telefono}
+            maxLength={11}
+            inputMode="tel"
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, telefono: event.target.value }))
+            }
+            className="h-13 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 shadow-none focus-visible:border-b-2 focus-visible:border-primary focus-visible:ring-0"
+          />
+        </FieldGroup>
 
-          <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
-            <Button type="submit" disabled={submitting || !hasChanges}>
-              {submitting ? "Guardando..." : "Guardar cambios"}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={handleReset}
-              disabled={submitting || !hasChanges}
-            >
-              Descartar
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+        <FormNote>
+          {hasChanges
+            ? "Hay cambios listos para guardar. Si prefieres volver a la version anterior, puedes descartarlos antes de enviar."
+            : "Todavia no hay cambios pendientes. Cuando edites un campo, esta ficha preparara solo el diferencial para la API."}
+        </FormNote>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            type="submit"
+            size="lg"
+            className="h-12 rounded-xl px-6 text-sm font-semibold"
+            disabled={submitting || !hasChanges}
+          >
+            {submitting ? "Guardando..." : "Guardar cambios"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-12 rounded-xl px-4 text-sm"
+            onClick={handleReset}
+            disabled={submitting || !hasChanges}
+          >
+            Descartar
+          </Button>
+        </div>
+      </form>
+    </FormPanel>
   )
 }
