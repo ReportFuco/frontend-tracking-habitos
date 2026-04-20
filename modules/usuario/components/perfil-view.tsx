@@ -3,20 +3,11 @@
 import { ContextNav } from "@/components/shell/context-nav"
 import { PageHeader } from "@/components/shell/page-header"
 import { usePerfil } from "@/modules/usuario/hooks/usePerfil"
-import { PerfilDangerZone } from "./perfil-danger-zone"
 import { PerfilEditForm } from "./perfil-edit-form"
 import { PerfilSummaryCard } from "./perfil-summary-card"
 
 export function PerfilView() {
-  const {
-    perfil,
-    loading,
-    submitting,
-    error,
-    actualizarPerfil,
-    desactivarCuenta,
-    eliminarCuenta,
-  } = usePerfil()
+  const { perfil, loading, submitting, error, actualizarPerfil } = usePerfil()
 
   return (
     <div className="flex flex-col gap-5 sm:gap-6">
@@ -50,12 +41,6 @@ export function PerfilView() {
             perfil={perfil}
             submitting={submitting}
             onSubmit={actualizarPerfil}
-          />
-          <PerfilDangerZone
-            perfil={perfil}
-            submitting={submitting}
-            onDesactivar={desactivarCuenta}
-            onEliminar={eliminarCuenta}
           />
         </>
       ) : null}

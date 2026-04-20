@@ -138,14 +138,23 @@ export function MovimientoFormCard() {
     >
       <form onSubmit={handleCreateMovimiento} className="space-y-4 sm:space-y-5">
         <FieldGroup label="Tipo de movimiento">
-          <div className="grid grid-cols-2 gap-2 rounded-[1rem] bg-[color:var(--surface-variant)] p-1">
+          <div className="relative grid grid-cols-2 gap-2 rounded-[1rem] bg-[color:var(--surface-variant)] p-1">
+            <div
+              aria-hidden
+              className={cn(
+                "pointer-events-none absolute inset-y-1 w-[calc(50%-0.25rem)] rounded-[0.75rem] shadow-[var(--shadow-airy)] transition-all duration-300 ease-out",
+                esIngreso
+                  ? "translate-x-[calc(100%+0.5rem)] bg-[color:var(--secondary)]"
+                  : "translate-x-0 bg-[color:var(--tertiary)]"
+              )}
+            />
             {tipoMovimientoOpts.map((opt) => {
               const Icon = opt.icon
               const active = form.tipo_movimiento === opt.value
-              const toneClass =
+              const activeTextClass =
                 opt.tone === "secondary"
-                  ? "bg-[color:var(--secondary)] text-[color:var(--secondary-foreground)]"
-                  : "bg-[color:var(--tertiary)] text-[color:var(--tertiary-foreground)]"
+                  ? "text-[color:var(--secondary-foreground)]"
+                  : "text-[color:var(--tertiary-foreground)]"
 
               return (
                 <button
@@ -155,13 +164,11 @@ export function MovimientoFormCard() {
                     setForm((prev) => ({ ...prev, tipo_movimiento: opt.value }))
                   }
                   className={cn(
-                    "flex h-11 items-center justify-center gap-2 rounded-[0.75rem] text-sm font-medium transition",
-                    active
-                      ? cn("shadow-[var(--shadow-airy)]", toneClass)
-                      : "text-foreground/70 hover:text-foreground"
+                    "relative z-10 flex h-11 items-center justify-center gap-2 rounded-[0.75rem] text-sm font-medium transition-all duration-300 ease-out",
+                    active ? activeTextClass : "text-foreground/70 hover:text-foreground"
                   )}
                 >
-                  <Icon className="size-4" />
+                  <Icon className={cn("size-4 transition-transform duration-300", active && "scale-105")} />
                   {opt.label}
                 </button>
               )
@@ -220,7 +227,14 @@ export function MovimientoFormCard() {
 
         {esIngreso ? null : (
           <FieldGroup label="Tipo de gasto" hint="Para clasificar">
-            <div className="grid grid-cols-2 gap-2 rounded-[1rem] bg-[color:var(--surface-variant)] p-1">
+            <div className="relative grid grid-cols-2 gap-2 rounded-[1rem] bg-[color:var(--surface-variant)] p-1">
+              <div
+                aria-hidden
+                className={cn(
+                  "pointer-events-none absolute inset-y-1 w-[calc(50%-0.25rem)] rounded-[0.75rem] bg-[color:var(--surface-lowest)] shadow-[var(--shadow-airy)] transition-all duration-300 ease-out",
+                  form.tipo_gasto === "fijo" ? "translate-x-[calc(100%+0.5rem)]" : "translate-x-0"
+                )}
+              />
               {tipoGastoOpts.map((opt) => {
                 const Icon = opt.icon
                 const active = form.tipo_gasto === opt.value
@@ -233,13 +247,11 @@ export function MovimientoFormCard() {
                       setForm((prev) => ({ ...prev, tipo_gasto: opt.value }))
                     }
                     className={cn(
-                      "flex h-10 items-center justify-center gap-2 rounded-[0.75rem] text-sm font-medium transition",
-                      active
-                        ? "bg-[color:var(--surface-lowest)] text-foreground shadow-[var(--shadow-airy)]"
-                        : "text-muted-foreground hover:text-foreground"
+                      "relative z-10 flex h-10 items-center justify-center gap-2 rounded-[0.75rem] text-sm font-medium transition-all duration-300 ease-out",
+                      active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    <Icon className="size-3.5" />
+                    <Icon className={cn("size-3.5 transition-transform duration-300", active && "scale-105")} />
                     {opt.label}
                   </button>
                 )
@@ -269,11 +281,11 @@ export function MovimientoFormCard() {
           </div>
         </FieldGroup>
 
-        <FormSubmitBar>
+        <FormSubmitBar className="lg:flex lg:justify-end lg:pr-6 lg:pb-5 lg:pt-4">
           <Button
             type="submit"
             size="lg"
-            className="h-13 w-full rounded-xl text-sm font-semibold"
+            className="h-13 w-full rounded-xl text-sm font-semibold lg:h-12 lg:w-auto lg:min-w-[13rem] lg:px-6"
             disabled={submittingMovimiento || loadingCatalogos}
           >
             {submittingMovimiento

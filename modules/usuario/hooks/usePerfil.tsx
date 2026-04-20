@@ -40,36 +40,6 @@ export const usePerfil = () => {
     }
   }
 
-  const desactivarCuenta = async (idUsuario: number) => {
-    setSubmitting(true)
-    setError(null)
-    try {
-      await UsuariosAPI.desactivar(idUsuario)
-      return { ok: true as const }
-    } catch (err) {
-      const message = getFriendlyErrorMessage(err)
-      setError(message)
-      return { ok: false as const, message }
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const eliminarCuenta = async (idUsuario: number) => {
-    setSubmitting(true)
-    setError(null)
-    try {
-      await UsuariosAPI.eliminarPermanente(idUsuario)
-      return { ok: true as const }
-    } catch (err) {
-      const message = getFriendlyErrorMessage(err)
-      setError(message)
-      return { ok: false as const, message }
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   useEffect(() => {
     const timer = setTimeout(() => {
       void fetchPerfil()
@@ -84,7 +54,5 @@ export const usePerfil = () => {
     error,
     refetch: fetchPerfil,
     actualizarPerfil,
-    desactivarCuenta,
-    eliminarCuenta,
   }
 }
