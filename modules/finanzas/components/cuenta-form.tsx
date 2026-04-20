@@ -157,6 +157,7 @@ export function CuentaFormCard() {
               loading={loadingCatalogos && bancoOptions.length === 0}
               loadingMessage="Cargando bancos..."
               leadingIcon={<Landmark className="size-4" />}
+              compactOnMobile
               required
             />
           </FieldGroup>
@@ -177,6 +178,7 @@ export function CuentaFormCard() {
               loading={loadingProductos}
               loadingMessage="Cargando productos..."
               leadingIcon={<Package className="size-4" />}
+              compactOnMobile
               required
             />
           </FieldGroup>

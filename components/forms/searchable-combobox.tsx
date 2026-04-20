@@ -34,6 +34,7 @@ interface SearchableComboboxProps {
   required?: boolean
   id?: string
   searchPlaceholder?: string
+  compactOnMobile?: boolean
 }
 
 export function SearchableCombobox({
@@ -51,6 +52,7 @@ export function SearchableCombobox({
   className,
   id,
   searchPlaceholder = "Buscar...",
+  compactOnMobile = false,
 }: SearchableComboboxProps) {
   const generatedId = useId()
   const triggerId = id ?? generatedId
@@ -163,7 +165,8 @@ export function SearchableCombobox({
           setHighlighted(0)
         }}
         className={cn(
-          "flex h-13 w-full items-center gap-3 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 text-left text-sm text-foreground shadow-none outline-none transition",
+          "flex w-full items-center gap-3 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] text-left text-sm text-foreground shadow-none outline-none transition",
+          compactOnMobile ? "h-12 px-3 sm:h-13 sm:px-4" : "h-13 px-4",
           "focus-visible:border-b-2 focus-visible:border-primary",
           disabledState && "cursor-not-allowed opacity-70"
         )}
@@ -181,7 +184,12 @@ export function SearchableCombobox({
                 {selected.label}
               </span>
               {selected.description ? (
-                <span className="truncate text-xs text-muted-foreground">
+                <span
+                  className={cn(
+                    "truncate text-xs text-muted-foreground",
+                    compactOnMobile && "hidden sm:block"
+                  )}
+                >
                   {selected.description}
                 </span>
               ) : null}
@@ -242,7 +250,10 @@ export function SearchableCombobox({
               }}
               onKeyDown={handleKeyDown}
               placeholder={searchPlaceholder}
-              className="h-9 flex-1 border-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              className={cn(
+                "flex-1 border-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none",
+                compactOnMobile ? "h-8 sm:h-9" : "h-9"
+              )}
             />
             {query ? (
               <button
@@ -263,7 +274,10 @@ export function SearchableCombobox({
             <ul
               ref={listRef}
               role="listbox"
-              className="max-h-64 overflow-y-auto py-1.5"
+              className={cn(
+                "overflow-y-auto py-1.5",
+                compactOnMobile ? "max-h-52 sm:max-h-64" : "max-h-64"
+              )}
             >
               {filtered.map((option, index) => {
                 const isSelected = option.value === value
@@ -276,7 +290,8 @@ export function SearchableCombobox({
                       onMouseEnter={() => setHighlighted(index)}
                       onClick={() => handleSelect(option)}
                       className={cn(
-                        "flex w-full items-start gap-3 px-4 py-2.5 text-left transition",
+                        "flex w-full items-start gap-3 text-left transition",
+                        compactOnMobile ? "px-3 py-2 sm:px-4 sm:py-2.5" : "px-4 py-2.5",
                         isHighlighted && "bg-primary/8",
                         isSelected && "bg-primary/12"
                       )}
@@ -286,7 +301,12 @@ export function SearchableCombobox({
                           {option.label}
                         </span>
                         {option.description ? (
-                          <span className="truncate text-xs text-muted-foreground">
+                          <span
+                            className={cn(
+                              "truncate text-xs text-muted-foreground",
+                              compactOnMobile && "hidden sm:block"
+                            )}
+                          >
                             {option.description}
                           </span>
                         ) : null}
