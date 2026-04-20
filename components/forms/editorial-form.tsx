@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { ReactNode } from "react"
-import { cn } from "@/lib/utils"
+import { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 export function FormPanel({
   eyebrow,
@@ -11,27 +11,32 @@ export function FormPanel({
   children,
   accent = "primary",
 }: {
-  eyebrow?: string
-  title?: string
-  description?: string
-  aside?: ReactNode
-  children: ReactNode
-  accent?: "primary" | "tertiary"
+  eyebrow?: string;
+  title?: string;
+  description?: string;
+  aside?: ReactNode;
+  children: ReactNode;
+  accent?: "primary" | "tertiary";
 }) {
   const accentClass =
     accent === "tertiary"
       ? "from-tertiary/12 via-tertiary/6 to-transparent"
-      : "from-primary/12 via-primary/6 to-transparent"
+      : "from-primary/12 via-primary/6 to-transparent";
   const accentColor =
-    accent === "tertiary" ? "var(--module-entrenamientos)" : "var(--primary)"
+    accent === "tertiary" ? "var(--module-entrenamientos)" : "var(--primary)";
 
-  const hasFullHeader = Boolean(title || description)
-  const showCompactEyebrow = !hasFullHeader && Boolean(eyebrow)
+  const hasFullHeader = Boolean(title || description);
+  const showCompactEyebrow = !hasFullHeader && Boolean(eyebrow);
 
   return (
-    <section className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] shadow-[var(--shadow-airy-lg)] sm:rounded-[1.75rem]">
+    <section className="rounded-[1.5rem] bg-surface-lowest shadow-(--shadow-airy-lg) sm:rounded-[1.75rem]">
       {hasFullHeader ? (
-        <div className={cn("rounded-t-[1.5rem] bg-gradient-to-br px-4 py-5 sm:rounded-t-[1.75rem] sm:px-8 sm:py-6", accentClass)}>
+        <div
+          className={cn(
+            "rounded-t-[1.5rem] bg-linear-to-br px-4 py-5 sm:rounded-t-[1.75rem] sm:px-8 sm:py-6",
+            accentClass,
+          )}
+        >
           <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-6">
             <div className="space-y-2 sm:space-y-3">
               {eyebrow ? (
@@ -45,7 +50,9 @@ export function FormPanel({
                 </h2>
               ) : null}
               {description ? (
-                <p className="max-w-xl text-sm leading-6 text-muted-foreground">{description}</p>
+                <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+                  {description}
+                </p>
               ) : null}
             </div>
             {aside ? (
@@ -60,15 +67,13 @@ export function FormPanel({
       <div
         className={cn(
           "px-4 py-5 sm:px-8 sm:py-7",
-          showCompactEyebrow || aside ? "pt-4 sm:pt-6" : null
+          showCompactEyebrow || aside ? "pt-4 sm:pt-6" : null,
         )}
       >
         {showCompactEyebrow || aside ? (
           <div className="mb-5 flex items-center justify-between gap-3 sm:mb-6">
             {showCompactEyebrow ? (
-              <span
-                className="inline-flex items-center gap-1.5 font-label text-[0.62rem] uppercase tracking-[0.2em] text-muted-foreground sm:text-[0.68rem] sm:tracking-[0.22em]"
-              >
+              <span className="inline-flex items-center gap-1.5 font-label text-[0.62rem] uppercase tracking-[0.2em] text-muted-foreground sm:text-[0.68rem] sm:tracking-[0.22em]">
                 <span
                   aria-hidden
                   className="size-1.5 rounded-full"
@@ -79,16 +84,14 @@ export function FormPanel({
             ) : (
               <span />
             )}
-            {aside ? (
-              <div className="hidden lg:block">{aside}</div>
-            ) : null}
+            {aside ? <div className="hidden lg:block">{aside}</div> : null}
           </div>
         ) : null}
 
         {children}
       </div>
     </section>
-  )
+  );
 }
 
 export function FieldGroup({
@@ -96,9 +99,9 @@ export function FieldGroup({
   hint,
   children,
 }: {
-  label: string
-  hint?: string
-  children: ReactNode
+  label: string;
+  hint?: string;
+  children: ReactNode;
 }) {
   return (
     <div className="space-y-2 sm:space-y-2.5">
@@ -106,11 +109,15 @@ export function FieldGroup({
         <label className="font-label text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground sm:text-[11px] sm:tracking-[0.24em]">
           {label}
         </label>
-        {hint ? <span className="text-[11px] text-muted-foreground sm:text-xs">{hint}</span> : null}
+        {hint ? (
+          <span className="text-[11px] text-muted-foreground sm:text-xs">
+            {hint}
+          </span>
+        ) : null}
       </div>
       {children}
     </div>
-  )
+  );
 }
 
 export function EditorialSelect({
@@ -120,37 +127,37 @@ export function EditorialSelect({
   return (
     <select
       className={cn(
-        "h-13 w-full rounded-[1rem] border-0 bg-[color:var(--surface-variant)] px-4 text-sm text-foreground shadow-none outline-none transition focus:border-b-2 focus:border-primary",
-        className
+        "h-13 w-full rounded-3xl border-0 bg-surface-variant px-4 text-sm text-foreground shadow-none outline-none transition focus:border-b-2 focus:border-primary",
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 export function FormNote({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-[1.5rem] bg-[color:var(--surface-low)] p-4">
+    <div className="rounded-[1.5rem] bg-surface-low p-4">
       <p className="text-sm leading-6 text-muted-foreground">{children}</p>
     </div>
-  )
+  );
 }
 
 export function FormSubmitBar({
   children,
   className,
 }: {
-  children: ReactNode
-  className?: string
+  children: ReactNode;
+  className?: string;
 }) {
   return (
     <div
       className={cn(
-        "sticky bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] z-10 -mx-4 mt-5 border-t border-[color:var(--border)]/25 bg-[color:var(--surface-lowest)]/92 px-4 py-3 backdrop-blur-md sm:-mx-8 sm:px-8 sm:py-4 lg:static lg:bottom-auto lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none",
-        className
+        "sticky bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] z-10 -mx-4 mt-5 border-t border-(--border)/25 px-4 py-3 backdrop-blur-md sm:-mx-8 sm:px-8 sm:py-4 lg:static lg:bottom-auto lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none",
+        className,
       )}
     >
       {children}
     </div>
-  )
+  );
 }

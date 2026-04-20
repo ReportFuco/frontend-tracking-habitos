@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   KeyboardEvent,
@@ -8,33 +8,33 @@ import {
   useMemo,
   useRef,
   useState,
-} from "react"
-import { Check, ChevronDown, Search, X } from "lucide-react"
-import { cn } from "@/lib/utils"
+} from "react";
+import { Check, ChevronDown, Search, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface ComboboxOption {
-  value: string
-  label: string
-  description?: string | null
+  value: string;
+  label: string;
+  description?: string | null;
 }
 
 interface SearchableComboboxProps {
-  value: string
-  onChange: (value: string) => void
-  options: ComboboxOption[]
-  placeholder?: string
-  emptyMessage?: string
-  disabled?: boolean
-  disabledMessage?: string
-  loading?: boolean
-  loadingMessage?: string
-  allowClear?: boolean
-  leadingIcon?: ReactNode
-  className?: string
-  required?: boolean
-  id?: string
-  searchPlaceholder?: string
-  compactOnMobile?: boolean
+  value: string;
+  onChange: (value: string) => void;
+  options: ComboboxOption[];
+  placeholder?: string;
+  emptyMessage?: string;
+  disabled?: boolean;
+  disabledMessage?: string;
+  loading?: boolean;
+  loadingMessage?: string;
+  allowClear?: boolean;
+  leadingIcon?: ReactNode;
+  className?: string;
+  required?: boolean;
+  id?: string;
+  searchPlaceholder?: string;
+  compactOnMobile?: boolean;
 }
 
 export function SearchableCombobox({
@@ -54,98 +54,104 @@ export function SearchableCombobox({
   searchPlaceholder = "Buscar...",
   compactOnMobile = false,
 }: SearchableComboboxProps) {
-  const generatedId = useId()
-  const triggerId = id ?? generatedId
-  const [open, setOpen] = useState(false)
-  const [query, setQuery] = useState("")
-  const [highlighted, setHighlighted] = useState(0)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const searchInputRef = useRef<HTMLInputElement>(null)
-  const listRef = useRef<HTMLUListElement>(null)
+  const generatedId = useId();
+  const triggerId = id ?? generatedId;
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [highlighted, setHighlighted] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
   const selected = useMemo(
     () => options.find((option) => option.value === value) ?? null,
-    [options, value]
-  )
+    [options, value],
+  );
 
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase("es")
+    const normalized = query.trim().toLocaleLowerCase("es");
 
-    if (!normalized) return options
+    if (!normalized) return options;
 
     return options.filter((option) => {
-      const haystack = `${option.label} ${option.description ?? ""}`.toLocaleLowerCase("es")
-      return haystack.includes(normalized)
-    })
-  }, [options, query])
-  const highlightedIndex = Math.min(highlighted, Math.max(filtered.length - 1, 0))
+      const haystack =
+        `${option.label} ${option.description ?? ""}`.toLocaleLowerCase("es");
+      return haystack.includes(normalized);
+    });
+  }, [options, query]);
+  const highlightedIndex = Math.min(
+    highlighted,
+    Math.max(filtered.length - 1, 0),
+  );
 
   const closeCombobox = () => {
-    setOpen(false)
-    setQuery("")
-    setHighlighted(0)
-  }
+    setOpen(false);
+    setQuery("");
+    setHighlighted(0);
+  };
 
   useEffect(() => {
-    if (!open) return
+    if (!open) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (!containerRef.current) return
+      if (!containerRef.current) return;
       if (!containerRef.current.contains(event.target as Node)) {
-        closeCombobox()
+        closeCombobox();
       }
-    }
+    };
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [open])
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
 
   useEffect(() => {
-    if (!open) return
+    if (!open) return;
 
     const frame = requestAnimationFrame(() => {
-      searchInputRef.current?.focus()
-    })
-    return () => cancelAnimationFrame(frame)
-  }, [open])
+      searchInputRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
 
-  const disabledState = disabled || loading
+  const disabledState = disabled || loading;
 
   const handleSelect = (option: ComboboxOption) => {
-    onChange(option.value)
-    closeCombobox()
-  }
+    onChange(option.value);
+    closeCombobox();
+  };
 
   const handleClear = (event: React.MouseEvent) => {
-    event.stopPropagation()
-    onChange("")
-  }
+    event.stopPropagation();
+    onChange("");
+  };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "ArrowDown") {
-      event.preventDefault()
-      setHighlighted((prev) => Math.min(prev + 1, Math.max(filtered.length - 1, 0)))
-      return
+      event.preventDefault();
+      setHighlighted((prev) =>
+        Math.min(prev + 1, Math.max(filtered.length - 1, 0)),
+      );
+      return;
     }
 
     if (event.key === "ArrowUp") {
-      event.preventDefault()
-      setHighlighted((prev) => Math.max(prev - 1, 0))
-      return
+      event.preventDefault();
+      setHighlighted((prev) => Math.max(prev - 1, 0));
+      return;
     }
 
     if (event.key === "Enter") {
-      event.preventDefault()
-      const option = filtered[highlightedIndex]
-      if (option) handleSelect(option)
-      return
+      event.preventDefault();
+      const option = filtered[highlightedIndex];
+      if (option) handleSelect(option);
+      return;
     }
 
     if (event.key === "Escape") {
-      event.preventDefault()
-      closeCombobox()
+      event.preventDefault();
+      closeCombobox();
     }
-  }
+  };
 
   return (
     <div ref={containerRef} className={cn("relative w-full", className)}>
@@ -156,19 +162,19 @@ export function SearchableCombobox({
         aria-expanded={open}
         disabled={disabledState}
         onClick={() => {
-          if (disabledState) return
+          if (disabledState) return;
           if (open) {
-            closeCombobox()
-            return
+            closeCombobox();
+            return;
           }
-          setOpen(true)
-          setHighlighted(0)
+          setOpen(true);
+          setHighlighted(0);
         }}
         className={cn(
-          "flex w-full items-center gap-3 rounded-[1rem] border-0 bg-[color:var(--surface-variant)] text-left text-sm text-foreground shadow-none outline-none transition",
+          "flex w-full items-center gap-3 rounded-3xl border-0 bg-surface-variant text-left text-sm text-foreground shadow-none outline-none transition",
           compactOnMobile ? "h-12 px-3 sm:h-13 sm:px-4" : "h-13 px-4",
           "focus-visible:border-b-2 focus-visible:border-primary",
-          disabledState && "cursor-not-allowed opacity-70"
+          disabledState && "cursor-not-allowed opacity-70",
         )}
       >
         {leadingIcon ? (
@@ -187,7 +193,7 @@ export function SearchableCombobox({
                 <span
                   className={cn(
                     "truncate text-xs text-muted-foreground",
-                    compactOnMobile && "hidden sm:block"
+                    compactOnMobile && "hidden sm:block",
                   )}
                 >
                   {selected.description}
@@ -213,8 +219,8 @@ export function SearchableCombobox({
             onClick={handleClear}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault()
-                onChange("")
+                event.preventDefault();
+                onChange("");
               }
             }}
             className="flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-background/80 hover:text-foreground"
@@ -226,7 +232,7 @@ export function SearchableCombobox({
         <ChevronDown
           className={cn(
             "size-4 shrink-0 text-muted-foreground transition-transform",
-            open && "rotate-180"
+            open && "rotate-180",
           )}
         />
       </button>
@@ -234,25 +240,25 @@ export function SearchableCombobox({
       {open ? (
         <div
           className={cn(
-            "absolute z-50 mt-2 w-full overflow-hidden rounded-[1.25rem] bg-[color:var(--surface-lowest)] shadow-[var(--shadow-airy-lg)]",
-            "ring-1 ring-black/5"
+            "absolute z-50 mt-2 w-full overflow-hidden rounded-4xl bg-surface-lowest shadow-(--shadow-airy-lg)",
+            "ring-1 ring-black/5",
           )}
           role="dialog"
         >
-          <div className="flex items-center gap-2 border-b border-[color:var(--border)]/40 bg-[color:var(--surface-low)] px-3 py-2.5">
+          <div className="flex items-center gap-2 border-b border-(--border)/40 bg-surface-low px-3 py-2.5">
             <Search className="size-4 text-muted-foreground" />
             <input
               ref={searchInputRef}
               value={query}
               onChange={(event) => {
-                setQuery(event.target.value)
-                setHighlighted(0)
+                setQuery(event.target.value);
+                setHighlighted(0);
               }}
               onKeyDown={handleKeyDown}
               placeholder={searchPlaceholder}
               className={cn(
                 "flex-1 border-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none",
-                compactOnMobile ? "h-8 sm:h-9" : "h-9"
+                compactOnMobile ? "h-8 sm:h-9" : "h-9",
               )}
             />
             {query ? (
@@ -276,24 +282,30 @@ export function SearchableCombobox({
               role="listbox"
               className={cn(
                 "overflow-y-auto py-1.5",
-                compactOnMobile ? "max-h-52 sm:max-h-64" : "max-h-64"
+                compactOnMobile ? "max-h-52 sm:max-h-64" : "max-h-64",
               )}
             >
               {filtered.map((option, index) => {
-                const isSelected = option.value === value
-                const isHighlighted = index === highlightedIndex
+                const isSelected = option.value === value;
+                const isHighlighted = index === highlightedIndex;
 
                 return (
-                  <li key={option.value} role="option" aria-selected={isSelected}>
+                  <li
+                    key={option.value}
+                    role="option"
+                    aria-selected={isSelected}
+                  >
                     <button
                       type="button"
                       onMouseEnter={() => setHighlighted(index)}
                       onClick={() => handleSelect(option)}
                       className={cn(
                         "flex w-full items-start gap-3 text-left transition",
-                        compactOnMobile ? "px-3 py-2 sm:px-4 sm:py-2.5" : "px-4 py-2.5",
+                        compactOnMobile
+                          ? "px-3 py-2 sm:px-4 sm:py-2.5"
+                          : "px-4 py-2.5",
                         isHighlighted && "bg-primary/8",
-                        isSelected && "bg-primary/12"
+                        isSelected && "bg-primary/12",
                       )}
                     >
                       <span className="flex min-w-0 flex-1 flex-col">
@@ -304,7 +316,7 @@ export function SearchableCombobox({
                           <span
                             className={cn(
                               "truncate text-xs text-muted-foreground",
-                              compactOnMobile && "hidden sm:block"
+                              compactOnMobile && "hidden sm:block",
                             )}
                           >
                             {option.description}
@@ -316,12 +328,12 @@ export function SearchableCombobox({
                       ) : null}
                     </button>
                   </li>
-                )
+                );
               })}
             </ul>
           )}
         </div>
       ) : null}
     </div>
-  )
+  );
 }
