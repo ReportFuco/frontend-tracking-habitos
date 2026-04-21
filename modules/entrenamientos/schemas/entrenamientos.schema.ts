@@ -26,16 +26,19 @@ export const entrenoFuerzaCreateSchema = z.object({
 })
 
 export const serieFuerzaCreateSchema = z.object({
-  id_ejercicio: z.number().int().positive(),
+  id_ejercicio: z.number().int().positive("Selecciona un ejercicio"),
   es_calentamiento: z.boolean(),
-  cantidad_peso: z.number().nonnegative("El peso no puede ser negativo"),
-  repeticiones: z.number().int().positive("Las repeticiones deben ser mayor a 0"),
+  cantidad_peso: z.number().nonnegative("El peso no puede ser negativo").finite("El peso no es valido"),
+  repeticiones: z
+    .number()
+    .int("Las repeticiones deben ser un numero entero")
+    .positive("Las repeticiones deben ser mayor a 0"),
 })
 
 export const serieFuerzaPatchSchema = z.object({
   id_ejercicio: z.number().int().positive().optional().nullable(),
   es_calentamiento: z.boolean().optional().nullable(),
-  cantidad_peso: z.number().nonnegative().optional().nullable(),
+  cantidad_peso: z.number().nonnegative().finite().optional().nullable(),
   repeticiones: z.number().int().positive().optional().nullable(),
 })
 

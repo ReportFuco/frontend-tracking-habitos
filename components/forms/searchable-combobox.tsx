@@ -257,7 +257,7 @@ export function SearchableCombobox({
               onKeyDown={handleKeyDown}
               placeholder={searchPlaceholder}
               className={cn(
-                "flex-1 border-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none",
+                "flex-1 border-0 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none sm:text-sm",
                 compactOnMobile ? "h-8 sm:h-9" : "h-9",
               )}
             />
