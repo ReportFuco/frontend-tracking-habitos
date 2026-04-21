@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { LogOut, Menu } from "lucide-react"
+import { ArrowLeft, LogOut, Menu, Shield } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { clearStoredSession } from "@/lib/auth-session"
@@ -68,17 +68,20 @@ export function Topbar({
         </Link>
       </div>
 
-      <div className="ml-auto flex items-center gap-3">
+      <div className="ml-auto flex items-center gap-2 sm:gap-3">
+        {variant === "admin" ? (
+          <Link
+            href="/app/dashboard"
+            aria-label="Volver a la app"
+            title="Volver a la app"
+            className="flex size-9 items-center justify-center rounded-full bg-[color:var(--surface-low)] text-foreground transition hover:bg-[color:var(--surface-variant)]"
+          >
+            <ArrowLeft className="size-4" />
+          </Link>
+        ) : null}
+
         {profile ? (
           <div className="hidden items-center gap-3 sm:flex">
-            {variant === "user" && profile.is_superuser ? (
-              <Link
-                href="/administrador"
-                className="rounded-full bg-[color:var(--surface-low)] px-3 py-2 font-[family-name:var(--font-label)] text-[0.7rem] uppercase tracking-wider text-foreground transition hover:bg-[color:var(--surface-variant)]"
-              >
-                Panel admin
-              </Link>
-            ) : null}
             <div className="text-right">
               <p className="text-sm font-medium leading-tight">
                 {profile.nombre} {profile.apellido}
@@ -94,6 +97,17 @@ export function Topbar({
               {initials}
             </span>
           </div>
+        ) : null}
+
+        {profile?.is_superuser && variant === "user" ? (
+          <Link
+            href="/administrador"
+            aria-label="Panel de administracion"
+            title="Panel de administracion"
+            className="flex size-9 items-center justify-center rounded-full bg-[color:var(--tertiary-container)] text-[color:var(--tertiary)] transition hover:opacity-80"
+          >
+            <Shield className="size-4" />
+          </Link>
         ) : null}
 
         <Button

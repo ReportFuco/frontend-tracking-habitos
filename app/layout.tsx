@@ -36,6 +36,7 @@ export default function RootLayout({
     <html lang="es">
       <body
         className={`${manrope.variable} ${inter.variable} ${geistMono.variable} font-sans antialiased`}
+        suppressHydrationWarning
       >
         {children}
         <AppToaster />
