@@ -7,31 +7,42 @@ import type { NavItem } from "./nav-items";
 
 interface MobileBottomNavProps {
   items: NavItem[];
+  preferredOrder?: string[];
+  className?: string;
 }
 
-export function MobileBottomNav({ items }: MobileBottomNavProps) {
+const defaultPreferredOrder = [
+  "/app/dashboard",
+  "/app/finanzas",
+  "/app/entrenamientos",
+  "/app/nutricion",
+  "/app/compras",
+];
+
+function isItemActive(item: NavItem, pathname: string): boolean {
+  if (item.exactMatch) return pathname === item.href;
+  const prefix = item.activePrefix ?? item.href;
+  return pathname === item.href || pathname.startsWith(prefix + "/");
+}
+
+export function MobileBottomNav({ items, preferredOrder, className }: MobileBottomNavProps) {
   const pathname = usePathname() ?? "";
-  const preferredOrder = [
-    "/app/dashboard",
-    "/app/finanzas",
-    "/app/entrenamientos",
-    "/app/nutricion",
-    "/app/compras",
-  ];
-  const visibleItems = preferredOrder
+  const order = preferredOrder ?? defaultPreferredOrder;
+  const visibleItems = order
     .map((href) => items.find((item) => item.href === href))
     .filter((item): item is NavItem => Boolean(item));
-  const activeIndex = visibleItems.findIndex((item) =>
-    item.href === "/app/dashboard"
-      ? pathname === item.href
-      : pathname === item.href || pathname.startsWith(`${item.href}/`),
-  );
+  const activeIndex = visibleItems.findIndex((item) => isItemActive(item, pathname));
   const normalizedActiveIndex = activeIndex >= 0 ? activeIndex : 0;
   const indicatorWidth =
     visibleItems.length > 0 ? `${100 / visibleItems.length}%` : "0%";
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-(--border)/30 bg-background/96 px-2 pb-[calc(env(safe-area-inset-bottom)+0.55rem)] pt-2 sm:bg-background/88 sm:backdrop-blur-xl lg:hidden">
+    <nav
+      className={cn(
+        "fixed inset-x-0 bottom-0 z-40 border-t border-(--border)/30 bg-background/96 px-2 pb-[calc(env(safe-area-inset-bottom)+0.55rem)] pt-2 sm:bg-background/88 sm:backdrop-blur-xl lg:hidden",
+        className,
+      )}
+    >
       <div className="relative mx-auto max-w-md">
         <div
           aria-hidden
@@ -48,11 +59,7 @@ export function MobileBottomNav({ items }: MobileBottomNavProps) {
           }}
         >
           {visibleItems.map((item) => {
-            const isActive =
-              item.href === "/app/dashboard"
-                ? pathname === item.href
-                : pathname === item.href ||
-                  pathname.startsWith(`${item.href}/`);
+            const isActive = isItemActive(item, pathname);
             const Icon = item.icon;
 
             return (

@@ -21,6 +21,8 @@ export interface NavItem {
   href: string
   icon: LucideIcon
   moduleColor?: string
+  activePrefix?: string
+  exactMatch?: boolean
 }
 
 export interface NavSection {
@@ -101,6 +103,15 @@ export const adminNavSections: NavSection[] = [
     title: "Entrenamientos maestros",
     items: [
       { label: "Gimnasios", href: "/administrador/entrenamientos/gimnasios", icon: Dumbbell },
+      { label: "Ejercicios", href: "/administrador/entrenamientos/ejercicios", icon: Dumbbell },
     ],
   },
+]
+
+export const adminBottomNavItems: NavItem[] = [
+  { label: "Resumen", href: "/administrador", icon: Gauge, exactMatch: true },
+  { label: "Usuarios", href: "/administrador/usuarios", icon: Users },
+  { label: "Finanzas", href: "/administrador/finanzas/bancos", icon: Building2, activePrefix: "/administrador/finanzas" },
+  { label: "Catalogo", href: "/administrador/marcas", icon: Package, activePrefix: "/administrador/marcas" },
+  { label: "Compras", href: "/administrador/cadenas", icon: Store, activePrefix: "/administrador/cadenas" },
 ]

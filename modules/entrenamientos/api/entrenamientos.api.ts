@@ -1,5 +1,7 @@
 import { api } from "@/lib/api"
 import {
+  EjercicioCreate,
+  EjercicioEdit,
   EjercicioResponse,
   EntrenoFuerzaCreate,
   EntrenoFuerzaResponse,
@@ -80,6 +82,20 @@ export const EntrenamientosAPI = {
     })
 
     return toArray<unknown>(data).map(normalizeEjercicio).filter((item): item is EjercicioResponse => item !== null)
+  },
+
+  createEjercicio: async (payload: EjercicioCreate): Promise<EjercicioResponse> => {
+    const { data } = await api.post("/api/entrenamientos/ejercicios/", payload)
+    return normalizeEjercicio(data) ?? (data as EjercicioResponse)
+  },
+
+  updateEjercicio: async (idEjercicio: number, payload: EjercicioEdit): Promise<EjercicioResponse> => {
+    const { data } = await api.patch(`/api/entrenamientos/ejercicios/${idEjercicio}`, payload)
+    return normalizeEjercicio(data) ?? (data as EjercicioResponse)
+  },
+
+  deleteEjercicio: async (idEjercicio: number): Promise<void> => {
+    await api.delete(`/api/entrenamientos/ejercicios/${idEjercicio}`)
   },
 
   getTiposMusculares: async (): Promise<string[]> => {

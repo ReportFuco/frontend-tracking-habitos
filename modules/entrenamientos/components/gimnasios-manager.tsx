@@ -1,10 +1,10 @@
 "use client"
 
+import { Pencil, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { EditorialInput, FieldGroup, FormPanel, FormSubmitBar } from "@/components/forms/editorial-form"
 import { useEntrenamientos } from "@/modules/entrenamientos/hooks/useEntrenamientos"
 import { gimnasioCreateSchema, gimnasioEditSchema } from "@/modules/entrenamientos/schemas/entrenamientos.schema"
 import { GimnasioResponse } from "@/modules/entrenamientos/types/entrenamientos"
@@ -57,230 +57,216 @@ export function GimnasiosManager() {
     const timer = setTimeout(() => {
       void fetchGimnasios(search.trim() || undefined)
     }, 250)
-
     return () => clearTimeout(timer)
   }, [fetchGimnasios, search])
 
   const handleCreate = async () => {
     const parsed = gimnasioCreateSchema.safeParse(getPayloadFromForm(form))
-
     if (!parsed.success) {
       toast.error("Revisa el formulario", {
         description: parsed.error.issues[0]?.message ?? "Completa los datos del gimnasio.",
       })
       return
     }
-
     const result = await crearGimnasio({
       ...parsed.data,
       nombre_cadena: parsed.data.nombre_cadena ?? null,
       comuna: parsed.data.comuna ?? null,
     })
-
     if (result.ok) {
       setForm(initialForm)
-      toast.success("Gimnasio creado", {
-        description: "El gimnasio se agrego correctamente.",
-      })
+      toast.success("Gimnasio creado")
       return
     }
-
-    toast.error("No pudimos crear el gimnasio", {
-      description: result.message,
-    })
+    toast.error("No se pudo crear el gimnasio", { description: result.message })
   }
 
   const handleSave = async (idGimnasio: number) => {
     const parsed = gimnasioEditSchema.safeParse(getPayloadFromForm(editingForm))
-
     if (!parsed.success) {
       toast.error("Revisa los cambios", {
         description: parsed.error.issues[0]?.message ?? "Completa los datos del gimnasio.",
       })
       return
     }
-
     const result = await editarGimnasio(idGimnasio, parsed.data)
-
     if (result.ok) {
       setEditingId(null)
       setEditingForm(initialForm)
-      toast.success("Gimnasio actualizado", {
-        description: "Los cambios se guardaron correctamente.",
-      })
+      toast.success("Gimnasio actualizado")
       return
     }
-
-    toast.error("No pudimos actualizar el gimnasio", {
-      description: result.message,
-    })
+    toast.error("No se pudo actualizar el gimnasio", { description: result.message })
   }
 
   const handleDelete = async (idGimnasio: number) => {
     const result = await eliminarGimnasio(idGimnasio)
-
     if (result.ok) {
-      toast.success("Gimnasio eliminado", {
-        description: "El gimnasio se elimino correctamente.",
-      })
+      toast.success("Gimnasio eliminado")
       return
     }
-
-    toast.error("No pudimos eliminar el gimnasio", {
-      description: result.message,
-    })
+    toast.error("No se pudo eliminar el gimnasio", { description: result.message })
   }
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[1.2fr_1.8fr]">
-      <Card>
-        <CardHeader>
-          <CardTitle>Registrar gimnasio</CardTitle>
-          <CardDescription>
-            Crea gimnasios con direccion y coordenadas para usarlos en tus sesiones.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Input
-            placeholder="Nombre del gimnasio"
-            value={form.nombre_gimnasio}
-            onChange={(event) => setForm((prev) => ({ ...prev, nombre_gimnasio: event.target.value }))}
-          />
-          <Input
-            placeholder="Cadena o marca"
-            value={form.nombre_cadena}
-            onChange={(event) => setForm((prev) => ({ ...prev, nombre_cadena: event.target.value }))}
-          />
-          <Input
-            placeholder="Direccion"
-            value={form.direccion}
-            onChange={(event) => setForm((prev) => ({ ...prev, direccion: event.target.value }))}
-          />
-          <Input
-            placeholder="Comuna"
-            value={form.comuna}
-            onChange={(event) => setForm((prev) => ({ ...prev, comuna: event.target.value }))}
-          />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Input
-              placeholder="Latitud"
-              inputMode="decimal"
-              value={form.latitud}
-              onChange={(event) => setForm((prev) => ({ ...prev, latitud: event.target.value }))}
+    <section className="grid gap-6 lg:grid-cols-[1.1fr_1.9fr]">
+      <FormPanel eyebrow="Nuevo gimnasio">
+        <div className="space-y-4 sm:space-y-5">
+          <FieldGroup label="Nombre">
+            <EditorialInput
+              placeholder="Nombre del gimnasio"
+              value={form.nombre_gimnasio}
+              onChange={(e) => setForm((p) => ({ ...p, nombre_gimnasio: e.target.value }))}
             />
-            <Input
-              placeholder="Longitud"
-              inputMode="decimal"
-              value={form.longitud}
-              onChange={(event) => setForm((prev) => ({ ...prev, longitud: event.target.value }))}
+          </FieldGroup>
+          <FieldGroup label="Cadena o marca" hint="Opcional">
+            <EditorialInput
+              placeholder="Ej: Smart Fit"
+              value={form.nombre_cadena}
+              onChange={(e) => setForm((p) => ({ ...p, nombre_cadena: e.target.value }))}
             />
+          </FieldGroup>
+          <FieldGroup label="Direccion">
+            <EditorialInput
+              placeholder="Av. Ejemplo 123"
+              value={form.direccion}
+              onChange={(e) => setForm((p) => ({ ...p, direccion: e.target.value }))}
+            />
+          </FieldGroup>
+          <FieldGroup label="Comuna" hint="Opcional">
+            <EditorialInput
+              placeholder="Nunoa"
+              value={form.comuna}
+              onChange={(e) => setForm((p) => ({ ...p, comuna: e.target.value }))}
+            />
+          </FieldGroup>
+          <div className="grid grid-cols-2 gap-3">
+            <FieldGroup label="Latitud">
+              <EditorialInput
+                inputMode="decimal"
+                placeholder="-33.456"
+                value={form.latitud}
+                onChange={(e) => setForm((p) => ({ ...p, latitud: e.target.value }))}
+              />
+            </FieldGroup>
+            <FieldGroup label="Longitud">
+              <EditorialInput
+                inputMode="decimal"
+                placeholder="-70.648"
+                value={form.longitud}
+                onChange={(e) => setForm((p) => ({ ...p, longitud: e.target.value }))}
+              />
+            </FieldGroup>
           </div>
-          <Button onClick={handleCreate} disabled={submitting}>
-            {submitting ? "Guardando..." : "Crear gimnasio"}
-          </Button>
-        </CardContent>
-      </Card>
+          <FormSubmitBar>
+            <Button onClick={handleCreate} disabled={submitting} className="w-full sm:w-auto">
+              {submitting ? "Guardando..." : "Crear gimnasio"}
+            </Button>
+          </FormSubmitBar>
+        </div>
+      </FormPanel>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Gestion de gimnasios</CardTitle>
-          <CardDescription>Busca, edita y elimina gimnasios registrados.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Input
-            placeholder="Buscar por nombre o comuna"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
+      <FormPanel eyebrow="Gestion">
+        <div className="space-y-4 sm:space-y-5">
+          <FieldGroup label="Buscar">
+            <EditorialInput
+              placeholder="Nombre o comuna"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </FieldGroup>
 
-          <div className="space-y-3">
-            {!loading && gimnasios.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No hay gimnasios registrados con ese filtro.</p>
+          <div className="space-y-2">
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Cargando...</p>
+            ) : gimnasios.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No hay gimnasios con ese filtro.</p>
             ) : null}
 
             {gimnasios.map((gimnasio) => (
-              <div key={gimnasio.id_gimnasio} className="rounded-lg border p-4">
+              <div key={gimnasio.id_gimnasio} className="rounded-4xl bg-surface-low p-4">
                 {editingId === gimnasio.id_gimnasio ? (
                   <div className="space-y-3">
-                    <Input
+                    <EditorialInput
                       value={editingForm.nombre_gimnasio}
-                      onChange={(event) =>
-                        setEditingForm((prev) => ({ ...prev, nombre_gimnasio: event.target.value }))
-                      }
+                      onChange={(e) => setEditingForm((p) => ({ ...p, nombre_gimnasio: e.target.value }))}
                     />
-                    <Input
+                    <EditorialInput
+                      placeholder="Cadena o marca"
                       value={editingForm.nombre_cadena}
-                      onChange={(event) =>
-                        setEditingForm((prev) => ({ ...prev, nombre_cadena: event.target.value }))
-                      }
+                      onChange={(e) => setEditingForm((p) => ({ ...p, nombre_cadena: e.target.value }))}
                     />
-                    <Input
+                    <EditorialInput
+                      placeholder="Direccion"
                       value={editingForm.direccion}
-                      onChange={(event) =>
-                        setEditingForm((prev) => ({ ...prev, direccion: event.target.value }))
-                      }
+                      onChange={(e) => setEditingForm((p) => ({ ...p, direccion: e.target.value }))}
                     />
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <Input
+                    <div className="grid grid-cols-3 gap-2">
+                      <EditorialInput
+                        placeholder="Comuna"
                         value={editingForm.comuna}
-                        onChange={(event) =>
-                          setEditingForm((prev) => ({ ...prev, comuna: event.target.value }))
-                        }
+                        onChange={(e) => setEditingForm((p) => ({ ...p, comuna: e.target.value }))}
                       />
-                      <Input
+                      <EditorialInput
                         inputMode="decimal"
+                        placeholder="Latitud"
                         value={editingForm.latitud}
-                        onChange={(event) =>
-                          setEditingForm((prev) => ({ ...prev, latitud: event.target.value }))
-                        }
+                        onChange={(e) => setEditingForm((p) => ({ ...p, latitud: e.target.value }))}
                       />
-                      <Input
+                      <EditorialInput
                         inputMode="decimal"
+                        placeholder="Longitud"
                         value={editingForm.longitud}
-                        onChange={(event) =>
-                          setEditingForm((prev) => ({ ...prev, longitud: event.target.value }))
-                        }
+                        onChange={(e) => setEditingForm((p) => ({ ...p, longitud: e.target.value }))}
                       />
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button onClick={() => handleSave(gimnasio.id_gimnasio)} disabled={submitting}>
-                        Guardar cambios
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setEditingId(null)
-                          setEditingForm(initialForm)
-                        }}
-                      >
-                        Cancelar
-                      </Button>
-                    </div>
+                    <FormSubmitBar>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleSave(gimnasio.id_gimnasio)} disabled={submitting}>
+                          Guardar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingId(null)
+                            setEditingForm(initialForm)
+                          }}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </FormSubmitBar>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="space-y-1">
-                      <p className="font-medium">{gimnasio.nombre_gimnasio}</p>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium">{gimnasio.nombre_gimnasio}</p>
+                      <p className="text-xs text-muted-foreground">
                         {gimnasio.nombre_cadena ?? "Sin cadena"} · {gimnasio.comuna ?? "Sin comuna"}
                       </p>
-                      <p className="text-sm text-muted-foreground">{gimnasio.direccion}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Lat {gimnasio.latitud} · Lng {gimnasio.longitud}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{gimnasio.direccion}</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex shrink-0 gap-1">
                       <Button
-                        variant="outline"
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 text-muted-foreground hover:text-foreground"
                         onClick={() => {
                           setEditingId(gimnasio.id_gimnasio)
                           setEditingForm(getFormFromGimnasio(gimnasio))
                         }}
                       >
-                        Editar
+                        <Pencil className="size-3.5" />
                       </Button>
-                      <Button variant="destructive" onClick={() => handleDelete(gimnasio.id_gimnasio)}>
-                        Eliminar
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDelete(gimnasio.id_gimnasio)}
+                        disabled={submitting}
+                      >
+                        <Trash2 className="size-3.5" />
                       </Button>
                     </div>
                   </div>
@@ -288,8 +274,8 @@ export function GimnasiosManager() {
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </FormPanel>
     </section>
   )
 }

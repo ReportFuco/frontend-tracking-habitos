@@ -1,7 +1,31 @@
+export interface CadenaCreate {
+  nombre_cadena: string
+}
+
+export interface CadenaPatch {
+  nombre_cadena?: string | null
+}
+
 export interface CadenaResponse {
   id_cadena: number
   nombre_cadena: string
   created_at: string
+}
+
+export interface LocalCreate {
+  id_cadena?: number | null
+  nombre_local: string
+  latitud?: number | null
+  longitud?: number | null
+  direccion?: string | null
+}
+
+export interface LocalPatch {
+  id_cadena?: number | null
+  nombre_local?: string | null
+  latitud?: number | null
+  longitud?: number | null
+  direccion?: string | null
 }
 
 export interface LocalResponse {

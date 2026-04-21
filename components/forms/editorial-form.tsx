@@ -120,6 +120,21 @@ export function FieldGroup({
   );
 }
 
+export function EditorialInput({
+  className,
+  ...props
+}: React.ComponentProps<"input">) {
+  return (
+    <input
+      className={cn(
+        "h-13 w-full rounded-3xl border-0 bg-surface-variant px-4 text-base text-foreground shadow-none outline-none transition placeholder:text-muted-foreground focus:border-b-2 focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
 export function EditorialSelect({
   className,
   ...props

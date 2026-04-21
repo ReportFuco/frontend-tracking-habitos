@@ -60,6 +60,7 @@ const cards: AdminCard[] = [
     href: "/administrador/cadenas",
     icon: Store,
     accentColor: "var(--module-compras)",
+    ready: true,
   },
   {
     title: "Locales",
@@ -74,6 +75,7 @@ const cards: AdminCard[] = [
     href: "/administrador/marcas",
     icon: Tag,
     accentColor: "var(--module-compras)",
+    ready: true,
   },
   {
     title: "Productos",
@@ -88,6 +90,14 @@ const cards: AdminCard[] = [
     href: "/administrador/tablas-nutricionales",
     icon: ClipboardList,
     accentColor: "var(--module-nutricion)",
+  },
+  {
+    title: "Ejercicios",
+    description: "Catalogo de ejercicios para sesiones de fuerza.",
+    href: "/administrador/entrenamientos/ejercicios",
+    icon: Dumbbell,
+    accentColor: "var(--module-entrenamientos)",
+    ready: true,
   },
 ]
 
@@ -125,7 +135,7 @@ export default function AdministradorPage() {
                   <p className="text-sm text-muted-foreground">{card.description}</p>
                 </div>
               </div>
-              <span className="inline-flex items-center gap-2 font-[family-name:var(--font-label)] text-xs uppercase tracking-wider text-muted-foreground">
+              <span className="inline-flex items-center gap-2 font-label text-xs uppercase tracking-wider text-muted-foreground">
                 {card.ready ? "Abrir" : "En construccion"}
                 <ArrowRight className="size-3" />
               </span>

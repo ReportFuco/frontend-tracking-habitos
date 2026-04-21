@@ -28,6 +28,18 @@ export interface GimnasioResponse {
   created_at: string
 }
 
+export interface EjercicioCreate {
+  nombre: string
+  tipo: string
+  url_video?: string | null
+}
+
+export interface EjercicioEdit {
+  nombre?: string | null
+  tipo?: string | null
+  url_video?: string | null
+}
+
 export interface EjercicioResponse {
   id_ejercicio: number
   nombre: string
