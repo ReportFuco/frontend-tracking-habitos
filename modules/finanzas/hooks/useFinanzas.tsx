@@ -19,6 +19,8 @@ import {
   ProductoFinancieroResponse,
 } from "@/modules/finanzas/types/finanzas"
 
+const MOVIMIENTOS_LIMIT = 20
+
 type FinanzasContextValue = ReturnType<typeof useFinanzasState>
 
 const FinanzasContext = createContext<FinanzasContextValue | null>(null)
@@ -28,6 +30,9 @@ const useFinanzasState = () => {
   const [categorias, setCategorias] = useState<CategoriaResponse[]>([])
   const [cuentas, setCuentas] = useState<CuentaResponse[]>([])
   const [movimientos, setMovimientos] = useState<MovimientoResponse[]>([])
+  const [totalGastoMensual, setTotalGastoMensual] = useState(0)
+  const [hasMoreMovimientos, setHasMoreMovimientos] = useState(false)
+  const [loadingMoreMovimientos, setLoadingMoreMovimientos] = useState(false)
 
   const [loadingCatalogos, setLoadingCatalogos] = useState(false)
   const [submittingCuenta, setSubmittingCuenta] = useState(false)
@@ -44,13 +49,18 @@ const useFinanzasState = () => {
           FinanzasAPI.getBancos(),
           FinanzasAPI.getCategorias(),
           FinanzasAPI.getCuentas(),
-          FinanzasAPI.getMovimientos(),
+          FinanzasAPI.getMovimientos({ limit: MOVIMIENTOS_LIMIT }),
         ])
 
       if (bancosResult.status === "fulfilled") setBancos(bancosResult.value)
       if (categoriasResult.status === "fulfilled") setCategorias(categoriasResult.value)
       if (cuentasResult.status === "fulfilled") setCuentas(cuentasResult.value)
-      if (movimientosResult.status === "fulfilled") setMovimientos(movimientosResult.value)
+      if (movimientosResult.status === "fulfilled") {
+        const page = movimientosResult.value
+        setMovimientos(page.items)
+        setTotalGastoMensual(page.total_gasto_mensual)
+        setHasMoreMovimientos(page.items.length === MOVIMIENTOS_LIMIT)
+      }
 
       const failures = [bancosResult, categoriasResult, cuentasResult, movimientosResult].filter(
         (item) => item.status === "rejected"
@@ -60,24 +70,38 @@ const useFinanzasState = () => {
         const firstFailure = failures[0] as PromiseRejectedResult
         const message = getFriendlyErrorMessage(firstFailure.reason)
         setError(message)
-        toast.error("No pudimos cargar tus datos", {
-          description: message,
-        })
+        toast.error("No pudimos cargar tus datos", { description: message })
       }
     } catch (err) {
       const message = getFriendlyErrorMessage(err)
       setError(message)
-      toast.error("No pudimos cargar tus datos", {
-        description: message,
-      })
+      toast.error("No pudimos cargar tus datos", { description: message })
     } finally {
       setLoadingCatalogos(false)
     }
   }
 
+  const loadMoreMovimientos = useCallback(async () => {
+    setLoadingMoreMovimientos(true)
+    try {
+      const page = await FinanzasAPI.getMovimientos({
+        offset: movimientos.length,
+        limit: MOVIMIENTOS_LIMIT,
+      })
+      setMovimientos((prev) => [...prev, ...page.items])
+      setTotalGastoMensual(page.total_gasto_mensual)
+      setHasMoreMovimientos(page.items.length === MOVIMIENTOS_LIMIT)
+    } catch (err) {
+      toast.error("No se pudieron cargar más movimientos", {
+        description: getFriendlyErrorMessage(err),
+      })
+    } finally {
+      setLoadingMoreMovimientos(false)
+    }
+  }, [movimientos.length])
+
   const runAction = async (action: () => Promise<unknown>) => {
     setError(null)
-
     try {
       await action()
       await fetchCatalogos()
@@ -132,9 +156,8 @@ const useFinanzasState = () => {
       try {
         return await FinanzasAPI.getProductosFinancieros({ id_banco: idBanco })
       } catch (err) {
-        const message = getFriendlyErrorMessage(err)
         toast.error("No pudimos cargar los productos del banco", {
-          description: message,
+          description: getFriendlyErrorMessage(err),
         })
         return []
       }
@@ -143,10 +166,7 @@ const useFinanzasState = () => {
   )
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      void fetchCatalogos()
-    }, 0)
-
+    const timer = setTimeout(() => { void fetchCatalogos() }, 0)
     return () => clearTimeout(timer)
   }, [])
 
@@ -155,11 +175,15 @@ const useFinanzasState = () => {
     categorias,
     cuentas,
     movimientos,
+    totalGastoMensual,
+    hasMoreMovimientos,
+    loadingMoreMovimientos,
     loadingCatalogos,
     submittingCuenta,
     submittingMovimiento,
     error,
     fetchCatalogos,
+    loadMoreMovimientos,
     crearBanco,
     editarBanco,
     eliminarBanco,
@@ -177,16 +201,11 @@ const useFinanzasState = () => {
 
 export function FinanzasProvider({ children }: { children: ReactNode }) {
   const value = useFinanzasState()
-
   return <FinanzasContext.Provider value={value}>{children}</FinanzasContext.Provider>
 }
 
 export const useFinanzas = () => {
   const context = useContext(FinanzasContext)
-
-  if (!context) {
-    throw new Error("useFinanzas debe usarse dentro de un FinanzasProvider")
-  }
-
+  if (!context) throw new Error("useFinanzas debe usarse dentro de un FinanzasProvider")
   return context
 }

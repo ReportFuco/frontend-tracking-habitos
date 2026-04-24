@@ -337,8 +337,8 @@ export function EntrenamientoActivoCard() {
   }
 
   return (
-    <section className="grid gap-4 sm:gap-6 xl:grid-cols-[1.08fr_0.92fr]">
-      <section className="order-2 rounded-[1.5rem] bg-[color:var(--surface-low)] p-4 sm:rounded-[1.75rem] sm:p-6 xl:order-none">
+    <section className="grid min-w-0 gap-4 sm:gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+      <section className="order-2 min-w-0 rounded-[1.5rem] bg-[color:var(--surface-low)] p-4 sm:rounded-[1.75rem] sm:p-6 xl:order-none">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="hidden xl:block">
             <p className="font-label text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground sm:text-[0.7rem] sm:tracking-[0.22em]">
@@ -353,7 +353,7 @@ export function EntrenamientoActivoCard() {
               </p>
             ) : null}
           </div>
-          <div className="flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
             <span
               className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.16em] sm:px-3 sm:tracking-[0.18em]"
               style={{
@@ -377,9 +377,9 @@ export function EntrenamientoActivoCard() {
 
         {totalSeries > 0 ? (
           <div className="mt-4 space-y-2 rounded-[1rem] bg-[color:var(--surface-lowest)] p-3 sm:mt-5 sm:rounded-[1.25rem] sm:p-4">
-            <div className="flex items-center justify-between text-[11px] text-muted-foreground sm:text-xs">
+            <div className="flex min-w-0 items-center justify-between gap-3 text-[11px] text-muted-foreground sm:text-xs">
               <span className="font-label uppercase tracking-[0.18em]">Reparto</span>
-              <span>
+              <span className="min-w-0 text-right">
                 {seriesTrabajo} trabajo · {seriesCalentamiento} calentamiento
               </span>
             </div>
@@ -562,8 +562,8 @@ export function EntrenamientoActivoCard() {
                                 </div>
                               </div>
                             ) : (
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-2">
+                              <div className="flex min-w-0 items-center justify-between gap-3">
+                                <div className="flex min-w-0 flex-wrap items-center gap-2">
                                   <span
                                     className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] ${
                                       serie.es_calentamiento
@@ -581,7 +581,7 @@ export function EntrenamientoActivoCard() {
                                     · {serie.repeticiones} reps
                                   </span>
                                 </div>
-                                <div className="flex gap-1">
+                                <div className="flex shrink-0 gap-1">
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -623,7 +623,7 @@ export function EntrenamientoActivoCard() {
         </div>
       </section>
 
-      <div className="order-1 space-y-4 sm:space-y-6 xl:order-none">
+      <div className="order-1 min-w-0 space-y-4 sm:space-y-6 xl:order-none">
         <section className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] shadow-[var(--shadow-airy-lg)] sm:rounded-[1.75rem]">
           <button
             type="button"

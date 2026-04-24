@@ -11,6 +11,7 @@ import {
   MovimientoCreate,
   MovimientoPatch,
   MovimientoResponse,
+  MovimientosPageResponse,
   ProductoFinancieroCreate,
   ProductoFinancieroPatch,
   ProductoFinancieroResponse,
@@ -109,9 +110,16 @@ export const FinanzasAPI = {
     await api.delete(`/api/finanzas/cuentas/${idCuenta}`)
   },
 
-  getMovimientos: async (): Promise<MovimientoResponse[]> => {
-    const { data } = await api.get("/api/finanzas/movimientos/")
-    return data
+  getMovimientos: async (params?: { offset?: number; limit?: number }): Promise<MovimientosPageResponse> => {
+    try {
+      const { data } = await api.get("/api/finanzas/movimientos/", { params })
+      return data
+    } catch (err: unknown) {
+      if ((err as { response?: { status?: number } })?.response?.status === 404) {
+        return { items: [], offset: 0, limit: params?.limit ?? 20, total_gasto_mensual: 0 }
+      }
+      throw err
+    }
   },
 
   getMovimientoById: async (idMovimiento: number): Promise<MovimientoResponse> => {

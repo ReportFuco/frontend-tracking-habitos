@@ -5,8 +5,9 @@ import { FormEvent, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { ArrowRight, Flame } from "lucide-react"
 import { toast } from "sonner"
+import { SearchableCombobox } from "@/components/forms/searchable-combobox"
 import { Button } from "@/components/ui/button"
-import { EditorialSelect, FieldGroup, FormNote, FormPanel, FormSubmitBar } from "@/components/forms/editorial-form"
+import { FieldGroup, FormNote, FormPanel, FormSubmitBar } from "@/components/forms/editorial-form"
 import { entrenoFuerzaCreateSchema } from "@/modules/entrenamientos/schemas/entrenamientos.schema"
 import { useEntrenamientos } from "@/modules/entrenamientos/hooks/useEntrenamientos"
 
@@ -76,6 +77,11 @@ export function EntrenoFuerzaFormCard() {
   }
 
   const availableGimnasios = gimnasios.filter((gimnasio) => gimnasio.activo)
+  const gimnasioOptions = availableGimnasios.map((gimnasio) => ({
+    value: String(gimnasio.id_gimnasio),
+    label: gimnasio.nombre_gimnasio,
+    description: gimnasio.comuna || undefined,
+  }))
   const selectedGym = availableGimnasios.find(
     (gimnasio) => String(gimnasio.id_gimnasio) === form.id_gimnasio
   )
@@ -112,21 +118,16 @@ export function EntrenoFuerzaFormCard() {
                 label="Gimnasio"
                 hint={availableGimnasios.length ? "Contexto de la sesion" : "Sin opciones activas"}
               >
-                <EditorialSelect
+                <SearchableCombobox
                   value={form.id_gimnasio}
-                  onChange={(event) => setForm((prev) => ({ ...prev, id_gimnasio: event.target.value }))}
-                  required
+                  onChange={(value) => setForm((prev) => ({ ...prev, id_gimnasio: value }))}
+                  options={gimnasioOptions}
                   disabled={submitting || availableGimnasios.length === 0}
-                  className="focus:border-[color:var(--module-entrenamientos)]"
-                >
-                  <option value="">Selecciona un gimnasio</option>
-                  {availableGimnasios.map((gimnasio) => (
-                    <option key={gimnasio.id_gimnasio} value={gimnasio.id_gimnasio}>
-                      {gimnasio.nombre_gimnasio}
-                      {gimnasio.comuna ? ` · ${gimnasio.comuna}` : ""}
-                    </option>
-                  ))}
-                </EditorialSelect>
+                  disabledMessage="Sin gimnasios activos"
+                  placeholder="Selecciona un gimnasio"
+                  searchPlaceholder="Buscar gimnasio..."
+                  emptyMessage="No hay gimnasios disponibles"
+                />
               </FieldGroup>
 
               <FieldGroup label="Observacion" hint="Opcional">

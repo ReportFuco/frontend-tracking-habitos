@@ -2,6 +2,7 @@
 
 import {
   KeyboardEvent,
+  CSSProperties,
   ReactNode,
   useEffect,
   useId,
@@ -9,6 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +39,11 @@ interface SearchableComboboxProps {
   compactOnMobile?: boolean;
 }
 
+interface DropdownPosition {
+  listMaxHeight: number;
+  style: CSSProperties;
+}
+
 export function SearchableCombobox({
   value,
   onChange,
@@ -60,8 +67,14 @@ export function SearchableCombobox({
   const [query, setQuery] = useState("");
   const [highlighted, setHighlighted] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition>({
+    listMaxHeight: compactOnMobile ? 208 : 256,
+    style: {},
+  });
 
   const selected = useMemo(
     () => options.find((option) => option.value === value) ?? null,
@@ -93,15 +106,82 @@ export function SearchableCombobox({
   useEffect(() => {
     if (!open) return;
 
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!containerRef.current) return;
-      if (!containerRef.current.contains(event.target as Node)) {
-        closeCombobox();
-      }
+    const updateDropdownPosition = () => {
+      if (!triggerRef.current) return;
+
+      const rect = triggerRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const horizontalMargin = 12;
+      const verticalMargin = 12;
+      const gap = 8;
+      const minListHeight = 96;
+
+      const width = Math.min(rect.width, viewportWidth - horizontalMargin * 2);
+      const maxLeft = viewportWidth - horizontalMargin - width;
+      const left = Math.min(Math.max(rect.left, horizontalMargin), maxLeft);
+
+      const spaceBelow = viewportHeight - rect.bottom - gap - verticalMargin;
+      const spaceAbove = rect.top - gap - verticalMargin;
+      const openAbove = spaceBelow < 220 && spaceAbove > spaceBelow;
+      const availableSpace = Math.max(
+        openAbove ? spaceAbove : spaceBelow,
+        minListHeight,
+      );
+
+      setDropdownPosition({
+        listMaxHeight: availableSpace,
+        style: openAbove
+          ? {
+              bottom: Math.max(viewportHeight - rect.top + gap, verticalMargin),
+              left,
+              position: "fixed",
+              width,
+              zIndex: 50,
+            }
+          : {
+              left,
+              position: "fixed",
+              top: Math.max(rect.bottom + gap, verticalMargin),
+              width,
+              zIndex: 50,
+            },
+      });
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    updateDropdownPosition();
+
+    const handleViewportChange = () => {
+      window.requestAnimationFrame(updateDropdownPosition);
+    };
+
+    window.addEventListener("resize", handleViewportChange);
+    window.addEventListener("scroll", handleViewportChange, true);
+    window.visualViewport?.addEventListener("resize", handleViewportChange);
+    window.visualViewport?.addEventListener("scroll", handleViewportChange);
+
+    return () => {
+      window.removeEventListener("resize", handleViewportChange);
+      window.removeEventListener("scroll", handleViewportChange, true);
+      window.visualViewport?.removeEventListener("resize", handleViewportChange);
+      window.visualViewport?.removeEventListener("scroll", handleViewportChange);
+    };
+  }, [compactOnMobile, open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleClickOutside = (event: PointerEvent) => {
+      const target = event.target as Node;
+
+      if (containerRef.current?.contains(target)) return;
+      if (dropdownRef.current?.contains(target)) return;
+
+        closeCombobox();
+    };
+
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => document.removeEventListener("pointerdown", handleClickOutside);
   }, [open]);
 
   useEffect(() => {
@@ -153,9 +233,108 @@ export function SearchableCombobox({
     }
   };
 
+  const dropdownPanel = open ? (
+    <div
+      ref={dropdownRef}
+      className={cn(
+        "overflow-hidden rounded-4xl bg-surface-lowest shadow-(--shadow-airy-lg)",
+        "ring-1 ring-black/5",
+      )}
+      style={dropdownPosition.style}
+      role="dialog"
+    >
+      <div className="flex items-center gap-2 border-b border-(--border)/40 bg-surface-low px-3 py-2.5">
+        <Search className="size-4 text-muted-foreground" />
+        <input
+          ref={searchInputRef}
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setHighlighted(0);
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder={searchPlaceholder}
+          className={cn(
+            "flex-1 border-0 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none sm:text-sm",
+            compactOnMobile ? "h-8 sm:h-9" : "h-9",
+          )}
+        />
+        {query ? (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            className="flex size-6 items-center justify-center rounded-full text-muted-foreground transition hover:bg-background/80 hover:text-foreground"
+          >
+            <X className="size-3.5" />
+          </button>
+        ) : null}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+          {loading ? loadingMessage : emptyMessage}
+        </div>
+      ) : (
+        <ul
+          ref={listRef}
+          role="listbox"
+          className="overflow-y-auto py-1.5"
+          style={{ maxHeight: dropdownPosition.listMaxHeight }}
+        >
+          {filtered.map((option, index) => {
+            const isSelected = option.value === value;
+            const isHighlighted = index === highlightedIndex;
+
+            return (
+              <li
+                key={option.value}
+                role="option"
+                aria-selected={isSelected}
+              >
+                <button
+                  type="button"
+                  onMouseEnter={() => setHighlighted(index)}
+                  onClick={() => handleSelect(option)}
+                  className={cn(
+                    "flex w-full items-start gap-3 text-left transition",
+                    compactOnMobile
+                      ? "px-3 py-2 sm:px-4 sm:py-2.5"
+                      : "px-4 py-2.5",
+                    isHighlighted && "bg-primary/8",
+                    isSelected && "bg-primary/12",
+                  )}
+                >
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-sm font-medium text-foreground">
+                      {option.label}
+                    </span>
+                    {option.description ? (
+                      <span
+                        className={cn(
+                          "truncate text-xs text-muted-foreground",
+                          compactOnMobile && "hidden sm:block",
+                        )}
+                      >
+                        {option.description}
+                      </span>
+                    ) : null}
+                  </span>
+                  {isSelected ? (
+                    <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                  ) : null}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  ) : null;
+
   return (
     <div ref={containerRef} className={cn("relative w-full", className)}>
       <button
+        ref={triggerRef}
         type="button"
         id={triggerId}
         aria-haspopup="listbox"
@@ -237,103 +416,9 @@ export function SearchableCombobox({
         />
       </button>
 
-      {open ? (
-        <div
-          className={cn(
-            "absolute z-50 mt-2 w-full overflow-hidden rounded-4xl bg-surface-lowest shadow-(--shadow-airy-lg)",
-            "ring-1 ring-black/5",
-          )}
-          role="dialog"
-        >
-          <div className="flex items-center gap-2 border-b border-(--border)/40 bg-surface-low px-3 py-2.5">
-            <Search className="size-4 text-muted-foreground" />
-            <input
-              ref={searchInputRef}
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setHighlighted(0);
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder={searchPlaceholder}
-              className={cn(
-                "flex-1 border-0 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none sm:text-sm",
-                compactOnMobile ? "h-8 sm:h-9" : "h-9",
-              )}
-            />
-            {query ? (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                className="flex size-6 items-center justify-center rounded-full text-muted-foreground transition hover:bg-background/80 hover:text-foreground"
-              >
-                <X className="size-3.5" />
-              </button>
-            ) : null}
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-              {loading ? loadingMessage : emptyMessage}
-            </div>
-          ) : (
-            <ul
-              ref={listRef}
-              role="listbox"
-              className={cn(
-                "overflow-y-auto py-1.5",
-                compactOnMobile ? "max-h-52 sm:max-h-64" : "max-h-64",
-              )}
-            >
-              {filtered.map((option, index) => {
-                const isSelected = option.value === value;
-                const isHighlighted = index === highlightedIndex;
-
-                return (
-                  <li
-                    key={option.value}
-                    role="option"
-                    aria-selected={isSelected}
-                  >
-                    <button
-                      type="button"
-                      onMouseEnter={() => setHighlighted(index)}
-                      onClick={() => handleSelect(option)}
-                      className={cn(
-                        "flex w-full items-start gap-3 text-left transition",
-                        compactOnMobile
-                          ? "px-3 py-2 sm:px-4 sm:py-2.5"
-                          : "px-4 py-2.5",
-                        isHighlighted && "bg-primary/8",
-                        isSelected && "bg-primary/12",
-                      )}
-                    >
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate text-sm font-medium text-foreground">
-                          {option.label}
-                        </span>
-                        {option.description ? (
-                          <span
-                            className={cn(
-                              "truncate text-xs text-muted-foreground",
-                              compactOnMobile && "hidden sm:block",
-                            )}
-                          >
-                            {option.description}
-                          </span>
-                        ) : null}
-                      </span>
-                      {isSelected ? (
-                        <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-                      ) : null}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      ) : null}
+      {dropdownPanel && typeof document !== "undefined"
+        ? createPortal(dropdownPanel, document.body)
+        : null}
     </div>
   );
 }

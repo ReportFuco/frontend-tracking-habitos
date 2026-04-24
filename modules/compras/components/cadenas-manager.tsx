@@ -4,7 +4,8 @@ import { Pencil, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { EditorialInput, FieldGroup, FormPanel, FormSubmitBar } from "@/components/forms/editorial-form"
+import { EditorialInput, FormPanel } from "@/components/forms/editorial-form"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ComprasAPI } from "@/modules/compras/api/compras.api"
 import type { CadenaResponse } from "@/modules/compras/types/compras"
 
@@ -12,9 +13,9 @@ export function CadenasManager() {
   const [cadenas, setCadenas] = useState<CadenaResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [newName, setNewName] = useState("")
+  const [formValue, setFormValue] = useState("")
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [editingName, setEditingName] = useState("")
+  const isEditing = editingId !== null
 
   useEffect(() => {
     void ComprasAPI.getCadenas()
@@ -23,37 +24,23 @@ export function CadenasManager() {
       .finally(() => setLoading(false))
   }, [])
 
-  const handleCreate = async () => {
-    if (!newName.trim()) {
-      toast.error("Nombre requerido")
-      return
-    }
+  const handleSubmit = async () => {
+    if (!formValue.trim()) { toast.error("Nombre requerido"); return }
     setSubmitting(true)
     try {
-      const cadena = await ComprasAPI.createCadena({ nombre_cadena: newName.trim() })
-      setCadenas((prev) => [...prev, cadena])
-      setNewName("")
-      toast.success("Cadena creada")
-    } catch {
-      toast.error("No se pudo crear la cadena")
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleSave = async (idCadena: number) => {
-    if (!editingName.trim()) {
-      toast.error("Nombre requerido")
-      return
-    }
-    setSubmitting(true)
-    try {
-      const updated = await ComprasAPI.updateCadena(idCadena, { nombre_cadena: editingName.trim() })
-      setCadenas((prev) => prev.map((c) => (c.id_cadena === idCadena ? updated : c)))
+      if (isEditing) {
+        const updated = await ComprasAPI.updateCadena(editingId!, { nombre_cadena: formValue.trim() })
+        setCadenas((prev) => prev.map((c) => (c.id_cadena === editingId ? updated : c)))
+        toast.success("Cadena actualizada")
+      } else {
+        const nueva = await ComprasAPI.createCadena({ nombre_cadena: formValue.trim() })
+        setCadenas((prev) => [...prev, nueva])
+        toast.success("Cadena creada")
+      }
+      setFormValue("")
       setEditingId(null)
-      toast.success("Cadena actualizada")
     } catch {
-      toast.error("No se pudo actualizar la cadena")
+      toast.error("No se pudo guardar la cadena")
     } finally {
       setSubmitting(false)
     }
@@ -74,66 +61,52 @@ export function CadenasManager() {
 
   return (
     <FormPanel eyebrow="Compras maestras">
-      <div className="space-y-6 sm:space-y-7">
-        <FieldGroup label="Nueva cadena">
-          <div className="flex gap-2">
-            <EditorialInput
-              placeholder="Nombre de la cadena"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && void handleCreate()}
-            />
-            <Button onClick={handleCreate} disabled={submitting} className="shrink-0">
-              Crear
+      <div className="space-y-5">
+        <div className="flex gap-2">
+          <EditorialInput
+            placeholder={isEditing ? "Nuevo nombre de la cadena" : "Nombre de la cadena"}
+            value={formValue}
+            onChange={(e) => setFormValue(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && void handleSubmit()}
+            autoFocus={isEditing}
+          />
+          <Button onClick={handleSubmit} disabled={submitting} className="shrink-0">
+            {isEditing ? "Guardar" : "Crear"}
+          </Button>
+          {isEditing ? (
+            <Button variant="ghost" className="shrink-0" onClick={() => { setEditingId(null); setFormValue("") }}>
+              Cancelar
             </Button>
-          </div>
-        </FieldGroup>
+          ) : null}
+        </div>
 
         {loading ? (
           <p className="text-sm text-muted-foreground">Cargando...</p>
         ) : cadenas.length === 0 ? (
           <p className="text-sm text-muted-foreground">No hay cadenas registradas.</p>
         ) : (
-          <div className="space-y-2">
-            {cadenas.map((cadena) => (
-              <div key={cadena.id_cadena} className="rounded-4xl bg-surface-low px-4 py-3.5">
-                {editingId === cadena.id_cadena ? (
-                  <div className="space-y-3">
-                    <EditorialInput
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && void handleSave(cadena.id_cadena)}
-                      autoFocus
-                    />
-                    <FormSubmitBar>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleSave(cadena.id_cadena)} disabled={submitting}>
-                          Guardar
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                          Cancelar
-                        </Button>
-                      </div>
-                    </FormSubmitBar>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium">{cadena.nombre_cadena}</p>
-                    <div className="flex shrink-0 gap-1">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cadena</TableHead>
+                <TableHead className="w-20 text-right" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {cadenas.map((cadena) => (
+                <TableRow key={cadena.id_cadena}>
+                  <TableCell className="font-medium">{cadena.nombre_cadena}</TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
                       <Button
-                        size="icon"
-                        variant="ghost"
+                        size="icon" variant="ghost"
                         className="size-8 text-muted-foreground hover:text-foreground"
-                        onClick={() => {
-                          setEditingId(cadena.id_cadena)
-                          setEditingName(cadena.nombre_cadena)
-                        }}
+                        onClick={() => { setEditingId(cadena.id_cadena); setFormValue(cadena.nombre_cadena) }}
                       >
                         <Pencil className="size-3.5" />
                       </Button>
                       <Button
-                        size="icon"
-                        variant="ghost"
+                        size="icon" variant="ghost"
                         className="size-8 text-muted-foreground hover:text-destructive"
                         onClick={() => handleDelete(cadena.id_cadena)}
                         disabled={submitting}
@@ -141,11 +114,11 @@ export function CadenasManager() {
                         <Trash2 className="size-3.5" />
                       </Button>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </div>
     </FormPanel>

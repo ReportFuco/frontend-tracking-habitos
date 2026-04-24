@@ -1,17 +1,16 @@
 "use client"
 
 import { Pencil, Trash2 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { EditorialInput, FieldGroup, FormPanel, FormSubmitBar } from "@/components/forms/editorial-form"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { SearchableCombobox } from "@/components/forms/searchable-combobox"
 import { ComprasAPI } from "@/modules/compras/api/compras.api"
 import type { LocalResponse, CadenaResponse } from "@/modules/compras/types/compras"
 
-const SELECT_CLASS =
-  "h-13 w-full rounded-3xl border-0 bg-surface-variant px-4 text-sm text-foreground shadow-none outline-none transition focus:border-b-2 focus:border-primary"
-
-type LocalFormState = {
+type FormState = {
   nombre_local: string
   id_cadena: string
   direccion: string
@@ -19,15 +18,9 @@ type LocalFormState = {
   longitud: string
 }
 
-const emptyForm: LocalFormState = {
-  nombre_local: "",
-  id_cadena: "",
-  direccion: "",
-  latitud: "",
-  longitud: "",
-}
+const emptyForm: FormState = { nombre_local: "", id_cadena: "", direccion: "", latitud: "", longitud: "" }
 
-const toPayload = (f: LocalFormState) => ({
+const toPayload = (f: FormState) => ({
   nombre_local: f.nombre_local.trim(),
   id_cadena: f.id_cadena ? Number(f.id_cadena) : null,
   direccion: f.direccion.trim() || null,
@@ -35,12 +28,12 @@ const toPayload = (f: LocalFormState) => ({
   longitud: f.longitud ? Number(f.longitud) : null,
 })
 
-const toFormState = (local: LocalResponse): LocalFormState => ({
-  nombre_local: local.nombre_local,
-  id_cadena: local.id_cadena != null ? String(local.id_cadena) : "",
-  direccion: local.direccion ?? "",
-  latitud: local.latitud != null ? String(local.latitud) : "",
-  longitud: local.longitud != null ? String(local.longitud) : "",
+const toFormState = (l: LocalResponse): FormState => ({
+  nombre_local: l.nombre_local,
+  id_cadena: l.id_cadena != null ? String(l.id_cadena) : "",
+  direccion: l.direccion ?? "",
+  latitud: l.latitud != null ? String(l.latitud) : "",
+  longitud: l.longitud != null ? String(l.longitud) : "",
 })
 
 export function LocalesManager() {
@@ -48,51 +41,42 @@ export function LocalesManager() {
   const [cadenas, setCadenas] = useState<CadenaResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [form, setForm] = useState<LocalFormState>(emptyForm)
+  const [form, setForm] = useState<FormState>(emptyForm)
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [editingForm, setEditingForm] = useState<LocalFormState>(emptyForm)
+  const isEditing = editingId !== null
 
   useEffect(() => {
     void Promise.all([ComprasAPI.getLocales(), ComprasAPI.getCadenas()])
-      .then(([ls, cs]) => {
-        setLocales(ls)
-        setCadenas(cs)
-      })
+      .then(([ls, cs]) => { setLocales(ls); setCadenas(cs) })
       .catch(() => toast.error("Error al cargar datos"))
       .finally(() => setLoading(false))
   }, [])
 
-  const handleCreate = async () => {
-    if (!form.nombre_local.trim()) {
-      toast.error("Nombre requerido")
-      return
-    }
-    setSubmitting(true)
-    try {
-      const local = await ComprasAPI.createLocal(toPayload(form))
-      setLocales((prev) => [...prev, local])
-      setForm(emptyForm)
-      toast.success("Local creado")
-    } catch {
-      toast.error("No se pudo crear el local")
-    } finally {
-      setSubmitting(false)
-    }
-  }
+  const cadenaOptions = useMemo(
+    () => cadenas.map((c) => ({ value: String(c.id_cadena), label: c.nombre_cadena })),
+    [cadenas],
+  )
 
-  const handleSave = async (idLocal: number) => {
-    if (!editingForm.nombre_local.trim()) {
-      toast.error("Nombre requerido")
-      return
-    }
+  const cancelEdit = () => { setEditingId(null); setForm(emptyForm) }
+  const set = (patch: Partial<FormState>) => setForm((p) => ({ ...p, ...patch }))
+
+  const handleSubmit = async () => {
+    if (!form.nombre_local.trim()) { toast.error("Nombre requerido"); return }
     setSubmitting(true)
     try {
-      const updated = await ComprasAPI.updateLocal(idLocal, toPayload(editingForm))
-      setLocales((prev) => prev.map((l) => (l.id_local === idLocal ? updated : l)))
-      setEditingId(null)
-      toast.success("Local actualizado")
+      if (isEditing) {
+        const updated = await ComprasAPI.updateLocal(editingId!, toPayload(form))
+        setLocales((prev) => prev.map((l) => (l.id_local === editingId ? updated : l)))
+        toast.success("Local actualizado")
+        cancelEdit()
+      } else {
+        const nuevo = await ComprasAPI.createLocal(toPayload(form))
+        setLocales((prev) => [...prev, nuevo])
+        toast.success("Local creado")
+        setForm(emptyForm)
+      }
     } catch {
-      toast.error("No se pudo actualizar el local")
+      toast.error("No se pudo guardar el local")
     } finally {
       setSubmitting(false)
     }
@@ -113,157 +97,88 @@ export function LocalesManager() {
 
   return (
     <section className="grid gap-6 lg:grid-cols-[1.1fr_1.9fr]">
-      <FormPanel eyebrow="Nuevo local">
+      <FormPanel eyebrow={isEditing ? "Editando local" : "Nuevo local"}>
         <div className="space-y-4 sm:space-y-5">
           <FieldGroup label="Nombre">
-            <EditorialInput
-              placeholder="Ej: Lider Nunoa"
-              value={form.nombre_local}
-              onChange={(e) => setForm((p) => ({ ...p, nombre_local: e.target.value }))}
-            />
+            <EditorialInput placeholder="Ej: Lider Nunoa" value={form.nombre_local} onChange={(e) => set({ nombre_local: e.target.value })} />
           </FieldGroup>
           <FieldGroup label="Cadena" hint="Opcional">
-            <select
+            <SearchableCombobox
               value={form.id_cadena}
-              onChange={(e) => setForm((p) => ({ ...p, id_cadena: e.target.value }))}
-              className={SELECT_CLASS}
-            >
-              <option value="">Sin cadena</option>
-              {cadenas.map((c) => (
-                <option key={c.id_cadena} value={c.id_cadena}>
-                  {c.nombre_cadena}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => set({ id_cadena: v })}
+              options={cadenaOptions}
+              placeholder="Sin cadena"
+              searchPlaceholder="Buscar cadena..."
+            />
           </FieldGroup>
           <FieldGroup label="Direccion" hint="Opcional">
-            <EditorialInput
-              placeholder="Av. Ejemplo 123"
-              value={form.direccion}
-              onChange={(e) => setForm((p) => ({ ...p, direccion: e.target.value }))}
-            />
+            <EditorialInput placeholder="Av. Ejemplo 123" value={form.direccion} onChange={(e) => set({ direccion: e.target.value })} />
           </FieldGroup>
           <FieldGroup label="Coordenadas" hint="Opcional">
             <div className="grid grid-cols-2 gap-2">
-              <EditorialInput
-                type="number"
-                placeholder="Latitud"
-                value={form.latitud}
-                onChange={(e) => setForm((p) => ({ ...p, latitud: e.target.value }))}
-              />
-              <EditorialInput
-                type="number"
-                placeholder="Longitud"
-                value={form.longitud}
-                onChange={(e) => setForm((p) => ({ ...p, longitud: e.target.value }))}
-              />
+              <EditorialInput type="number" placeholder="Latitud" value={form.latitud} onChange={(e) => set({ latitud: e.target.value })} />
+              <EditorialInput type="number" placeholder="Longitud" value={form.longitud} onChange={(e) => set({ longitud: e.target.value })} />
             </div>
           </FieldGroup>
           <FormSubmitBar>
-            <Button onClick={handleCreate} disabled={submitting} className="w-full sm:w-auto">
-              {submitting ? "Guardando..." : "Crear local"}
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleSubmit} disabled={submitting} className="w-full sm:w-auto">
+                {submitting ? "Guardando..." : isEditing ? "Guardar cambios" : "Crear local"}
+              </Button>
+              {isEditing ? <Button variant="ghost" onClick={cancelEdit}>Cancelar</Button> : null}
+            </div>
           </FormSubmitBar>
         </div>
       </FormPanel>
 
-      <FormPanel eyebrow="Gestion">
-        <div className="space-y-2">
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Cargando...</p>
-          ) : locales.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay locales registrados.</p>
-          ) : null}
-
-          {locales.map((local) => (
-            <div key={local.id_local} className="rounded-4xl bg-surface-low p-4">
-              {editingId === local.id_local ? (
-                <div className="space-y-3">
-                  <EditorialInput
-                    value={editingForm.nombre_local}
-                    onChange={(e) => setEditingForm((p) => ({ ...p, nombre_local: e.target.value }))}
-                    autoFocus
-                  />
-                  <select
-                    value={editingForm.id_cadena}
-                    onChange={(e) => setEditingForm((p) => ({ ...p, id_cadena: e.target.value }))}
-                    className={SELECT_CLASS}
-                  >
-                    <option value="">Sin cadena</option>
-                    {cadenas.map((c) => (
-                      <option key={c.id_cadena} value={c.id_cadena}>
-                        {c.nombre_cadena}
-                      </option>
-                    ))}
-                  </select>
-                  <EditorialInput
-                    placeholder="Direccion"
-                    value={editingForm.direccion}
-                    onChange={(e) => setEditingForm((p) => ({ ...p, direccion: e.target.value }))}
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <EditorialInput
-                      type="number"
-                      placeholder="Latitud"
-                      value={editingForm.latitud}
-                      onChange={(e) => setEditingForm((p) => ({ ...p, latitud: e.target.value }))}
-                    />
-                    <EditorialInput
-                      type="number"
-                      placeholder="Longitud"
-                      value={editingForm.longitud}
-                      onChange={(e) => setEditingForm((p) => ({ ...p, longitud: e.target.value }))}
-                    />
-                  </div>
-                  <FormSubmitBar>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleSave(local.id_local)} disabled={submitting}>
-                        Guardar
+      <FormPanel eyebrow="Catalogo">
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Cargando...</p>
+        ) : locales.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No hay locales registrados.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Local</TableHead>
+                <TableHead>Cadena</TableHead>
+                <TableHead className="w-20 text-right" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {locales.map((local) => (
+                <TableRow key={local.id_local}>
+                  <TableCell>
+                    <div className="font-medium">{local.nombre_local}</div>
+                    {local.direccion ? <div className="text-xs text-muted-foreground">{local.direccion}</div> : null}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {local.nombre_cadena ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        size="icon" variant="ghost"
+                        className="size-8 text-muted-foreground hover:text-foreground"
+                        onClick={() => { setEditingId(local.id_local); setForm(toFormState(local)) }}
+                      >
+                        <Pencil className="size-3.5" />
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                        Cancelar
+                      <Button
+                        size="icon" variant="ghost"
+                        className="size-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDelete(local.id_local)}
+                        disabled={submitting}
+                      >
+                        <Trash2 className="size-3.5" />
                       </Button>
                     </div>
-                  </FormSubmitBar>
-                </div>
-              ) : (
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-medium">{local.nombre_local}</p>
-                    {local.nombre_cadena ? (
-                      <p className="text-xs text-muted-foreground">{local.nombre_cadena}</p>
-                    ) : null}
-                    {local.direccion ? (
-                      <p className="text-xs text-muted-foreground">{local.direccion}</p>
-                    ) : null}
-                  </div>
-                  <div className="flex shrink-0 gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="size-8 text-muted-foreground hover:text-foreground"
-                      onClick={() => {
-                        setEditingId(local.id_local)
-                        setEditingForm(toFormState(local))
-                      }}
-                    >
-                      <Pencil className="size-3.5" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="size-8 text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDelete(local.id_local)}
-                      disabled={submitting}
-                    >
-                      <Trash2 className="size-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </FormPanel>
     </section>
   )

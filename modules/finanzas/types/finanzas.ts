@@ -90,7 +90,17 @@ export interface MovimientoResponse {
   tipo_gasto: TipoGasto
   categoria?: string | null
   nombre_cuenta?: string | null
+  compras_vinculadas?: { id_compra: number }[]
+  total_compras_vinculadas?: number
+  diferencia_total_compras?: number
   monto: number
   descripcion: string
   created_at: string
+}
+
+export interface MovimientosPageResponse {
+  items: MovimientoResponse[]
+  offset: number
+  limit: number
+  total_gasto_mensual: number
 }

@@ -4,130 +4,100 @@ import { Pencil, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { EditorialInput, FieldGroup, FormPanel, FormSubmitBar } from "@/components/forms/editorial-form"
+import { EditorialInput, FormPanel } from "@/components/forms/editorial-form"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useFinanzas } from "@/modules/finanzas/hooks/useFinanzas"
 
 export function CategoriasManager() {
   const { categorias, crearCategoria, editarCategoria, eliminarCategoria } = useFinanzas()
   const [submitting, setSubmitting] = useState(false)
-  const [nuevaCategoria, setNuevaCategoria] = useState("")
+  const [formValue, setFormValue] = useState("")
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [editingName, setEditingName] = useState("")
+  const isEditing = editingId !== null
 
-  const onCreate = async () => {
-    if (!nuevaCategoria.trim()) {
-      toast.error("Nombre requerido")
-      return
-    }
+  const handleSubmit = async () => {
+    if (!formValue.trim()) { toast.error("Nombre requerido"); return }
     setSubmitting(true)
-    const result = await crearCategoria({ nombre: nuevaCategoria.trim() })
+    const result = isEditing
+      ? await editarCategoria(editingId!, { nombre: formValue.trim() })
+      : await crearCategoria({ nombre: formValue.trim() })
     setSubmitting(false)
     if (result.ok) {
-      toast.success("Categoria creada")
-      setNuevaCategoria("")
-      return
-    }
-    toast.error("No se pudo crear la categoria", { description: result.message })
-  }
-
-  const onSave = async (idCategoria: number) => {
-    if (!editingName.trim()) {
-      toast.error("Nombre requerido")
-      return
-    }
-    setSubmitting(true)
-    const result = await editarCategoria(idCategoria, { nombre: editingName.trim() })
-    setSubmitting(false)
-    if (result.ok) {
-      toast.success("Categoria actualizada")
+      toast.success(isEditing ? "Categoria actualizada" : "Categoria creada")
+      setFormValue("")
       setEditingId(null)
       return
     }
-    toast.error("No se pudo actualizar la categoria", { description: result.message })
+    toast.error("No se pudo guardar la categoria", { description: result.message })
   }
 
-  const onDelete = async (idCategoria: number) => {
+  const handleDelete = async (idCategoria: number) => {
     setSubmitting(true)
     const result = await eliminarCategoria(idCategoria)
     setSubmitting(false)
-    if (result.ok) {
-      toast.success("Categoria eliminada")
-      return
-    }
+    if (result.ok) { toast.success("Categoria eliminada"); return }
     toast.error("No se pudo eliminar la categoria", { description: result.message })
   }
 
   return (
     <FormPanel eyebrow="Finanzas maestras">
-      <div className="space-y-6 sm:space-y-7">
-        <FieldGroup label="Nueva categoria">
-          <div className="flex gap-2">
-            <EditorialInput
-              placeholder="Nombre de la categoria"
-              value={nuevaCategoria}
-              onChange={(e) => setNuevaCategoria(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && void onCreate()}
-            />
-            <Button onClick={onCreate} disabled={submitting} className="shrink-0">
-              Crear
+      <div className="space-y-5">
+        <div className="flex gap-2">
+          <EditorialInput
+            placeholder={isEditing ? "Nuevo nombre de categoria" : "Nombre de la categoria"}
+            value={formValue}
+            onChange={(e) => setFormValue(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && void handleSubmit()}
+            autoFocus={isEditing}
+          />
+          <Button onClick={handleSubmit} disabled={submitting} className="shrink-0">
+            {isEditing ? "Guardar" : "Crear"}
+          </Button>
+          {isEditing ? (
+            <Button variant="ghost" className="shrink-0" onClick={() => { setEditingId(null); setFormValue("") }}>
+              Cancelar
             </Button>
-          </div>
-        </FieldGroup>
+          ) : null}
+        </div>
 
-        {categorias.length > 0 ? (
-          <div className="space-y-2">
-            {categorias.map((categoria) => (
-              <div key={categoria.id_categoria} className="rounded-4xl bg-surface-low px-4 py-3.5">
-                {editingId === categoria.id_categoria ? (
-                  <div className="space-y-3">
-                    <EditorialInput
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && void onSave(categoria.id_categoria)}
-                      autoFocus
-                    />
-                    <FormSubmitBar>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => onSave(categoria.id_categoria)} disabled={submitting}>
-                          Guardar
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                          Cancelar
-                        </Button>
-                      </div>
-                    </FormSubmitBar>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium capitalize">{categoria.nombre}</p>
-                    <div className="flex shrink-0 gap-1">
+        {categorias.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No hay categorias registradas.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Categoria</TableHead>
+                <TableHead className="w-20 text-right" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {categorias.map((cat) => (
+                <TableRow key={cat.id_categoria}>
+                  <TableCell className="font-medium capitalize">{cat.nombre}</TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
                       <Button
-                        size="icon"
-                        variant="ghost"
+                        size="icon" variant="ghost"
                         className="size-8 text-muted-foreground hover:text-foreground"
-                        onClick={() => {
-                          setEditingId(categoria.id_categoria)
-                          setEditingName(categoria.nombre)
-                        }}
+                        onClick={() => { setEditingId(cat.id_categoria); setFormValue(cat.nombre) }}
                       >
                         <Pencil className="size-3.5" />
                       </Button>
                       <Button
-                        size="icon"
-                        variant="ghost"
+                        size="icon" variant="ghost"
                         className="size-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => onDelete(categoria.id_categoria)}
+                        onClick={() => handleDelete(cat.id_categoria)}
                         disabled={submitting}
                       >
                         <Trash2 className="size-3.5" />
                       </Button>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : null}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </FormPanel>
   )

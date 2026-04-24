@@ -1,15 +1,16 @@
 "use client"
 
 import { Pencil, Trash2 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { EditorialInput, FieldGroup, FormPanel, FormSubmitBar } from "@/components/forms/editorial-form"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useEntrenamientos } from "@/modules/entrenamientos/hooks/useEntrenamientos"
 import { gimnasioCreateSchema, gimnasioEditSchema } from "@/modules/entrenamientos/schemas/entrenamientos.schema"
-import { GimnasioResponse } from "@/modules/entrenamientos/types/entrenamientos"
+import type { GimnasioResponse } from "@/modules/entrenamientos/types/entrenamientos"
 
-type GimnasioFormState = {
+type FormState = {
   nombre_gimnasio: string
   nombre_cadena: string
   direccion: string
@@ -18,7 +19,7 @@ type GimnasioFormState = {
   longitud: string
 }
 
-const initialForm: GimnasioFormState = {
+const emptyForm: FormState = {
   nombre_gimnasio: "",
   nombre_cadena: "",
   direccion: "",
@@ -27,31 +28,34 @@ const initialForm: GimnasioFormState = {
   longitud: "",
 }
 
-const getPayloadFromForm = (form: GimnasioFormState) => ({
-  nombre_gimnasio: form.nombre_gimnasio,
-  nombre_cadena: form.nombre_cadena || null,
-  direccion: form.direccion,
-  comuna: form.comuna || null,
-  latitud: Number(form.latitud),
-  longitud: Number(form.longitud),
+const toPayload = (f: FormState) => ({
+  nombre_gimnasio: f.nombre_gimnasio,
+  nombre_cadena: f.nombre_cadena || null,
+  direccion: f.direccion,
+  comuna: f.comuna || null,
+  latitud: Number(f.latitud),
+  longitud: Number(f.longitud),
 })
 
-const getFormFromGimnasio = (gimnasio: GimnasioResponse): GimnasioFormState => ({
-  nombre_gimnasio: gimnasio.nombre_gimnasio,
-  nombre_cadena: gimnasio.nombre_cadena ?? "",
-  direccion: gimnasio.direccion,
-  comuna: gimnasio.comuna ?? "",
-  latitud: String(gimnasio.latitud),
-  longitud: String(gimnasio.longitud),
+const toFormState = (g: GimnasioResponse): FormState => ({
+  nombre_gimnasio: g.nombre_gimnasio,
+  nombre_cadena: g.nombre_cadena ?? "",
+  direccion: g.direccion,
+  comuna: g.comuna ?? "",
+  latitud: String(g.latitud),
+  longitud: String(g.longitud),
 })
 
 export function GimnasiosManager() {
-  const { gimnasios, loading, submitting, fetchGimnasios, crearGimnasio, editarGimnasio, eliminarGimnasio } =
+  const { gimnasios, loading, fetchGimnasios, crearGimnasio, editarGimnasio, eliminarGimnasio } =
     useEntrenamientos()
+  const [submitting, setSubmitting] = useState(false)
   const [search, setSearch] = useState("")
-  const [form, setForm] = useState(initialForm)
+  const [form, setForm] = useState<FormState>(emptyForm)
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [editingForm, setEditingForm] = useState(initialForm)
+  const isEditing = editingId !== null
+
+  const cancelEdit = useCallback(() => { setEditingId(null); setForm(emptyForm) }, [])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -60,220 +64,141 @@ export function GimnasiosManager() {
     return () => clearTimeout(timer)
   }, [fetchGimnasios, search])
 
-  const handleCreate = async () => {
-    const parsed = gimnasioCreateSchema.safeParse(getPayloadFromForm(form))
-    if (!parsed.success) {
-      toast.error("Revisa el formulario", {
-        description: parsed.error.issues[0]?.message ?? "Completa los datos del gimnasio.",
-      })
-      return
+  const handleSubmit = async () => {
+    const payload = toPayload(form)
+    setSubmitting(true)
+    try {
+      if (isEditing) {
+        const parsed = gimnasioEditSchema.safeParse(payload)
+        if (!parsed.success) {
+          toast.error("Revisa los datos", { description: parsed.error.issues[0]?.message })
+          return
+        }
+        const result = await editarGimnasio(editingId!, parsed.data)
+        if (result.ok) { toast.success("Gimnasio actualizado"); cancelEdit(); return }
+        toast.error("No se pudo actualizar el gimnasio", { description: result.message })
+      } else {
+        const parsed = gimnasioCreateSchema.safeParse(payload)
+        if (!parsed.success) {
+          toast.error("Revisa los datos", { description: parsed.error.issues[0]?.message })
+          return
+        }
+        const result = await crearGimnasio({
+          ...parsed.data,
+          nombre_cadena: parsed.data.nombre_cadena ?? null,
+          comuna: parsed.data.comuna ?? null,
+        })
+        if (result.ok) { toast.success("Gimnasio creado"); setForm(emptyForm); return }
+        toast.error("No se pudo crear el gimnasio", { description: result.message })
+      }
+    } finally {
+      setSubmitting(false)
     }
-    const result = await crearGimnasio({
-      ...parsed.data,
-      nombre_cadena: parsed.data.nombre_cadena ?? null,
-      comuna: parsed.data.comuna ?? null,
-    })
-    if (result.ok) {
-      setForm(initialForm)
-      toast.success("Gimnasio creado")
-      return
-    }
-    toast.error("No se pudo crear el gimnasio", { description: result.message })
-  }
-
-  const handleSave = async (idGimnasio: number) => {
-    const parsed = gimnasioEditSchema.safeParse(getPayloadFromForm(editingForm))
-    if (!parsed.success) {
-      toast.error("Revisa los cambios", {
-        description: parsed.error.issues[0]?.message ?? "Completa los datos del gimnasio.",
-      })
-      return
-    }
-    const result = await editarGimnasio(idGimnasio, parsed.data)
-    if (result.ok) {
-      setEditingId(null)
-      setEditingForm(initialForm)
-      toast.success("Gimnasio actualizado")
-      return
-    }
-    toast.error("No se pudo actualizar el gimnasio", { description: result.message })
   }
 
   const handleDelete = async (idGimnasio: number) => {
+    setSubmitting(true)
     const result = await eliminarGimnasio(idGimnasio)
-    if (result.ok) {
-      toast.success("Gimnasio eliminado")
-      return
-    }
+    setSubmitting(false)
+    if (result.ok) { toast.success("Gimnasio eliminado"); return }
     toast.error("No se pudo eliminar el gimnasio", { description: result.message })
   }
 
+  const f = form
+  const set = (patch: Partial<FormState>) => setForm((p) => ({ ...p, ...patch }))
+
   return (
     <section className="grid gap-6 lg:grid-cols-[1.1fr_1.9fr]">
-      <FormPanel eyebrow="Nuevo gimnasio">
+      <FormPanel eyebrow={isEditing ? "Editando gimnasio" : "Nuevo gimnasio"}>
         <div className="space-y-4 sm:space-y-5">
           <FieldGroup label="Nombre">
-            <EditorialInput
-              placeholder="Nombre del gimnasio"
-              value={form.nombre_gimnasio}
-              onChange={(e) => setForm((p) => ({ ...p, nombre_gimnasio: e.target.value }))}
-            />
+            <EditorialInput placeholder="Ej: Smart Fit Oeste" value={f.nombre_gimnasio} onChange={(e) => set({ nombre_gimnasio: e.target.value })} />
           </FieldGroup>
           <FieldGroup label="Cadena o marca" hint="Opcional">
-            <EditorialInput
-              placeholder="Ej: Smart Fit"
-              value={form.nombre_cadena}
-              onChange={(e) => setForm((p) => ({ ...p, nombre_cadena: e.target.value }))}
-            />
+            <EditorialInput placeholder="Ej: Smart Fit" value={f.nombre_cadena} onChange={(e) => set({ nombre_cadena: e.target.value })} />
           </FieldGroup>
           <FieldGroup label="Direccion">
-            <EditorialInput
-              placeholder="Av. Ejemplo 123"
-              value={form.direccion}
-              onChange={(e) => setForm((p) => ({ ...p, direccion: e.target.value }))}
-            />
+            <EditorialInput placeholder="Av. Ejemplo 123" value={f.direccion} onChange={(e) => set({ direccion: e.target.value })} />
           </FieldGroup>
           <FieldGroup label="Comuna" hint="Opcional">
-            <EditorialInput
-              placeholder="Nunoa"
-              value={form.comuna}
-              onChange={(e) => setForm((p) => ({ ...p, comuna: e.target.value }))}
-            />
+            <EditorialInput placeholder="Nunoa" value={f.comuna} onChange={(e) => set({ comuna: e.target.value })} />
           </FieldGroup>
-          <div className="grid grid-cols-2 gap-3">
-            <FieldGroup label="Latitud">
-              <EditorialInput
-                inputMode="decimal"
-                placeholder="-33.456"
-                value={form.latitud}
-                onChange={(e) => setForm((p) => ({ ...p, latitud: e.target.value }))}
-              />
-            </FieldGroup>
-            <FieldGroup label="Longitud">
-              <EditorialInput
-                inputMode="decimal"
-                placeholder="-70.648"
-                value={form.longitud}
-                onChange={(e) => setForm((p) => ({ ...p, longitud: e.target.value }))}
-              />
-            </FieldGroup>
-          </div>
+          <FieldGroup label="Coordenadas">
+            <div className="grid grid-cols-2 gap-2">
+              <EditorialInput inputMode="decimal" placeholder="Latitud" value={f.latitud} onChange={(e) => set({ latitud: e.target.value })} />
+              <EditorialInput inputMode="decimal" placeholder="Longitud" value={f.longitud} onChange={(e) => set({ longitud: e.target.value })} />
+            </div>
+          </FieldGroup>
           <FormSubmitBar>
-            <Button onClick={handleCreate} disabled={submitting} className="w-full sm:w-auto">
-              {submitting ? "Guardando..." : "Crear gimnasio"}
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleSubmit} disabled={submitting} className="w-full sm:w-auto">
+                {submitting ? "Guardando..." : isEditing ? "Guardar cambios" : "Crear gimnasio"}
+              </Button>
+              {isEditing ? (
+                <Button variant="ghost" onClick={cancelEdit}>Cancelar</Button>
+              ) : null}
+            </div>
           </FormSubmitBar>
         </div>
       </FormPanel>
 
-      <FormPanel eyebrow="Gestion">
-        <div className="space-y-4 sm:space-y-5">
-          <FieldGroup label="Buscar">
-            <EditorialInput
-              placeholder="Nombre o comuna"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </FieldGroup>
+      <FormPanel eyebrow="Catalogo">
+        <div className="space-y-4">
+          <EditorialInput
+            placeholder="Buscar por nombre o comuna..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
 
-          <div className="space-y-2">
-            {loading ? (
-              <p className="text-sm text-muted-foreground">Cargando...</p>
-            ) : gimnasios.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No hay gimnasios con ese filtro.</p>
-            ) : null}
-
-            {gimnasios.map((gimnasio) => (
-              <div key={gimnasio.id_gimnasio} className="rounded-4xl bg-surface-low p-4">
-                {editingId === gimnasio.id_gimnasio ? (
-                  <div className="space-y-3">
-                    <EditorialInput
-                      value={editingForm.nombre_gimnasio}
-                      onChange={(e) => setEditingForm((p) => ({ ...p, nombre_gimnasio: e.target.value }))}
-                    />
-                    <EditorialInput
-                      placeholder="Cadena o marca"
-                      value={editingForm.nombre_cadena}
-                      onChange={(e) => setEditingForm((p) => ({ ...p, nombre_cadena: e.target.value }))}
-                    />
-                    <EditorialInput
-                      placeholder="Direccion"
-                      value={editingForm.direccion}
-                      onChange={(e) => setEditingForm((p) => ({ ...p, direccion: e.target.value }))}
-                    />
-                    <div className="grid grid-cols-3 gap-2">
-                      <EditorialInput
-                        placeholder="Comuna"
-                        value={editingForm.comuna}
-                        onChange={(e) => setEditingForm((p) => ({ ...p, comuna: e.target.value }))}
-                      />
-                      <EditorialInput
-                        inputMode="decimal"
-                        placeholder="Latitud"
-                        value={editingForm.latitud}
-                        onChange={(e) => setEditingForm((p) => ({ ...p, latitud: e.target.value }))}
-                      />
-                      <EditorialInput
-                        inputMode="decimal"
-                        placeholder="Longitud"
-                        value={editingForm.longitud}
-                        onChange={(e) => setEditingForm((p) => ({ ...p, longitud: e.target.value }))}
-                      />
-                    </div>
-                    <FormSubmitBar>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleSave(gimnasio.id_gimnasio)} disabled={submitting}>
-                          Guardar
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Cargando...</p>
+          ) : gimnasios.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sin resultados.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Gimnasio</TableHead>
+                  <TableHead>Ubicacion</TableHead>
+                  <TableHead className="w-20 text-right" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {gimnasios.map((g) => (
+                  <TableRow key={g.id_gimnasio}>
+                    <TableCell>
+                      <span className="font-medium">{g.nombre_gimnasio}</span>
+                      {g.nombre_cadena ? (
+                        <span className="ml-1.5 text-xs text-muted-foreground">{g.nombre_cadena}</span>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {[g.comuna, g.direccion].filter(Boolean).join(" · ") || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          size="icon" variant="ghost"
+                          className="size-8 text-muted-foreground hover:text-foreground"
+                          onClick={() => { setEditingId(g.id_gimnasio); setForm(toFormState(g)) }}
+                        >
+                          <Pencil className="size-3.5" />
                         </Button>
                         <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingId(null)
-                            setEditingForm(initialForm)
-                          }}
+                          size="icon" variant="ghost"
+                          className="size-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleDelete(g.id_gimnasio)}
+                          disabled={submitting}
                         >
-                          Cancelar
+                          <Trash2 className="size-3.5" />
                         </Button>
                       </div>
-                    </FormSubmitBar>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-medium">{gimnasio.nombre_gimnasio}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {gimnasio.nombre_cadena ?? "Sin cadena"} · {gimnasio.comuna ?? "Sin comuna"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{gimnasio.direccion}</p>
-                    </div>
-                    <div className="flex shrink-0 gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="size-8 text-muted-foreground hover:text-foreground"
-                        onClick={() => {
-                          setEditingId(gimnasio.id_gimnasio)
-                          setEditingForm(getFormFromGimnasio(gimnasio))
-                        }}
-                      >
-                        <Pencil className="size-3.5" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="size-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDelete(gimnasio.id_gimnasio)}
-                        disabled={submitting}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </FormPanel>
     </section>

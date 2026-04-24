@@ -1,6 +1,25 @@
 import { z } from "zod"
 
 const optionalTrimmedText = z.string().trim().optional().nullable().or(z.literal(""))
+const enumMusculoValues = ["bicep", "tricep", "pecho", "hombro", "espalda", "cuadricep"] as const
+const musculoAliases: Record<string, (typeof enumMusculoValues)[number]> = {
+  biceps: "bicep",
+  bicep: "bicep",
+  triceps: "tricep",
+  tricep: "tricep",
+  pecho: "pecho",
+  hombro: "hombro",
+  espalda: "espalda",
+  cuadricep: "cuadricep",
+  cuadriceps: "cuadricep",
+  pierna: "cuadricep",
+  piernas: "cuadricep",
+}
+const normalizeMusculo = (value: string) => musculoAliases[value.trim().toLowerCase()] ?? value.trim().toLowerCase()
+const musculoSchema = z.preprocess(
+  (value) => (typeof value === "string" ? normalizeMusculo(value) : value),
+  z.enum(enumMusculoValues, { error: "Grupo muscular invalido" }),
+)
 
 export const gimnasioCreateSchema = z.object({
   nombre_gimnasio: z.string().trim().min(2, "El nombre del gimnasio debe tener al menos 2 caracteres"),
@@ -18,6 +37,24 @@ export const gimnasioEditSchema = z.object({
   comuna: optionalTrimmedText,
   latitud: z.number().finite().optional().nullable(),
   longitud: z.number().finite().optional().nullable(),
+})
+
+export const ejercicioCreateSchema = z.object({
+  nombre: z.string().trim().min(2, "El nombre del ejercicio debe tener al menos 2 caracteres"),
+  tipo: musculoSchema,
+  url_video: z
+    .string()
+    .trim()
+    .url("La URL del video no es valida")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
+})
+
+export const ejercicioEditSchema = z.object({
+  nombre: z.string().trim().min(2).optional().nullable().or(z.literal("")),
+  tipo: musculoSchema.optional().nullable().or(z.literal("")),
+  url_video: z.string().trim().url("La URL del video no es valida").optional().nullable().or(z.literal("")),
 })
 
 export const entrenoFuerzaCreateSchema = z.object({
@@ -44,6 +81,8 @@ export const serieFuerzaPatchSchema = z.object({
 
 export type GimnasioCreateForm = z.infer<typeof gimnasioCreateSchema>
 export type GimnasioEditForm = z.infer<typeof gimnasioEditSchema>
+export type EjercicioCreateForm = z.infer<typeof ejercicioCreateSchema>
+export type EjercicioEditForm = z.infer<typeof ejercicioEditSchema>
 export type EntrenoFuerzaCreateForm = z.infer<typeof entrenoFuerzaCreateSchema>
 export type SerieFuerzaCreateForm = z.infer<typeof serieFuerzaCreateSchema>
 export type SerieFuerzaPatchForm = z.infer<typeof serieFuerzaPatchSchema>

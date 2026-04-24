@@ -15,8 +15,11 @@ Esta API centraliza registros personales y operativos en varios dominios:
 
 La aplicación expone documentación interactiva en:
 
-- `/docs`
-- `/redoc`
+- `/docs` para el menú principal de documentación
+- `/docs/global` para el Swagger completo
+- `/docs/{modulo}` para Swagger modular, por ejemplo `/docs/finanzas`
+- `/openapi.json` para el schema global
+- `/openapi/{modulo}.json` para schemas por módulo
 
 Este archivo está pensado para ser más fácil de leer por una persona y también más fácil de parsear por una IA.
 
@@ -97,7 +100,7 @@ Campos esperados:
 - `username`: máximo 20 caracteres
 - `nombre`: máximo 20 caracteres
 - `apellido`: máximo 20 caracteres
-- `telefono`: máximo 11 caracteres
+- `telefono`: exactamente 11 dígitos numéricos
 
 #### `POST /auth/jwt/login`
 
@@ -105,7 +108,11 @@ Inicia sesión y devuelve el token JWT.
 
 #### Endpoints adicionales de auth
 
-`fastapi-users` suele exponer también rutas auxiliares del router JWT, dependiendo de la configuración activa del paquete.
+| Método | Ruta               | Descripción                                            |
+| ------ | ------------------ | ------------------------------------------------------ |
+| `POST` | `/auth/jwt/login`  | Inicia sesión y devuelve JWT                           |
+| `POST` | `/auth/jwt/logout` | Endpoint expuesto por el router JWT de `fastapi-users` |
+| `POST` | `/auth/register`   | Registra usuario                                       |
 
 ## Convenciones globales
 
@@ -170,7 +177,8 @@ Prefijo: `/api/usuarios`
   "apellido": "Arancibia",
   "telefono": "56912345678",
   "email": "correo@mail.com",
-  "created_at": "2026-01-01T12:00:00"
+  "created_at": "2026-01-01T12:00:00",
+  "is_superuser": false
 }
 ```
 
@@ -270,12 +278,49 @@ Campos importantes:
 
 #### Movimientos
 
-| Método  | Ruta                                        | Auth                           | Descripción                                                         |
-| ------- | ------------------------------------------- | ------------------------------ | ------------------------------------------------------------------- |
-| `GET`   | `/api/finanzas/movimientos/`                | usuario                        | Lista movimientos del usuario a partir de sus cuentas               |
-| `GET`   | `/api/finanzas/movimientos/{id_movimiento}` | usuario + ownership por cuenta | Obtiene movimiento por ID, incluyendo compras vinculadas si existen |
-| `POST`  | `/api/finanzas/movimientos/`                | usuario                        | Crea movimiento                                                     |
-| `PATCH` | `/api/finanzas/movimientos/{id_movimiento}` | usuario + ownership por cuenta | Edita movimiento                                                    |
+| Método  | Ruta                                        | Auth                           | Descripción                                                                                                                                          |
+| ------- | ------------------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`   | `/api/finanzas/movimientos/`                | usuario                        | Lista movimientos del usuario a partir de sus cuentas, acepta `offset` y `limit`, ordena de más nuevo a más antiguo y devuelve `total_gasto_mensual` |
+| `GET`   | `/api/finanzas/movimientos/{id_movimiento}` | usuario + ownership por cuenta | Obtiene movimiento por ID, incluyendo compras vinculadas si existen                                                                                  |
+| `POST`  | `/api/finanzas/movimientos/`                | usuario                        | Crea movimiento                                                                                                                                      |
+| `PATCH` | `/api/finanzas/movimientos/{id_movimiento}` | usuario + ownership por cuenta | Edita movimiento                                                                                                                                     |
+
+Parámetros útiles para `GET /api/finanzas/movimientos/`:
+
+- `offset`: paginación por desplazamiento, parte en `0`
+- `limit`: cantidad máxima a devolver por página, por defecto `20`, máximo `100`
+
+Comportamiento actual:
+
+- siempre ordena por `created_at` descendente
+- usa `id_transaccion` descendente como desempate
+- `total_gasto_mensual` suma solo movimientos de tipo `gasto`
+- ese total se calcula usando el mes actual en horario de Chile (`America/Santiago`), aunque el servidor corra en otra zona horaria
+
+Respuesta base del listado:
+
+```json
+{
+  "items": [
+    {
+      "id_transaccion": 15,
+      "tipo_movimiento": "gasto",
+      "tipo_gasto": "variable",
+      "categoria": "comida",
+      "nombre_cuenta": "Cuenta principal",
+      "compras_vinculadas": [],
+      "total_compras_vinculadas": 0,
+      "diferencia_total_compras": 3500,
+      "monto": 3500,
+      "descripcion": "Compra en supermercado",
+      "created_at": "2026-04-22T09:00:00"
+    }
+  ],
+  "offset": 0,
+  "limit": 20,
+  "total_gasto_mensual": 245000
+}
+```
 
 Payload create:
 
@@ -327,6 +372,15 @@ Payload create:
   "url_video": "https://youtube.com/ejemplo"
 }
 ```
+
+Enum importante de `Ejercicios.tipo`:
+
+- `EnumMusculo`: `bicep`, `tricep`, `pecho`, `hombro`, `espalda`, `cuadricep`
+
+Notas:
+
+- el filtro `tipo` de `GET /api/entrenamientos/ejercicios/` usa esos mismos valores
+- `GET /api/entrenamientos/ejercicios/musculos` expone esta lista de forma consumible para frontend
 
 #### Gimnasios
 
@@ -395,8 +449,33 @@ Prefijo: `/api/catalogo`
 
 Submódulos:
 
+- `categoria-producto`
 - `marca`
 - `producto`
+- `subcategoria-producto`
+
+#### Categorías de producto
+
+| Método   | Ruta                                              | Auth      | Descripción                                            |
+| -------- | ------------------------------------------------- | --------- | ------------------------------------------------------ |
+| `GET`    | `/api/catalogo/categoria-producto/`               | usuario   | Lista categorías de producto                           |
+| `GET`    | `/api/catalogo/categoria-producto/{id_categoria}` | usuario   | Obtiene categoría de producto                          |
+| `POST`   | `/api/catalogo/categoria-producto/`               | superuser | Crea categoría de producto                             |
+| `PATCH`  | `/api/catalogo/categoria-producto/{id_categoria}` | superuser | Edita categoría de producto                            |
+| `DELETE` | `/api/catalogo/categoria-producto/{id_categoria}` | superuser | Elimina categoría de producto si no tiene dependencias |
+
+Payload create:
+
+```json
+{
+  "nombre_categoria": "Lacteos"
+}
+```
+
+Notas:
+
+- no se puede eliminar una categoría si tiene subcategorías asociadas
+- no se puede eliminar una categoría si tiene productos asociados
 
 #### Marcas
 
@@ -457,6 +536,31 @@ Notas:
 - en `PATCH`, si cambias la categoría sin enviar subcategoría, se limpia `id_subcategoria` para evitar inconsistencias
 - el response de producto mantiene los campos `categoria` y `subcategoria` como nombres legibles (además de sus IDs)
 - `DELETE` marca el producto como inactivo, no lo borra físicamente
+
+#### Subcategorías de producto
+
+| Método   | Ruta                                                    | Auth      | Descripción                                               |
+| -------- | ------------------------------------------------------- | --------- | --------------------------------------------------------- |
+| `GET`    | `/api/catalogo/subcategoria-producto/`                  | usuario   | Lista subcategorías de producto                           |
+| `GET`    | `/api/catalogo/subcategoria-producto/{id_subcategoria}` | usuario   | Obtiene subcategoría de producto                          |
+| `POST`   | `/api/catalogo/subcategoria-producto/`                  | superuser | Crea subcategoría de producto                             |
+| `PATCH`  | `/api/catalogo/subcategoria-producto/{id_subcategoria}` | superuser | Edita subcategoría de producto                            |
+| `DELETE` | `/api/catalogo/subcategoria-producto/{id_subcategoria}` | superuser | Elimina subcategoría de producto si no tiene dependencias |
+
+Payload create:
+
+```json
+{
+  "id_categoria": 2,
+  "nombre_subcategoria": "Yogurt"
+}
+```
+
+Notas:
+
+- cada subcategoría pertenece a una categoría (`id_categoria`)
+- el nombre de subcategoría es único dentro de su categoría
+- no se puede eliminar una subcategoría si tiene productos asociados
 
 ### 5. Compras
 
@@ -521,7 +625,8 @@ Notas:
 | `GET`    | `/api/compras/compra/`            | usuario             | Lista compras del usuario                                                  |
 | `GET`    | `/api/compras/compra/{id_compra}` | usuario + ownership | Obtiene compra con local, total y movimientos vinculados si existen        |
 | `POST`   | `/api/compras/compra/`            | usuario             | Crea compra asociada al usuario autenticado                                |
-| `POST`   | `/api/compras/compra-completa/`   | usuario             | Crea compra, detalle y vínculo opcional a movimiento en una sola operación |
+| `POST`   | `/api/compras/compra/completa`    | usuario             | Crea compra, detalle y vínculo opcional a movimiento en una sola operación |
+| `POST`   | `/api/compras/compra-completa/`   | usuario             | Alias del endpoint anterior; reutiliza la misma lógica                     |
 | `PATCH`  | `/api/compras/compra/{id_compra}` | usuario + ownership | Edita compra                                                               |
 | `DELETE` | `/api/compras/compra/{id_compra}` | usuario + ownership | Elimina compra                                                             |
 
@@ -849,6 +954,14 @@ Notas:
 }
 ```
 
+### Categoria producto create
+
+```json
+{
+  "nombre_categoria": "Lacteos"
+}
+```
+
 ### Producto create
 
 ```json
@@ -863,6 +976,15 @@ Notas:
   "contenido_neto": 330,
   "unidad_contenido": "ml",
   "activo": true
+}
+```
+
+### Subcategoria producto create
+
+```json
+{
+  "id_categoria": 2,
+  "nombre_subcategoria": "Leche"
 }
 ```
 
@@ -962,6 +1084,14 @@ Notas:
 - `404 Not Found`: recurso no existe o no pertenece al usuario
 - `409 Conflict`: duplicado o regla de negocio violada
 - `422 Unprocessable Entity`: validación de esquema falló
+
+Excepciones actuales a considerar:
+
+- `GET /api/finanzas/movimientos/` responde `404` si el usuario no tiene movimientos registrados
+
+Notas recientes:
+
+- `GET /api/finanzas/movimientos/` ya no devuelve una lista directa; ahora responde un objeto con `items`, `offset`, `limit` y `total_gasto_mensual`
 
 ### Ejemplo de error
 

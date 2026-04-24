@@ -43,7 +43,7 @@ export function AppShell({ children, variant = "user", sections }: AppShellProps
   }, [])
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen overflow-x-clip bg-background text-foreground">
       <div className="mx-auto flex w-full max-w-[1400px]">
         <aside className={asideClassName} aria-label="Navegacion principal">
           <div className="flex h-16 items-center justify-between px-5">

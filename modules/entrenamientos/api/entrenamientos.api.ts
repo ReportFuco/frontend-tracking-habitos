@@ -75,6 +75,26 @@ const normalizeTipoMuscular = (item: unknown): string | null => {
   return normalized || null
 }
 
+const toEjercicioPayload = (payload: EjercicioCreate | EjercicioEdit) => {
+  const body: Record<string, string | null> = {}
+
+  if ("nombre" in payload && payload.nombre !== undefined) {
+    body.nombre = payload.nombre ?? null
+    body.nombre_ejercicio = payload.nombre ?? null
+  }
+
+  if ("tipo" in payload && payload.tipo !== undefined) {
+    body.tipo = payload.tipo ?? null
+    body.tipo_ejercicio = payload.tipo ?? null
+  }
+
+  if ("url_video" in payload && payload.url_video !== undefined) {
+    body.url_video = payload.url_video
+  }
+
+  return body
+}
+
 export const EntrenamientosAPI = {
   getEjercicios: async (params?: { q?: string; tipo?: string }): Promise<EjercicioResponse[]> => {
     const { data } = await api.get("/api/entrenamientos/ejercicios/", {
@@ -85,12 +105,12 @@ export const EntrenamientosAPI = {
   },
 
   createEjercicio: async (payload: EjercicioCreate): Promise<EjercicioResponse> => {
-    const { data } = await api.post("/api/entrenamientos/ejercicios/", payload)
+    const { data } = await api.post("/api/entrenamientos/ejercicios/", toEjercicioPayload(payload))
     return normalizeEjercicio(data) ?? (data as EjercicioResponse)
   },
 
   updateEjercicio: async (idEjercicio: number, payload: EjercicioEdit): Promise<EjercicioResponse> => {
-    const { data } = await api.patch(`/api/entrenamientos/ejercicios/${idEjercicio}`, payload)
+    const { data } = await api.patch(`/api/entrenamientos/ejercicios/${idEjercicio}`, toEjercicioPayload(payload))
     return normalizeEjercicio(data) ?? (data as EjercicioResponse)
   },
 
