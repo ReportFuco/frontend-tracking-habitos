@@ -89,6 +89,31 @@ export interface PesoResponse {
   created_at: string
 }
 
+export interface TablaNutricionalCreate {
+  id_producto: number
+  porcion_cantidad: number
+  porcion_unidad: string
+  calorias: number
+  proteinas: number
+  carbohidratos: number
+  grasas: number
+  azucares?: number | null
+  sodio?: number | null
+  fibra?: number | null
+}
+
+export interface TablaNutricionalPatch {
+  porcion_cantidad?: number | null
+  porcion_unidad?: string | null
+  calorias?: number | null
+  proteinas?: number | null
+  carbohidratos?: number | null
+  grasas?: number | null
+  azucares?: number | null
+  sodio?: number | null
+  fibra?: number | null
+}
+
 export interface TablaNutricionalResponse {
   id_tabla: number
   id_producto: number

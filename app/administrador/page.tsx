@@ -29,6 +29,7 @@ const cards: AdminCard[] = [
     href: "/administrador/usuarios",
     icon: Users,
     accentColor: "var(--module-admin)",
+    ready: true,
   },
   {
     title: "Bancos",
@@ -68,6 +69,7 @@ const cards: AdminCard[] = [
     href: "/administrador/locales",
     icon: MapPin,
     accentColor: "var(--module-compras)",
+    ready: true,
   },
   {
     title: "Marcas",
@@ -83,6 +85,7 @@ const cards: AdminCard[] = [
     href: "/administrador/productos",
     icon: Package,
     accentColor: "var(--module-compras)",
+    ready: true,
   },
   {
     title: "Tablas nutricionales",
@@ -90,6 +93,7 @@ const cards: AdminCard[] = [
     href: "/administrador/tablas-nutricionales",
     icon: ClipboardList,
     accentColor: "var(--module-nutricion)",
+    ready: true,
   },
   {
     title: "Ejercicios",

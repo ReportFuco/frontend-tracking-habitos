@@ -12,6 +12,8 @@ import {
   PesoCreate,
   PesoPatch,
   PesoResponse,
+  TablaNutricionalCreate,
+  TablaNutricionalPatch,
   TablaNutricionalResponse,
 } from "@/modules/nutricion/types/nutricion"
 
@@ -110,5 +112,19 @@ export const NutricionAPI = {
   getTablas: async (): Promise<TablaNutricionalResponse[]> => {
     const { data } = await api.get("/api/nutricion/tabla/")
     return data
+  },
+
+  createTabla: async (payload: TablaNutricionalCreate): Promise<TablaNutricionalResponse> => {
+    const { data } = await api.post("/api/nutricion/tabla/", payload)
+    return data
+  },
+
+  updateTabla: async (idTabla: number, payload: TablaNutricionalPatch): Promise<TablaNutricionalResponse> => {
+    const { data } = await api.patch(`/api/nutricion/tabla/${idTabla}`, payload)
+    return data
+  },
+
+  deleteTabla: async (idTabla: number): Promise<void> => {
+    await api.delete(`/api/nutricion/tabla/${idTabla}`)
   },
 }

@@ -8,7 +8,8 @@ import { EditorialInput, FieldGroup, FormPanel, FormSubmitBar } from "@/componen
 import { useFinanzas } from "@/modules/finanzas/hooks/useFinanzas"
 
 export function CategoriasManager() {
-  const { categorias, submitting, crearCategoria, editarCategoria, eliminarCategoria } = useFinanzas()
+  const { categorias, crearCategoria, editarCategoria, eliminarCategoria } = useFinanzas()
+  const [submitting, setSubmitting] = useState(false)
   const [nuevaCategoria, setNuevaCategoria] = useState("")
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editingName, setEditingName] = useState("")
@@ -18,7 +19,9 @@ export function CategoriasManager() {
       toast.error("Nombre requerido")
       return
     }
+    setSubmitting(true)
     const result = await crearCategoria({ nombre: nuevaCategoria.trim() })
+    setSubmitting(false)
     if (result.ok) {
       toast.success("Categoria creada")
       setNuevaCategoria("")
@@ -32,7 +35,9 @@ export function CategoriasManager() {
       toast.error("Nombre requerido")
       return
     }
+    setSubmitting(true)
     const result = await editarCategoria(idCategoria, { nombre: editingName.trim() })
+    setSubmitting(false)
     if (result.ok) {
       toast.success("Categoria actualizada")
       setEditingId(null)
@@ -42,7 +47,9 @@ export function CategoriasManager() {
   }
 
   const onDelete = async (idCategoria: number) => {
+    setSubmitting(true)
     const result = await eliminarCategoria(idCategoria)
+    setSubmitting(false)
     if (result.ok) {
       toast.success("Categoria eliminada")
       return

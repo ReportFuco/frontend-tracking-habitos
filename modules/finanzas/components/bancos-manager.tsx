@@ -8,7 +8,8 @@ import { EditorialInput, FieldGroup, FormPanel, FormSubmitBar } from "@/componen
 import { useFinanzas } from "@/modules/finanzas/hooks/useFinanzas"
 
 export function BancosManager() {
-  const { bancos, submitting, crearBanco, editarBanco, eliminarBanco } = useFinanzas()
+  const { bancos, crearBanco, editarBanco, eliminarBanco } = useFinanzas()
+  const [submitting, setSubmitting] = useState(false)
   const [nuevoBanco, setNuevoBanco] = useState("")
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editingName, setEditingName] = useState("")
@@ -18,7 +19,9 @@ export function BancosManager() {
       toast.error("Nombre requerido")
       return
     }
+    setSubmitting(true)
     const result = await crearBanco({ nombre_banco: nuevoBanco.trim() })
+    setSubmitting(false)
     if (result.ok) {
       toast.success("Banco creado")
       setNuevoBanco("")
@@ -32,7 +35,9 @@ export function BancosManager() {
       toast.error("Nombre requerido")
       return
     }
+    setSubmitting(true)
     const result = await editarBanco(idBanco, { nombre_banco: editingName.trim() })
+    setSubmitting(false)
     if (result.ok) {
       toast.success("Banco actualizado")
       setEditingId(null)
@@ -42,7 +47,9 @@ export function BancosManager() {
   }
 
   const onDelete = async (idBanco: number) => {
+    setSubmitting(true)
     const result = await eliminarBanco(idBanco)
+    setSubmitting(false)
     if (result.ok) {
       toast.success("Banco eliminado")
       return

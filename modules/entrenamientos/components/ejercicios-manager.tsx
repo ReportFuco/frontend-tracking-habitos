@@ -45,7 +45,7 @@ export function EjerciciosManager() {
       const nuevo = await EntrenamientosAPI.createEjercicio({
         nombre: form.nombre.trim(),
         tipo: form.tipo.trim(),
-        url_video: form.url_video.trim() || null,
+        ...(form.url_video.trim() ? { url_video: form.url_video.trim() } : {}),
       })
       setEjercicios((prev) => [...prev, nuevo])
       setForm(emptyForm)
@@ -67,7 +67,7 @@ export function EjerciciosManager() {
       const updated = await EntrenamientosAPI.updateEjercicio(idEjercicio, {
         nombre: editingForm.nombre.trim(),
         tipo: editingForm.tipo.trim(),
-        url_video: editingForm.url_video.trim() || null,
+        ...(editingForm.url_video.trim() ? { url_video: editingForm.url_video.trim() } : { url_video: null }),
       })
       setEjercicios((prev) => prev.map((e) => (e.id_ejercicio === idEjercicio ? updated : e)))
       setEditingId(null)
