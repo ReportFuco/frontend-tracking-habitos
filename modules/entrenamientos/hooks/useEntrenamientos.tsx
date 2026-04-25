@@ -1,235 +1,237 @@
 "use client"
 
-import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react"
+import { createContext, ReactNode, useCallback, useContext, useState } from "react"
 import { AxiosError } from "axios"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { getFriendlyErrorMessage } from "@/lib/error-messages"
+import { queryKeys } from "@/lib/query-keys"
 import { EntrenamientosAPI } from "@/modules/entrenamientos/api/entrenamientos.api"
 import {
-  EjercicioResponse,
   EntrenoFuerzaCreate,
-  EntrenoFuerzaResponse,
-  EntrenoFuerzaSerieResponse,
   GimnasioCreate,
   GimnasioEdit,
-  GimnasioResponse,
   SerieFuerzaCreate,
   SerieFuerzaPatch,
 } from "@/modules/entrenamientos/types/entrenamientos"
+
+const ONE_MINUTE = 1000 * 60
+const SIX_HOURS = ONE_MINUTE * 60 * 6
+const ONE_DAY = ONE_MINUTE * 60 * 24
+const ONE_WEEK = ONE_DAY * 7
+const persistMeta = { persist: true }
 
 type EntrenamientosContextValue = ReturnType<typeof useEntrenamientosState>
 
 const EntrenamientosContext = createContext<EntrenamientosContextValue | null>(null)
 
+const getEntrenoActivoOrNull = async () => {
+  try {
+    return await EntrenamientosAPI.getEntrenoFuerzaActivo()
+  } catch (err) {
+    if (err instanceof AxiosError && err.response?.status === 404) {
+      return null
+    }
+    throw err
+  }
+}
+
 const useEntrenamientosState = () => {
-  const [ejercicios, setEjercicios] = useState<EjercicioResponse[]>([])
-  const [tiposMusculares, setTiposMusculares] = useState<string[]>([])
-  const [gimnasios, setGimnasios] = useState<GimnasioResponse[]>([])
-  const [entrenamientosFuerza, setEntrenamientosFuerza] = useState<EntrenoFuerzaResponse[]>([])
-  const [entrenamientoActivo, setEntrenamientoActivo] = useState<EntrenoFuerzaSerieResponse | null>(
-    null
-  )
-  const [loading, setLoading] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
+  const [gimnasiosSearch, setGimnasiosSearch] = useState<string | undefined>()
+  const [ejercicioParams, setEjercicioParams] = useState<{ q?: string; tipo?: string } | undefined>()
 
-  const fetchEntrenamientoActivo = useCallback(async () => {
-    try {
-      const data = await EntrenamientosAPI.getEntrenoFuerzaActivo()
-      setEntrenamientoActivo(data)
-      return data
-    } catch (err) {
-      if (err instanceof AxiosError && err.response?.status === 404) {
-        setEntrenamientoActivo(null)
-        return null
-      }
+  const gimnasiosQuery = useQuery({
+    queryKey: queryKeys.entrenamientos.gimnasios(gimnasiosSearch),
+    queryFn: () => EntrenamientosAPI.getGimnasios(gimnasiosSearch),
+    staleTime: SIX_HOURS,
+    gcTime: ONE_WEEK,
+    meta: persistMeta,
+  })
+  const entrenamientosQuery = useQuery({
+    queryKey: queryKeys.entrenamientos.fuerzaLista,
+    queryFn: EntrenamientosAPI.getEntrenosFuerza,
+    staleTime: ONE_MINUTE,
+  })
+  const entrenamientoActivoQuery = useQuery({
+    queryKey: queryKeys.entrenamientos.fuerzaActivo,
+    queryFn: getEntrenoActivoOrNull,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+  })
+  const ejerciciosQuery = useQuery({
+    queryKey: queryKeys.entrenamientos.ejercicios(ejercicioParams),
+    queryFn: () => EntrenamientosAPI.getEjercicios(ejercicioParams),
+    staleTime: ONE_DAY,
+    gcTime: ONE_WEEK,
+    meta: persistMeta,
+  })
+  const tiposMuscularesQuery = useQuery({
+    queryKey: queryKeys.entrenamientos.tiposMusculares,
+    queryFn: EntrenamientosAPI.getTiposMusculares,
+    staleTime: ONE_DAY,
+    gcTime: ONE_WEEK,
+    meta: persistMeta,
+  })
 
-      throw err
-    }
-  }, [])
+  const invalidate = async (...keys: readonly (readonly unknown[])[]) => {
+    await Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey })))
+  }
 
-  const fetchResumen = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const [gimnasiosData, entrenamientosData] = await Promise.all([
-        EntrenamientosAPI.getGimnasios(),
-        EntrenamientosAPI.getEntrenosFuerza(),
-      ])
-
-      setGimnasios(gimnasiosData)
-      setEntrenamientosFuerza(entrenamientosData)
-      await fetchEntrenamientoActivo()
-    } catch (err) {
-      const message = getFriendlyErrorMessage(err)
-      setError(message)
-    } finally {
-      setLoading(false)
-    }
-  }, [fetchEntrenamientoActivo])
-
-  const fetchGimnasios = useCallback(async (q?: string) => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const data = await EntrenamientosAPI.getGimnasios(q)
-      setGimnasios(data)
-      return data
-    } catch (err) {
-      const message = getFriendlyErrorMessage(err)
-      setError(message)
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  const fetchEjercicios = useCallback(async (params?: { q?: string; tipo?: string }) => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const data = await EntrenamientosAPI.getEjercicios(params)
-      setEjercicios(data)
-      return data
-    } catch (err) {
-      const message = getFriendlyErrorMessage(err)
-      setError(message)
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  const fetchTiposMusculares = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const data = await EntrenamientosAPI.getTiposMusculares()
-      setTiposMusculares(data)
-      return data
-    } catch (err) {
-      const message = getFriendlyErrorMessage(err)
-      setError(message)
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  const fetchDetalleEntrenoFuerza = useCallback(async (idEntrenamientoFuerza: number) => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      return await EntrenamientosAPI.getEntrenoFuerzaDetalle(idEntrenamientoFuerza)
-    } catch (err) {
-      const message = getFriendlyErrorMessage(err)
-      setError(message)
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  const runAction = useCallback(async (action: () => Promise<unknown>, shouldRefresh = true) => {
-    setSubmitting(true)
-    setError(null)
-
+  const runAction = useCallback(async <T,>(action: () => Promise<T>) => {
     try {
       await action()
-
-      if (shouldRefresh) {
-        await fetchResumen()
-      }
-
       return { ok: true as const }
     } catch (err) {
       const message = getFriendlyErrorMessage(err)
-      setError(message)
       return { ok: false as const, message }
-    } finally {
-      setSubmitting(false)
     }
-  }, [fetchResumen])
+  }, [])
 
-  const crearGimnasio = useCallback(
-    async (payload: GimnasioCreate) => runAction(() => EntrenamientosAPI.createGimnasio(payload)),
-    [runAction]
-  )
+  const gimnasioCreateMutation = useMutation({
+    mutationFn: EntrenamientosAPI.createGimnasio,
+    onSuccess: () => invalidate(queryKeys.entrenamientos.gimnasiosRoot),
+  })
+  const gimnasioUpdateMutation = useMutation({
+    mutationFn: ({ idGimnasio, payload }: { idGimnasio: number; payload: GimnasioEdit }) =>
+      EntrenamientosAPI.updateGimnasio(idGimnasio, payload),
+    onSuccess: () => invalidate(queryKeys.entrenamientos.gimnasiosRoot),
+  })
+  const gimnasioDeleteMutation = useMutation({
+    mutationFn: EntrenamientosAPI.deleteGimnasio,
+    onSuccess: () => invalidate(queryKeys.entrenamientos.gimnasiosRoot),
+  })
+  const entrenoCreateMutation = useMutation({
+    mutationFn: EntrenamientosAPI.createEntrenoFuerza,
+    onSuccess: () =>
+      invalidate(queryKeys.entrenamientos.fuerzaLista, queryKeys.entrenamientos.fuerzaActivo),
+  })
+  const entrenoCloseMutation = useMutation({
+    mutationFn: EntrenamientosAPI.closeEntrenoFuerzaActivo,
+    onSuccess: () =>
+      invalidate(queryKeys.entrenamientos.fuerzaLista, queryKeys.entrenamientos.fuerzaActivo),
+  })
+  const serieCreateMutation = useMutation({
+    mutationFn: EntrenamientosAPI.createSerieFuerza,
+    onSuccess: () => invalidate(queryKeys.entrenamientos.fuerzaActivo),
+  })
+  const serieUpdateMutation = useMutation({
+    mutationFn: ({
+      idFuerzaDetalle,
+      payload,
+    }: {
+      idFuerzaDetalle: number
+      payload: SerieFuerzaPatch
+    }) => EntrenamientosAPI.updateSerieFuerza(idFuerzaDetalle, payload),
+    onSuccess: () => invalidate(queryKeys.entrenamientos.fuerzaActivo),
+  })
+  const serieDeleteMutation = useMutation({
+    mutationFn: EntrenamientosAPI.deleteSerieFuerza,
+    onSuccess: () => invalidate(queryKeys.entrenamientos.fuerzaActivo),
+  })
 
-  const editarGimnasio = useCallback(
-    async (idGimnasio: number, payload: GimnasioEdit) =>
-      runAction(() => EntrenamientosAPI.updateGimnasio(idGimnasio, payload)),
-    [runAction]
-  )
+  const fetchResumen = () =>
+    invalidate(
+      queryKeys.entrenamientos.gimnasiosRoot,
+      queryKeys.entrenamientos.fuerzaLista,
+      queryKeys.entrenamientos.fuerzaActivo
+    )
 
-  const eliminarGimnasio = useCallback(
-    async (idGimnasio: number) => runAction(() => EntrenamientosAPI.deleteGimnasio(idGimnasio)),
-    [runAction]
-  )
+  const fetchGimnasios = async (q?: string) => {
+    setGimnasiosSearch(q)
+    return queryClient.fetchQuery({
+      queryKey: queryKeys.entrenamientos.gimnasios(q),
+      queryFn: () => EntrenamientosAPI.getGimnasios(q),
+      staleTime: SIX_HOURS,
+      gcTime: ONE_WEEK,
+      meta: persistMeta,
+    })
+  }
 
-  const iniciarEntrenoFuerza = useCallback(
-    async (payload: EntrenoFuerzaCreate) =>
-      runAction(() => EntrenamientosAPI.createEntrenoFuerza(payload)),
-    [runAction]
-  )
+  const fetchEjercicios = async (params?: { q?: string; tipo?: string }) => {
+    setEjercicioParams(params)
+    return queryClient.fetchQuery({
+      queryKey: queryKeys.entrenamientos.ejercicios(params),
+      queryFn: () => EntrenamientosAPI.getEjercicios(params),
+      staleTime: ONE_DAY,
+      gcTime: ONE_WEEK,
+      meta: persistMeta,
+    })
+  }
 
-  const cerrarEntrenoFuerzaActivo = useCallback(
-    async () => runAction(() => EntrenamientosAPI.closeEntrenoFuerzaActivo()),
-    [runAction]
-  )
+  const fetchTiposMusculares = () =>
+    queryClient.fetchQuery({
+      queryKey: queryKeys.entrenamientos.tiposMusculares,
+      queryFn: EntrenamientosAPI.getTiposMusculares,
+      staleTime: ONE_DAY,
+      gcTime: ONE_WEEK,
+      meta: persistMeta,
+    })
 
-  const agregarSerieFuerza = useCallback(
-    async (payload: SerieFuerzaCreate) => runAction(() => EntrenamientosAPI.createSerieFuerza(payload)),
-    [runAction]
-  )
+  const fetchEntrenamientoActivo = () =>
+    queryClient.fetchQuery({
+      queryKey: queryKeys.entrenamientos.fuerzaActivo,
+      queryFn: getEntrenoActivoOrNull,
+      staleTime: 0,
+    })
 
-  const editarSerieFuerza = useCallback(
-    async (idFuerzaDetalle: number, payload: SerieFuerzaPatch) =>
-      runAction(() => EntrenamientosAPI.updateSerieFuerza(idFuerzaDetalle, payload)),
-    [runAction]
-  )
+  const fetchDetalleEntrenoFuerza = (idEntrenamientoFuerza: number) =>
+    queryClient.fetchQuery({
+      queryKey: queryKeys.entrenamientos.fuerzaDetalle(idEntrenamientoFuerza),
+      queryFn: () => EntrenamientosAPI.getEntrenoFuerzaDetalle(idEntrenamientoFuerza),
+      staleTime: ONE_MINUTE,
+    })
 
-  const eliminarSerieFuerza = useCallback(
-    async (idFuerzaDetalle: number) =>
-      runAction(() => EntrenamientosAPI.deleteSerieFuerza(idFuerzaDetalle)),
-    [runAction]
-  )
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      void fetchResumen()
-    }, 0)
-
-    return () => clearTimeout(timer)
-  }, [fetchResumen])
+  const error =
+    gimnasiosQuery.error ??
+    entrenamientosQuery.error ??
+    entrenamientoActivoQuery.error ??
+    ejerciciosQuery.error ??
+    tiposMuscularesQuery.error ??
+    null
 
   return {
-    ejercicios,
-    tiposMusculares,
-    gimnasios,
-    entrenamientosFuerza,
-    entrenamientoActivo,
-    loading,
-    submitting,
-    error,
+    ejercicios: ejerciciosQuery.data ?? [],
+    tiposMusculares: tiposMuscularesQuery.data ?? [],
+    gimnasios: gimnasiosQuery.data ?? [],
+    entrenamientosFuerza: entrenamientosQuery.data ?? [],
+    entrenamientoActivo: entrenamientoActivoQuery.data ?? null,
+    loading:
+      gimnasiosQuery.isLoading ||
+      entrenamientosQuery.isLoading ||
+      entrenamientoActivoQuery.isLoading ||
+      ejerciciosQuery.isLoading ||
+      tiposMuscularesQuery.isLoading,
+    submitting:
+      gimnasioCreateMutation.isPending ||
+      gimnasioUpdateMutation.isPending ||
+      gimnasioDeleteMutation.isPending ||
+      entrenoCreateMutation.isPending ||
+      entrenoCloseMutation.isPending ||
+      serieCreateMutation.isPending ||
+      serieUpdateMutation.isPending ||
+      serieDeleteMutation.isPending,
+    error: error ? getFriendlyErrorMessage(error) : null,
     fetchResumen,
     fetchEjercicios,
     fetchGimnasios,
     fetchTiposMusculares,
     fetchEntrenamientoActivo,
     fetchDetalleEntrenoFuerza,
-    crearGimnasio,
-    editarGimnasio,
-    eliminarGimnasio,
-    iniciarEntrenoFuerza,
-    cerrarEntrenoFuerzaActivo,
-    agregarSerieFuerza,
-    editarSerieFuerza,
-    eliminarSerieFuerza,
+    crearGimnasio: (payload: GimnasioCreate) =>
+      runAction(() => gimnasioCreateMutation.mutateAsync(payload)),
+    editarGimnasio: (idGimnasio: number, payload: GimnasioEdit) =>
+      runAction(() => gimnasioUpdateMutation.mutateAsync({ idGimnasio, payload })),
+    eliminarGimnasio: (idGimnasio: number) =>
+      runAction(() => gimnasioDeleteMutation.mutateAsync(idGimnasio)),
+    iniciarEntrenoFuerza: (payload: EntrenoFuerzaCreate) =>
+      runAction(() => entrenoCreateMutation.mutateAsync(payload)),
+    cerrarEntrenoFuerzaActivo: () => runAction(() => entrenoCloseMutation.mutateAsync()),
+    agregarSerieFuerza: (payload: SerieFuerzaCreate) =>
+      runAction(() => serieCreateMutation.mutateAsync(payload)),
+    editarSerieFuerza: (idFuerzaDetalle: number, payload: SerieFuerzaPatch) =>
+      runAction(() => serieUpdateMutation.mutateAsync({ idFuerzaDetalle, payload })),
+    eliminarSerieFuerza: (idFuerzaDetalle: number) =>
+      runAction(() => serieDeleteMutation.mutateAsync(idFuerzaDetalle)),
   }
 }
 

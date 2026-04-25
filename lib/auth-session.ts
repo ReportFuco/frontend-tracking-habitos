@@ -2,6 +2,7 @@
 
 export const AUTH_TOKEN_KEY = "auth_token"
 export const LEGACY_TOKEN_KEY = "token"
+export const QUERY_CACHE_STORAGE_KEY = "tcl-query-cache-v1"
 
 const decodeBase64Url = (value: string) => {
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/")
@@ -39,6 +40,7 @@ export const clearStoredSession = () => {
 
   localStorage.removeItem(AUTH_TOKEN_KEY)
   localStorage.removeItem(LEGACY_TOKEN_KEY)
+  localStorage.removeItem(QUERY_CACHE_STORAGE_KEY)
 }
 
 export const isStoredTokenLocallyValid = (token: string) => {

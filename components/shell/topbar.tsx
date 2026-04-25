@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { ArrowLeft, LogOut, Menu, Shield } from "lucide-react"
 import { toast } from "sonner"
 import { FullScreenLoader } from "@/components/feedback/loaders/full-screen-loader"
@@ -25,6 +26,7 @@ export function Topbar({
   showMenuButton = true,
 }: TopbarProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [closingSession, setClosingSession] = useState(false)
 
   const handleLogout = async () => {
@@ -35,6 +37,7 @@ export function Topbar({
       // sesion local se limpia igualmente
     }
     clearStoredSession()
+    queryClient.clear()
     toast.success("Sesion cerrada")
     router.replace("/login")
   }

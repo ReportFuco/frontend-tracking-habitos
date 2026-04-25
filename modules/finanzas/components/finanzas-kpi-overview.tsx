@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { CSSProperties, ComponentType, useCallback, useEffect, useMemo, useState } from "react"
+import { CSSProperties, ComponentType, useMemo } from "react"
 import {
   ArrowRight,
   ArrowUpRight,
@@ -15,9 +15,8 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { FinanzasAPI } from "@/modules/finanzas/api/finanzas.api"
 import { FinanzasKpiOverviewSkeleton } from "@/modules/finanzas/components/skeletons/kpi-overview-skeleton"
-import { AnaliticaResumenResponse } from "@/modules/finanzas/types/finanzas"
+import { useAnaliticaResumen } from "@/modules/finanzas/hooks/useFinanzas"
 
 const MODULE_COLOR = "var(--module-finanzas)"
 
@@ -69,27 +68,8 @@ function MetricCard({
 }
 
 export function FinanzasKpiOverview() {
-  const [resumen, setResumen] = useState<AnaliticaResumenResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const loadResumen = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const data = await FinanzasAPI.getAnaliticaResumen()
-      setResumen(data)
-    } catch {
-      setError("No pudimos cargar el resumen financiero por ahora.")
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void loadResumen()
-  }, [loadResumen])
+  const resumenQuery = useAnaliticaResumen()
+  const resumen = resumenQuery.data ?? null
 
   const split = useMemo(() => {
     if (!resumen || resumen.gasto_total <= 0) {
@@ -102,11 +82,11 @@ export function FinanzasKpiOverview() {
     }
   }, [resumen])
 
-  if (loading) {
+  if (resumenQuery.isLoading) {
     return <FinanzasKpiOverviewSkeleton />
   }
 
-  if (!resumen || error) {
+  if (!resumen || resumenQuery.isError) {
     return (
       <section className="rounded-[1.75rem] bg-[color:var(--surface-low)] p-5 sm:p-6">
         <div className="rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-5 shadow-[var(--shadow-airy)] sm:p-6">
@@ -117,11 +97,13 @@ export function FinanzasKpiOverview() {
             El resumen financiero no esta disponible.
           </h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            {error ?? "No encontramos datos suficientes para construir tus KPI."}
+            {resumenQuery.isError
+              ? "No pudimos cargar el resumen financiero por ahora."
+              : "No encontramos datos suficientes para construir tus KPI."}
           </p>
           <Button
             type="button"
-            onClick={() => void loadResumen()}
+            onClick={() => void resumenQuery.refetch()}
             className="mt-5 bg-[color:var(--module-finanzas)] text-[color:var(--primary-foreground)] hover:bg-[color:var(--module-finanzas)]/90"
           >
             <RefreshCw className="size-4" />

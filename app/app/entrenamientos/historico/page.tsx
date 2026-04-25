@@ -1,6 +1,5 @@
 import { EntrenamientosMenuLinks } from "@/modules/entrenamientos/components/menu-links"
 import { HistoricoFuerza } from "@/modules/entrenamientos/components/historico-fuerza"
-import { EntrenamientosProvider } from "@/modules/entrenamientos/hooks/useEntrenamientos"
 import { PageHeader } from "@/components/shell/page-header"
 
 export default function HistoricoEntrenamientosPage() {
@@ -13,9 +12,7 @@ export default function HistoricoEntrenamientosPage() {
       />
       <EntrenamientosMenuLinks />
 
-      <EntrenamientosProvider>
-        <HistoricoFuerza />
-      </EntrenamientosProvider>
+      <HistoricoFuerza />
     </div>
   )
 }

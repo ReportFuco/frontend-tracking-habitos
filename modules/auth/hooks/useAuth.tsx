@@ -1,110 +1,102 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { clearStoredSession, getValidStoredToken } from "@/lib/auth-session"
 import { getFriendlyErrorMessage } from "@/lib/error-messages"
+import { queryKeys } from "@/lib/query-keys"
 import { AuthAPI } from "@/modules/auth/api/auth.api"
-import { AuthLoginPayload, AuthRegisterPayload, UsuarioProfile } from "@/modules/auth/types/auth"
+import { useProfile } from "@/modules/auth/hooks/useProfile"
+import { AuthLoginPayload, AuthRegisterPayload } from "@/modules/auth/types/auth"
 
 export const useAuth = () => {
-  const [token, setToken] = useState<string | null>(null)
-  const [profile, setProfile] = useState<UsuarioProfile | null>(null)
-  const [loadingProfile, setLoadingProfile] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
+  const queryClient = useQueryClient()
+  const [token, setToken] = useState<string | null>(() => getValidStoredToken())
   const [error, setError] = useState<string | null>(null)
+  const profileQuery = useProfile({ enabled: Boolean(token) })
 
-  const fetchProfile = useCallback(async () => {
-    setLoadingProfile(true)
-    setError(null)
-
-    try {
-      const data = await AuthAPI.getProfile()
-      setProfile(data)
-      return { ok: true as const, data }
-    } catch (err) {
-      const message = getFriendlyErrorMessage(err)
-      setError(message)
-      setProfile(null)
-      return { ok: false as const, message }
-    } finally {
-      setLoadingProfile(false)
-    }
-  }, [])
-
-  const login = async (payload: AuthLoginPayload) => {
-    setSubmitting(true)
-    setError(null)
-
-    try {
-      const data = await AuthAPI.login(payload)
+  const loginMutation = useMutation({
+    mutationFn: AuthAPI.login,
+    onMutate: () => {
+      setError(null)
+    },
+    onSuccess: async (data) => {
       localStorage.setItem("auth_token", data.access_token)
       setToken(data.access_token)
-      await fetchProfile()
+      await queryClient.fetchQuery({
+        queryKey: queryKeys.auth.profile,
+        queryFn: AuthAPI.getProfile,
+        staleTime: 1000 * 60 * 5,
+      })
+    },
+    onError: (err) => {
+      setError(getFriendlyErrorMessage(err))
+    },
+  })
+
+  const registerMutation = useMutation({
+    mutationFn: AuthAPI.register,
+    onMutate: () => {
+      setError(null)
+    },
+    onError: (err) => {
+      setError(getFriendlyErrorMessage(err))
+    },
+  })
+
+  const logoutMutation = useMutation({
+    mutationFn: AuthAPI.logout,
+    onSettled: () => {
+      clearStoredSession()
+      setToken(null)
+      queryClient.clear()
+    },
+  })
+
+  const login = async (payload: AuthLoginPayload) => {
+    setError(null)
+
+    try {
+      await loginMutation.mutateAsync(payload)
       return { ok: true as const }
     } catch (err) {
       const message = getFriendlyErrorMessage(err)
       setError(message)
       return { ok: false as const, message }
-    } finally {
-      setSubmitting(false)
     }
   }
 
   const register = async (payload: AuthRegisterPayload) => {
-    setSubmitting(true)
     setError(null)
 
     try {
-      await AuthAPI.register(payload)
+      await registerMutation.mutateAsync(payload)
       return { ok: true as const }
     } catch (err) {
       const message = getFriendlyErrorMessage(err)
       setError(message)
       return { ok: false as const, message }
-    } finally {
-      setSubmitting(false)
     }
   }
 
   const logout = async () => {
-    setSubmitting(true)
-
     try {
-      await AuthAPI.logout()
+      await logoutMutation.mutateAsync()
     } catch {
-      // Si falla el logout backend igualmente limpiamos sesion local
-    } finally {
       clearStoredSession()
       setToken(null)
-      setProfile(null)
-      setSubmitting(false)
+      queryClient.clear()
     }
   }
 
-  useEffect(() => {
-    const savedToken = getValidStoredToken()
-
-    if (!savedToken) {
-      return
-    }
-
-    setToken(savedToken)
-
-    const timer = setTimeout(() => {
-      void fetchProfile()
-    }, 0)
-
-    return () => clearTimeout(timer)
-  }, [fetchProfile])
-
   return {
     token,
-    profile,
-    loadingProfile,
-    submitting,
+    profile: profileQuery.data ?? null,
+    loadingProfile: profileQuery.isLoading || profileQuery.isFetching,
+    submitting: loginMutation.isPending || registerMutation.isPending || logoutMutation.isPending,
     error,
     isAuthenticated: Boolean(token),
-    fetchProfile,
+    fetchProfile: profileQuery.refetch,
     login,
     register,
     logout,

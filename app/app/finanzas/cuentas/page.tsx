@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { CuentasManager } from "@/modules/finanzas/components/cuentas-manager"
-import { FinanzasProvider } from "@/modules/finanzas/hooks/useFinanzas"
 import { FinanzasMenuLinks } from "@/modules/finanzas/components/menu-links"
 import { PageHeader } from "@/components/shell/page-header"
 
@@ -24,9 +23,7 @@ export default function CuentasPage() {
       />
       <FinanzasMenuLinks />
 
-      <FinanzasProvider>
-        <CuentasManager />
-      </FinanzasProvider>
+      <CuentasManager />
     </div>
   )
 }

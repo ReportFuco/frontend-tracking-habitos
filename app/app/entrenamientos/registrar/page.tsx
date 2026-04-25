@@ -1,6 +1,5 @@
 import { EntrenamientosMenuLinks } from "@/modules/entrenamientos/components/menu-links"
 import { EntrenoFuerzaFormCard } from "@/modules/entrenamientos/components/entreno-fuerza-form"
-import { EntrenamientosProvider } from "@/modules/entrenamientos/hooks/useEntrenamientos"
 import { PageHeader } from "@/components/shell/page-header"
 
 export default function RegistrarEntrenamientoPage() {
@@ -13,9 +12,7 @@ export default function RegistrarEntrenamientoPage() {
       />
       <EntrenamientosMenuLinks />
 
-      <EntrenamientosProvider>
-        <EntrenoFuerzaFormCard />
-      </EntrenamientosProvider>
+      <EntrenoFuerzaFormCard />
     </div>
   )
 }

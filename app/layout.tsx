@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope, Inter, Geist_Mono } from "next/font/google";
+import { Providers } from "@/app/providers";
 import { AppToaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -38,7 +39,7 @@ export default function RootLayout({
         className={`${manrope.variable} ${inter.variable} ${geistMono.variable} font-sans antialiased`}
         suppressHydrationWarning
       >
-        {children}
+        <Providers>{children}</Providers>
         <AppToaster />
       </body>
     </html>

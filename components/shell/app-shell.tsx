@@ -1,11 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { AuthAPI } from "@/modules/auth/api/auth.api"
-import type { UsuarioProfile } from "@/modules/auth/types/auth"
 import { cn } from "@/lib/utils"
+import { useProfile } from "@/modules/auth/hooks/useProfile"
 import { MobileBottomNav } from "./mobile-bottom-nav"
 import { SidebarNav } from "./sidebar-nav"
 import { Topbar } from "./topbar"
@@ -18,8 +17,8 @@ interface AppShellProps {
 }
 
 export function AppShell({ children, variant = "user", sections }: AppShellProps) {
-  const [profile, setProfile] = useState<UsuarioProfile | null>(null)
   const [open, setOpen] = useState(false)
+  const { data: profile = null } = useProfile()
 
   const navSections = sections ?? (variant === "admin" ? adminNavSections : userNavSections)
   const mobileNavItems = navSections.flatMap((section) => section.items)
@@ -32,15 +31,6 @@ export function AppShell({ children, variant = "user", sections }: AppShellProps
         open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )
   const usesMobileBottomNav = isUser
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      void AuthAPI.getProfile()
-        .then(setProfile)
-        .catch(() => setProfile(null))
-    }, 0)
-    return () => clearTimeout(timer)
-  }, [])
 
   return (
     <div className="min-h-screen overflow-x-clip bg-background text-foreground">

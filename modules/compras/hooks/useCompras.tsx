@@ -1,99 +1,93 @@
 "use client"
 
-import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react"
+import { createContext, ReactNode, useContext, useEffect } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { getFriendlyErrorMessage } from "@/lib/error-messages"
+import { queryKeys } from "@/lib/query-keys"
 import { ComprasAPI } from "@/modules/compras/api/compras.api"
-import {
-  CadenaResponse,
-  CompraCreate,
-  CompraPatch,
-  CompraResponse,
-  LocalResponse,
-} from "@/modules/compras/types/compras"
+import { CompraCreate, CompraPatch } from "@/modules/compras/types/compras"
+
+const FIVE_MINUTES = 1000 * 60 * 5
+const ONE_DAY = 1000 * 60 * 60 * 24
+const ONE_WEEK = ONE_DAY * 7
+const persistMeta = { persist: true }
 
 type ComprasContextValue = ReturnType<typeof useComprasState>
 
 const ComprasContext = createContext<ComprasContextValue | null>(null)
 
 const useComprasState = () => {
-  const [cadenas, setCadenas] = useState<CadenaResponse[]>([])
-  const [locales, setLocales] = useState<LocalResponse[]>([])
-  const [compras, setCompras] = useState<CompraResponse[]>([])
-  const [loading, setLoading] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
-  const fetchResumen = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+  const cadenasQuery = useQuery({
+    queryKey: queryKeys.compras.cadenas,
+    queryFn: ComprasAPI.getCadenas,
+    staleTime: ONE_DAY,
+    gcTime: ONE_WEEK,
+    meta: persistMeta,
+  })
+  const localesQuery = useQuery({
+    queryKey: queryKeys.compras.locales,
+    queryFn: ComprasAPI.getLocales,
+    staleTime: ONE_DAY,
+    gcTime: ONE_WEEK,
+    meta: persistMeta,
+  })
+  const comprasQuery = useQuery({
+    queryKey: queryKeys.compras.compras,
+    queryFn: ComprasAPI.getCompras,
+    staleTime: FIVE_MINUTES,
+  })
+
+  const invalidate = async (...keys: readonly (readonly unknown[])[]) => {
+    await Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey })))
+  }
+
+  const runAction = async <T,>(action: () => Promise<T>) => {
     try {
-      const [cadenasRes, localesRes, comprasRes] = await Promise.allSettled([
-        ComprasAPI.getCadenas(),
-        ComprasAPI.getLocales(),
-        ComprasAPI.getCompras(),
-      ])
-      if (cadenasRes.status === "fulfilled") setCadenas(cadenasRes.value)
-      if (localesRes.status === "fulfilled") setLocales(localesRes.value)
-      if (comprasRes.status === "fulfilled") setCompras(comprasRes.value)
-
-      const failure = [cadenasRes, localesRes, comprasRes].find((r) => r.status === "rejected")
-      if (failure) {
-        setError(getFriendlyErrorMessage((failure as PromiseRejectedResult).reason))
-      }
+      await action()
+      return { ok: true as const }
     } catch (err) {
-      setError(getFriendlyErrorMessage(err))
-    } finally {
-      setLoading(false)
+      const message = getFriendlyErrorMessage(err)
+      return { ok: false as const, message }
     }
-  }, [])
+  }
 
-  const runAction = useCallback(
-    async (action: () => Promise<unknown>) => {
-      setSubmitting(true)
-      setError(null)
-      try {
-        await action()
-        await fetchResumen()
-        return { ok: true as const }
-      } catch (err) {
-        const message = getFriendlyErrorMessage(err)
-        setError(message)
-        return { ok: false as const, message }
-      } finally {
-        setSubmitting(false)
-      }
-    },
-    [fetchResumen]
-  )
+  const compraCreateMutation = useMutation({
+    mutationFn: ComprasAPI.createCompra,
+    onSuccess: () => invalidate(queryKeys.compras.compras),
+  })
+  const compraUpdateMutation = useMutation({
+    mutationFn: ({ idCompra, payload }: { idCompra: number; payload: CompraPatch }) =>
+      ComprasAPI.updateCompra(idCompra, payload),
+    onSuccess: () => invalidate(queryKeys.compras.compras),
+  })
+  const compraDeleteMutation = useMutation({
+    mutationFn: ComprasAPI.deleteCompra,
+    onSuccess: () => invalidate(queryKeys.compras.compras),
+  })
 
-  const crearCompra = (payload: CompraCreate) =>
-    runAction(() => ComprasAPI.createCompra(payload))
-
-  const editarCompra = (idCompra: number, payload: CompraPatch) =>
-    runAction(() => ComprasAPI.updateCompra(idCompra, payload))
-
-  const eliminarCompra = (idCompra: number) =>
-    runAction(() => ComprasAPI.deleteCompra(idCompra))
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      void fetchResumen()
-    }, 0)
-    return () => clearTimeout(timer)
-  }, [fetchResumen])
+  const error = cadenasQuery.error ?? localesQuery.error ?? comprasQuery.error ?? null
 
   return {
-    cadenas,
-    locales,
-    compras,
-    loading,
-    submitting,
-    error,
-    fetchResumen,
-    crearCompra,
-    editarCompra,
-    eliminarCompra,
+    cadenas: cadenasQuery.data ?? [],
+    locales: localesQuery.data ?? [],
+    compras: comprasQuery.data ?? [],
+    loading: cadenasQuery.isLoading || localesQuery.isLoading || comprasQuery.isLoading,
+    submitting:
+      compraCreateMutation.isPending ||
+      compraUpdateMutation.isPending ||
+      compraDeleteMutation.isPending,
+    error: error ? getFriendlyErrorMessage(error) : null,
+    fetchResumen: () =>
+      invalidate(queryKeys.compras.cadenas, queryKeys.compras.locales, queryKeys.compras.compras),
+    crearCompra: (payload: CompraCreate) =>
+      runAction(() => compraCreateMutation.mutateAsync(payload)),
+    editarCompra: (idCompra: number, payload: CompraPatch) =>
+      runAction(() => compraUpdateMutation.mutateAsync({ idCompra, payload })),
+    eliminarCompra: (idCompra: number) =>
+      runAction(() => compraDeleteMutation.mutateAsync(idCompra)),
   }
 }
 

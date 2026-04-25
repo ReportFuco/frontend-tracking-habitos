@@ -1,10 +1,10 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
-import { ReactNode, useEffect, useRef, useState } from "react"
+import { ReactNode, useEffect, useRef } from "react"
 import { FullScreenLoader } from "@/components/feedback/loaders/full-screen-loader"
 import { getValidStoredToken } from "@/lib/auth-session"
-import { AuthAPI } from "@/modules/auth/api/auth.api"
+import { useProfile } from "@/modules/auth/hooks/useProfile"
 
 interface AuthGuardProps {
   children: ReactNode
@@ -15,34 +15,20 @@ export function AuthGuard({ children, redirectTo = "/login" }: AuthGuardProps) {
   const router = useRouter()
   const pathname = usePathname()
   const initialPathnameRef = useRef(pathname)
-  const [status, setStatus] = useState<"checking" | "authorized" | "unauthorized">("checking")
+  const token = getValidStoredToken()
+  const profileQuery = useProfile({ enabled: Boolean(token) })
 
   useEffect(() => {
-    const validateSession = async () => {
-      const token = getValidStoredToken()
-      const next = initialPathnameRef.current
-        ? `?next=${encodeURIComponent(initialPathnameRef.current)}`
-        : ""
+    const next = initialPathnameRef.current
+      ? `?next=${encodeURIComponent(initialPathnameRef.current)}`
+      : ""
 
-      if (!token) {
-        setStatus("unauthorized")
-        router.replace(`${redirectTo}${next}`)
-        return
-      }
-
-      try {
-        await AuthAPI.getProfile()
-        setStatus("authorized")
-      } catch {
-        setStatus("unauthorized")
-        router.replace(`${redirectTo}${next}`)
-      }
+    if (!token || profileQuery.isError) {
+      router.replace(`${redirectTo}${next}`)
     }
+  }, [profileQuery.isError, redirectTo, router, token])
 
-    void validateSession()
-  }, [redirectTo, router])
-
-  if (status !== "authorized") {
+  if (!profileQuery.data) {
     return <FullScreenLoader accent="olive" label="Validando acceso..." mode="session" />
   }
 

@@ -2,7 +2,6 @@ import { Dumbbell } from "lucide-react"
 import { ContextNav } from "@/components/shell/context-nav"
 import { PageHeader } from "@/components/shell/page-header"
 import { EntrenamientosHomeOverview } from "@/modules/entrenamientos/components/entrenamientos-home-overview"
-import { EntrenamientosProvider } from "@/modules/entrenamientos/hooks/useEntrenamientos"
 
 export default function EntrenamientosHomePage() {
   return (
@@ -20,9 +19,7 @@ export default function EntrenamientosHomePage() {
         description="Tres frentes simples: registrar tu sesion, revisar tus gimnasios y consultar tu historico."
       />
 
-      <EntrenamientosProvider>
-        <EntrenamientosHomeOverview />
-      </EntrenamientosProvider>
+      <EntrenamientosHomeOverview />
 
       <aside className="flex items-start gap-3 rounded-[1.25rem] bg-[color:var(--surface-low)] p-4 sm:items-center sm:gap-4 sm:rounded-[1.5rem] sm:p-5">
         <span

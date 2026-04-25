@@ -1,6 +1,5 @@
 import { PageHeader } from "@/components/shell/page-header"
 import { NutricionMenuLinks } from "@/modules/nutricion/components/menu-links"
-import { NutricionProvider } from "@/modules/nutricion/hooks/useNutricion"
 import { ConsumosManager } from "@/modules/nutricion/components/consumos-manager"
 
 export default function ConsumosPage() {
@@ -12,9 +11,7 @@ export default function ConsumosPage() {
         title="Consumos"
         description="Registra comidas por fecha y horario, agrupadas por dia."
       />
-      <NutricionProvider>
-        <ConsumosManager />
-      </NutricionProvider>
+      <ConsumosManager />
     </div>
   )
 }

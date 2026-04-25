@@ -1,6 +1,5 @@
 import { PageHeader } from "@/components/shell/page-header"
 import { NutricionMenuLinks } from "@/modules/nutricion/components/menu-links"
-import { NutricionProvider } from "@/modules/nutricion/hooks/useNutricion"
 import { PesoManager } from "@/modules/nutricion/components/peso-manager"
 
 export default function PesoPage() {
@@ -12,9 +11,7 @@ export default function PesoPage() {
         title="Peso corporal"
         description="Registra tu peso con fecha y revisa la tendencia a lo largo del tiempo."
       />
-      <NutricionProvider>
-        <PesoManager />
-      </NutricionProvider>
+      <PesoManager />
     </div>
   )
 }

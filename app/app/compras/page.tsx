@@ -1,7 +1,6 @@
 import { PageHeader } from "@/components/shell/page-header"
 import { ContextNav } from "@/components/shell/context-nav"
 import { ComprasManager } from "@/modules/compras/components/compras-manager"
-import { ComprasProvider } from "@/modules/compras/hooks/useCompras"
 
 export default function ComprasPage() {
   return (
@@ -18,9 +17,7 @@ export default function ComprasPage() {
         description="Registra compras por local y consulta tu historial."
       />
 
-      <ComprasProvider>
-        <ComprasManager />
-      </ComprasProvider>
+      <ComprasManager />
     </div>
   )
 }

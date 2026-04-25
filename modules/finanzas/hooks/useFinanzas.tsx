@@ -1,174 +1,201 @@
 "use client"
 
-import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react"
+import { createContext, ReactNode, useContext, useMemo } from "react"
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { getFriendlyErrorMessage } from "@/lib/error-messages"
+import { queryKeys } from "@/lib/query-keys"
 import { FinanzasAPI } from "@/modules/finanzas/api/finanzas.api"
 import {
   BancoCreate,
-  BancoResponse,
   CategoriaCreate,
   CategoriaPatch,
-  CategoriaResponse,
   CuentaCreate,
   CuentaPatch,
-  CuentaResponse,
   MovimientoCreate,
   MovimientoPatch,
-  MovimientoResponse,
   ProductoFinancieroResponse,
 } from "@/modules/finanzas/types/finanzas"
 
 const MOVIMIENTOS_LIMIT = 20
+const ONE_MINUTE = 1000 * 60
+const FIVE_MINUTES = ONE_MINUTE * 5
+const ONE_DAY = ONE_MINUTE * 60 * 24
+const ONE_WEEK = ONE_DAY * 7
 
 type FinanzasContextValue = ReturnType<typeof useFinanzasState>
+type ActionResult = Promise<{ ok: true } | { ok: false; message: string }>
 
 const FinanzasContext = createContext<FinanzasContextValue | null>(null)
+const persistMeta = { persist: true }
+
+export function useAnaliticaResumen(params?: { year?: number; month?: number }) {
+  return useQuery({
+    queryKey: queryKeys.finanzas.analiticaResumen(params),
+    queryFn: () => FinanzasAPI.getAnaliticaResumen(params),
+    staleTime: FIVE_MINUTES,
+  })
+}
 
 const useFinanzasState = () => {
-  const [bancos, setBancos] = useState<BancoResponse[]>([])
-  const [categorias, setCategorias] = useState<CategoriaResponse[]>([])
-  const [cuentas, setCuentas] = useState<CuentaResponse[]>([])
-  const [movimientos, setMovimientos] = useState<MovimientoResponse[]>([])
-  const [totalGastoMensual, setTotalGastoMensual] = useState(0)
-  const [hasMoreMovimientos, setHasMoreMovimientos] = useState(false)
-  const [loadingMoreMovimientos, setLoadingMoreMovimientos] = useState(false)
+  const queryClient = useQueryClient()
 
-  const [loadingCatalogos, setLoadingCatalogos] = useState(false)
-  const [submittingCuenta, setSubmittingCuenta] = useState(false)
-  const [submittingMovimiento, setSubmittingMovimiento] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const bancosQuery = useQuery({
+    queryKey: queryKeys.finanzas.bancos,
+    queryFn: FinanzasAPI.getBancos,
+    staleTime: ONE_DAY,
+    gcTime: ONE_WEEK,
+    meta: persistMeta,
+  })
+  const categoriasQuery = useQuery({
+    queryKey: queryKeys.finanzas.categorias,
+    queryFn: FinanzasAPI.getCategorias,
+    staleTime: ONE_DAY,
+    gcTime: ONE_WEEK,
+    meta: persistMeta,
+  })
+  const cuentasQuery = useQuery({
+    queryKey: queryKeys.finanzas.cuentas,
+    queryFn: FinanzasAPI.getCuentas,
+    staleTime: FIVE_MINUTES,
+  })
+  const movimientosQuery = useInfiniteQuery({
+    queryKey: queryKeys.finanzas.movimientos,
+    queryFn: ({ pageParam }) =>
+      FinanzasAPI.getMovimientos({ offset: pageParam, limit: MOVIMIENTOS_LIMIT }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) =>
+      lastPage.items.length === MOVIMIENTOS_LIMIT
+        ? lastPage.offset + lastPage.items.length
+        : undefined,
+    staleTime: ONE_MINUTE,
+  })
 
-  const fetchCatalogos = async () => {
-    setLoadingCatalogos(true)
-    setError(null)
+  const bancos = bancosQuery.data ?? []
+  const categorias = categoriasQuery.data ?? []
+  const cuentas = cuentasQuery.data ?? []
+  const movimientos = useMemo(
+    () => movimientosQuery.data?.pages.flatMap((page) => page.items) ?? [],
+    [movimientosQuery.data]
+  )
+  const totalGastoMensual = movimientosQuery.data?.pages.at(-1)?.total_gasto_mensual ?? 0
 
-    try {
-      const [bancosResult, categoriasResult, cuentasResult, movimientosResult] =
-        await Promise.allSettled([
-          FinanzasAPI.getBancos(),
-          FinanzasAPI.getCategorias(),
-          FinanzasAPI.getCuentas(),
-          FinanzasAPI.getMovimientos({ limit: MOVIMIENTOS_LIMIT }),
-        ])
-
-      if (bancosResult.status === "fulfilled") setBancos(bancosResult.value)
-      if (categoriasResult.status === "fulfilled") setCategorias(categoriasResult.value)
-      if (cuentasResult.status === "fulfilled") setCuentas(cuentasResult.value)
-      if (movimientosResult.status === "fulfilled") {
-        const page = movimientosResult.value
-        setMovimientos(page.items)
-        setTotalGastoMensual(page.total_gasto_mensual)
-        setHasMoreMovimientos(page.items.length === MOVIMIENTOS_LIMIT)
-      }
-
-      const failures = [bancosResult, categoriasResult, cuentasResult, movimientosResult].filter(
-        (item) => item.status === "rejected"
-      )
-
-      if (failures.length > 0) {
-        const firstFailure = failures[0] as PromiseRejectedResult
-        const message = getFriendlyErrorMessage(firstFailure.reason)
-        setError(message)
-        toast.error("No pudimos cargar tus datos", { description: message })
-      }
-    } catch (err) {
-      const message = getFriendlyErrorMessage(err)
-      setError(message)
-      toast.error("No pudimos cargar tus datos", { description: message })
-    } finally {
-      setLoadingCatalogos(false)
-    }
+  const invalidateFinanzas = async (...keys: readonly (readonly unknown[])[]) => {
+    await Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey })))
   }
 
-  const loadMoreMovimientos = useCallback(async () => {
-    setLoadingMoreMovimientos(true)
-    try {
-      const page = await FinanzasAPI.getMovimientos({
-        offset: movimientos.length,
-        limit: MOVIMIENTOS_LIMIT,
-      })
-      setMovimientos((prev) => [...prev, ...page.items])
-      setTotalGastoMensual(page.total_gasto_mensual)
-      setHasMoreMovimientos(page.items.length === MOVIMIENTOS_LIMIT)
-    } catch (err) {
-      toast.error("No se pudieron cargar más movimientos", {
-        description: getFriendlyErrorMessage(err),
-      })
-    } finally {
-      setLoadingMoreMovimientos(false)
-    }
-  }, [movimientos.length])
-
-  const runAction = async (action: () => Promise<unknown>) => {
-    setError(null)
+  const runAction = async <T,>(action: () => Promise<T>): ActionResult => {
     try {
       await action()
-      await fetchCatalogos()
       return { ok: true as const }
     } catch (err) {
       const message = getFriendlyErrorMessage(err)
-      setError(message)
       return { ok: false as const, message }
     }
   }
 
-  const crearBanco = async (payload: BancoCreate) => runAction(() => FinanzasAPI.createBanco(payload))
+  const bancoCreateMutation = useMutation({
+    mutationFn: FinanzasAPI.createBanco,
+    onSuccess: () =>
+      invalidateFinanzas(queryKeys.finanzas.bancos, queryKeys.finanzas.productosRoot),
+  })
+  const bancoUpdateMutation = useMutation({
+    mutationFn: ({ idBanco, payload }: { idBanco: number; payload: BancoCreate }) =>
+      FinanzasAPI.updateBanco(idBanco, payload),
+    onSuccess: () =>
+      invalidateFinanzas(queryKeys.finanzas.bancos, queryKeys.finanzas.productosRoot),
+  })
+  const bancoDeleteMutation = useMutation({
+    mutationFn: FinanzasAPI.deleteBanco,
+    onSuccess: () =>
+      invalidateFinanzas(queryKeys.finanzas.bancos, queryKeys.finanzas.productosRoot),
+  })
 
-  const editarBanco = async (idBanco: number, payload: BancoCreate) =>
-    runAction(() => FinanzasAPI.updateBanco(idBanco, payload))
+  const categoriaCreateMutation = useMutation({
+    mutationFn: FinanzasAPI.createCategoria,
+    onSuccess: () => invalidateFinanzas(queryKeys.finanzas.categorias),
+  })
+  const categoriaUpdateMutation = useMutation({
+    mutationFn: ({ idCategoria, payload }: { idCategoria: number; payload: CategoriaPatch }) =>
+      FinanzasAPI.updateCategoria(idCategoria, payload),
+    onSuccess: () => invalidateFinanzas(queryKeys.finanzas.categorias),
+  })
+  const categoriaDeleteMutation = useMutation({
+    mutationFn: FinanzasAPI.deleteCategoria,
+    onSuccess: () => invalidateFinanzas(queryKeys.finanzas.categorias),
+  })
 
-  const eliminarBanco = async (idBanco: number) => runAction(() => FinanzasAPI.deleteBanco(idBanco))
+  const cuentaCreateMutation = useMutation({
+    mutationFn: FinanzasAPI.createCuenta,
+    onSuccess: () => invalidateFinanzas(queryKeys.finanzas.cuentas),
+  })
+  const cuentaUpdateMutation = useMutation({
+    mutationFn: ({ idCuenta, payload }: { idCuenta: number; payload: CuentaPatch }) =>
+      FinanzasAPI.updateCuenta(idCuenta, payload),
+    onSuccess: () => invalidateFinanzas(queryKeys.finanzas.cuentas),
+  })
+  const cuentaDeleteMutation = useMutation({
+    mutationFn: FinanzasAPI.deleteCuenta,
+    onSuccess: () => invalidateFinanzas(queryKeys.finanzas.cuentas),
+  })
 
-  const crearCategoria = async (payload: CategoriaCreate) =>
-    runAction(() => FinanzasAPI.createCategoria(payload))
+  const movimientoCreateMutation = useMutation({
+    mutationFn: FinanzasAPI.createMovimiento,
+    onSuccess: () => invalidateFinanzas(queryKeys.finanzas.movimientos, queryKeys.finanzas.analitica),
+  })
+  const movimientoUpdateMutation = useMutation({
+    mutationFn: ({
+      idMovimiento,
+      payload,
+    }: {
+      idMovimiento: number
+      payload: MovimientoPatch
+    }) => FinanzasAPI.updateMovimiento(idMovimiento, payload),
+    onSuccess: () => invalidateFinanzas(queryKeys.finanzas.movimientos, queryKeys.finanzas.analitica),
+  })
 
-  const editarCategoria = async (idCategoria: number, payload: CategoriaPatch) =>
-    runAction(() => FinanzasAPI.updateCategoria(idCategoria, payload))
-
-  const eliminarCategoria = async (idCategoria: number) =>
-    runAction(() => FinanzasAPI.deleteCategoria(idCategoria))
-
-  const crearCuenta = async (payload: CuentaCreate) => {
-    setSubmittingCuenta(true)
-    const result = await runAction(() => FinanzasAPI.createCuenta(payload))
-    setSubmittingCuenta(false)
-    return result
+  const fetchCatalogos = async () => {
+    await invalidateFinanzas(
+      queryKeys.finanzas.bancos,
+      queryKeys.finanzas.categorias,
+      queryKeys.finanzas.cuentas,
+      queryKeys.finanzas.movimientos
+    )
   }
 
-  const editarCuenta = async (idCuenta: number, payload: CuentaPatch) =>
-    runAction(() => FinanzasAPI.updateCuenta(idCuenta, payload))
-
-  const eliminarCuenta = async (idCuenta: number) => runAction(() => FinanzasAPI.deleteCuenta(idCuenta))
-
-  const crearMovimiento = async (payload: MovimientoCreate) => {
-    setSubmittingMovimiento(true)
-    const result = await runAction(() => FinanzasAPI.createMovimiento(payload))
-    setSubmittingMovimiento(false)
-    return result
+  const loadMoreMovimientos = async () => {
+    try {
+      await movimientosQuery.fetchNextPage()
+    } catch (err) {
+      toast.error("No se pudieron cargar más movimientos", {
+        description: getFriendlyErrorMessage(err),
+      })
+    }
   }
 
-  const editarMovimiento = async (idMovimiento: number, payload: MovimientoPatch) =>
-    runAction(() => FinanzasAPI.updateMovimiento(idMovimiento, payload))
+  const getProductosByBanco = async (idBanco: number): Promise<ProductoFinancieroResponse[]> => {
+    try {
+      return await queryClient.fetchQuery({
+        queryKey: queryKeys.finanzas.productos(idBanco),
+        queryFn: () => FinanzasAPI.getProductosFinancieros({ id_banco: idBanco }),
+        staleTime: ONE_DAY,
+        gcTime: ONE_WEEK,
+        meta: persistMeta,
+      })
+    } catch (err) {
+      toast.error("No pudimos cargar los productos del banco", {
+        description: getFriendlyErrorMessage(err),
+      })
+      return []
+    }
+  }
 
-  const getProductosByBanco = useCallback(
-    async (idBanco: number): Promise<ProductoFinancieroResponse[]> => {
-      try {
-        return await FinanzasAPI.getProductosFinancieros({ id_banco: idBanco })
-      } catch (err) {
-        toast.error("No pudimos cargar los productos del banco", {
-          description: getFriendlyErrorMessage(err),
-        })
-        return []
-      }
-    },
-    []
-  )
-
-  useEffect(() => {
-    const timer = setTimeout(() => { void fetchCatalogos() }, 0)
-    return () => clearTimeout(timer)
-  }, [])
+  const error =
+    bancosQuery.error ??
+    categoriasQuery.error ??
+    cuentasQuery.error ??
+    movimientosQuery.error ??
+    null
 
   return {
     bancos,
@@ -176,25 +203,39 @@ const useFinanzasState = () => {
     cuentas,
     movimientos,
     totalGastoMensual,
-    hasMoreMovimientos,
-    loadingMoreMovimientos,
-    loadingCatalogos,
-    submittingCuenta,
-    submittingMovimiento,
-    error,
+    hasMoreMovimientos: Boolean(movimientosQuery.hasNextPage),
+    loadingMoreMovimientos: movimientosQuery.isFetchingNextPage,
+    loadingCatalogos:
+      bancosQuery.isLoading ||
+      categoriasQuery.isLoading ||
+      cuentasQuery.isLoading ||
+      movimientosQuery.isLoading,
+    submittingCuenta:
+      cuentaCreateMutation.isPending ||
+      cuentaUpdateMutation.isPending ||
+      cuentaDeleteMutation.isPending,
+    submittingMovimiento: movimientoCreateMutation.isPending || movimientoUpdateMutation.isPending,
+    error: error ? getFriendlyErrorMessage(error) : null,
     fetchCatalogos,
     loadMoreMovimientos,
-    crearBanco,
-    editarBanco,
-    eliminarBanco,
-    crearCategoria,
-    editarCategoria,
-    eliminarCategoria,
-    crearCuenta,
-    editarCuenta,
-    eliminarCuenta,
-    crearMovimiento,
-    editarMovimiento,
+    crearBanco: (payload: BancoCreate) => runAction(() => bancoCreateMutation.mutateAsync(payload)),
+    editarBanco: (idBanco: number, payload: BancoCreate) =>
+      runAction(() => bancoUpdateMutation.mutateAsync({ idBanco, payload })),
+    eliminarBanco: (idBanco: number) => runAction(() => bancoDeleteMutation.mutateAsync(idBanco)),
+    crearCategoria: (payload: CategoriaCreate) =>
+      runAction(() => categoriaCreateMutation.mutateAsync(payload)),
+    editarCategoria: (idCategoria: number, payload: CategoriaPatch) =>
+      runAction(() => categoriaUpdateMutation.mutateAsync({ idCategoria, payload })),
+    eliminarCategoria: (idCategoria: number) =>
+      runAction(() => categoriaDeleteMutation.mutateAsync(idCategoria)),
+    crearCuenta: (payload: CuentaCreate) => runAction(() => cuentaCreateMutation.mutateAsync(payload)),
+    editarCuenta: (idCuenta: number, payload: CuentaPatch) =>
+      runAction(() => cuentaUpdateMutation.mutateAsync({ idCuenta, payload })),
+    eliminarCuenta: (idCuenta: number) => runAction(() => cuentaDeleteMutation.mutateAsync(idCuenta)),
+    crearMovimiento: (payload: MovimientoCreate) =>
+      runAction(() => movimientoCreateMutation.mutateAsync(payload)),
+    editarMovimiento: (idMovimiento: number, payload: MovimientoPatch) =>
+      runAction(() => movimientoUpdateMutation.mutateAsync({ idMovimiento, payload })),
     getProductosByBanco,
   }
 }

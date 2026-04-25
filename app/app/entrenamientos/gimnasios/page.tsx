@@ -1,6 +1,5 @@
 import { EntrenamientosMenuLinks } from "@/modules/entrenamientos/components/menu-links"
 import { GimnasiosDirectory } from "@/modules/entrenamientos/components/gimnasios-directory"
-import { EntrenamientosProvider } from "@/modules/entrenamientos/hooks/useEntrenamientos"
 import { PageHeader } from "@/components/shell/page-header"
 
 export default function GimnasiosEntrenamientosUserPage() {
@@ -13,9 +12,7 @@ export default function GimnasiosEntrenamientosUserPage() {
       />
       <EntrenamientosMenuLinks />
 
-      <EntrenamientosProvider>
-        <GimnasiosDirectory />
-      </EntrenamientosProvider>
+      <GimnasiosDirectory />
     </div>
   )
 }

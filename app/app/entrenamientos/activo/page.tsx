@@ -1,6 +1,5 @@
 import { EntrenamientosMenuLinks } from "@/modules/entrenamientos/components/menu-links"
 import { EntrenamientoActivoCard } from "@/modules/entrenamientos/components/entrenamiento-activo-card"
-import { EntrenamientosProvider } from "@/modules/entrenamientos/hooks/useEntrenamientos"
 import { PageHeader } from "@/components/shell/page-header"
 
 export default function EntrenoActivoPage() {
@@ -13,9 +12,7 @@ export default function EntrenoActivoPage() {
       />
       <EntrenamientosMenuLinks />
 
-      <EntrenamientosProvider>
-        <EntrenamientoActivoCard />
-      </EntrenamientosProvider>
+      <EntrenamientoActivoCard />
     </div>
   )
 }

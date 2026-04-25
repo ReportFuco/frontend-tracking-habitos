@@ -1,6 +1,5 @@
 import { PageHeader } from "@/components/shell/page-header"
 import { NutricionMenuLinks } from "@/modules/nutricion/components/menu-links"
-import { NutricionProvider } from "@/modules/nutricion/hooks/useNutricion"
 import { TablaManager } from "@/modules/nutricion/components/tabla-manager"
 
 export default function TablaPage() {
@@ -12,9 +11,7 @@ export default function TablaPage() {
         title="Tabla nutricional"
         description="Consulta macros y porciones de referencia por producto."
       />
-      <NutricionProvider>
-        <TablaManager />
-      </NutricionProvider>
+      <TablaManager />
     </div>
   )
 }

@@ -1,5 +1,4 @@
 import { PageHeader } from "@/components/shell/page-header"
-import { NutricionProvider } from "@/modules/nutricion/hooks/useNutricion"
 import { NutricionMenuLinks } from "@/modules/nutricion/components/menu-links"
 import { NutricionHomeOverview } from "@/modules/nutricion/components/nutricion-home-overview"
 
@@ -13,9 +12,7 @@ export default function NutricionPage() {
         description="Peso, consumos y metas nutricionales en un mismo espacio."
       />
 
-      <NutricionProvider>
-        <NutricionHomeOverview />
-      </NutricionProvider>
+      <NutricionHomeOverview />
     </div>
   )
 }
