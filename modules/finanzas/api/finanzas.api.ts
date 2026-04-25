@@ -1,5 +1,8 @@
 import { api } from "@/lib/api"
 import {
+  AnaliticaDistribucionItem,
+  AnaliticaResumenResponse,
+  AnaliticaTendenciaMensualItem,
   BancoCreate,
   BancoResponse,
   CategoriaCreate,
@@ -137,6 +140,39 @@ export const FinanzasAPI = {
     payload: MovimientoPatch
   ): Promise<MovimientoResponse> => {
     const { data } = await api.patch(`/api/finanzas/movimientos/${idMovimiento}`, payload)
+    return data
+  },
+
+  getAnaliticaResumen: async (params?: {
+    year?: number
+    month?: number
+  }): Promise<AnaliticaResumenResponse> => {
+    const { data } = await api.get("/api/finanzas/analitica/resumen", { params })
+    return data
+  },
+
+  getAnaliticaTendenciaMensual: async (params?: {
+    months?: number
+  }): Promise<AnaliticaTendenciaMensualItem[]> => {
+    const { data } = await api.get("/api/finanzas/analitica/tendencia-mensual", { params })
+    return data
+  },
+
+  getAnaliticaDistribucionCategorias: async (params?: {
+    year?: number
+    month?: number
+    tipo_movimiento?: "gasto" | "ingreso"
+  }): Promise<AnaliticaDistribucionItem[]> => {
+    const { data } = await api.get("/api/finanzas/analitica/distribucion-categorias", { params })
+    return data
+  },
+
+  getAnaliticaDistribucionCuentas: async (params?: {
+    year?: number
+    month?: number
+    tipo_movimiento?: "gasto" | "ingreso"
+  }): Promise<AnaliticaDistribucionItem[]> => {
+    const { data } = await api.get("/api/finanzas/analitica/distribucion-cuentas", { params })
     return data
   },
 }

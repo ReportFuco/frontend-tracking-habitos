@@ -93,9 +93,9 @@ export function EjerciciosManager() {
         cancelEdit()
       } else {
         const nuevo = await EntrenamientosAPI.createEjercicio({
-          nombre: parsed.data.nombre.trim(),
-          tipo: parsed.data.tipo.trim(),
-          ...(parsed.data.url_video ? { url_video: parsed.data.url_video.trim() } : {}),
+          nombre: basePayload.nombre,
+          tipo: basePayload.tipo,
+          ...(basePayload.url_video ? { url_video: basePayload.url_video } : {}),
         })
         setEjercicios((prev) => [...prev, nuevo])
         toast.success("Ejercicio creado")

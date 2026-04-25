@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react"
 import { toast } from "sonner"
 import { AuthSessionCard } from "@/components/auth/auth-session-card"
 import { AuthShell } from "@/components/auth/auth-shell"
+import { FullScreenLoader } from "@/components/feedback/loaders/full-screen-loader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { logUbicacionUsuario } from "@/lib/geolocation"
@@ -20,6 +21,7 @@ export function LoginView() {
   const router = useRouter()
   const { profile, loadingProfile, submitting, isAuthenticated, login, logout } = useAuth()
   const [loginForm, setLoginForm] = useState(initialLogin)
+  const [redirecting, setRedirecting] = useState(false)
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -41,6 +43,7 @@ export function LoginView() {
       toast.success("Sesion iniciada", {
         description: "Bienvenido de nuevo.",
       })
+      setRedirecting(true)
       const nextPath =
         typeof window !== "undefined"
           ? new URLSearchParams(window.location.search).get("next")
@@ -55,26 +58,33 @@ export function LoginView() {
   }
 
   return (
-    <AuthShell
-      eyebrow="Acceso"
-      title="Vuelve a tu espacio con una entrada mas clara."
-      description="Entra a tu panel personal, recupera tu contexto y continua desde donde quedaste."
-      accent="olive"
-      secondaryCta={{
-        href: "/register",
-        label: "Crear cuenta",
-        description: "Si aun no tienes cuenta, puedes registrarte desde aqui.",
-      }}
-    >
-      {isAuthenticated ? (
-        <AuthSessionCard
-          profile={profile}
-          loadingProfile={loadingProfile}
-          submitting={submitting}
-          onLogout={logout}
-        />
-      ) : (
-        <div className="space-y-5 sm:space-y-6">
+    <>
+      {redirecting ? (
+        <div className="fixed inset-0 z-50">
+          <FullScreenLoader accent="olive" label="Abriendo tu panel..." mode="session" />
+        </div>
+      ) : null}
+
+      <AuthShell
+        eyebrow="Acceso"
+        title="Vuelve a tu espacio con una entrada mas clara."
+        description="Entra a tu panel personal, recupera tu contexto y continua desde donde quedaste."
+        accent="olive"
+        secondaryCta={{
+          href: "/register",
+          label: "Crear cuenta",
+          description: "Si aun no tienes cuenta, puedes registrarte desde aqui.",
+        }}
+      >
+        {isAuthenticated ? (
+          <AuthSessionCard
+            profile={profile}
+            loadingProfile={loadingProfile}
+            submitting={submitting}
+            onLogout={logout}
+          />
+        ) : (
+          <div className="space-y-5 sm:space-y-6">
           <div className="space-y-2 sm:space-y-3">
             <p className="font-label text-[11px] uppercase tracking-[0.26em] text-muted-foreground sm:text-xs">
               Iniciar sesion
@@ -130,8 +140,9 @@ export function LoginView() {
               {submitting ? "Ingresando..." : "Entrar al panel"}
             </Button>
           </form>
-        </div>
-      )}
-    </AuthShell>
+          </div>
+        )}
+      </AuthShell>
+    </>
   )
 }

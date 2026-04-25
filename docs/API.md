@@ -193,6 +193,7 @@ Submódulos:
 - `categoria`
 - `cuentas`
 - `movimientos`
+- `analitica`
 
 #### Bancos
 
@@ -340,6 +341,51 @@ Enums usados:
 
 - `tipo_movimiento`: `gasto`, `ingreso`
 - `tipo_gasto`: `variable`, `fijo`
+
+#### Analítica
+
+| Método | Ruta                                              | Auth    | Descripción                                                                             |
+| ------ | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------- |
+| `GET`  | `/api/finanzas/analitica/resumen`                 | usuario | Resume KPIs mensuales del usuario; acepta `year` y `month`                              |
+| `GET`  | `/api/finanzas/analitica/tendencia-mensual`       | usuario | Devuelve tendencia de gastos e ingresos por mes; acepta `months`                        |
+| `GET`  | `/api/finanzas/analitica/distribucion-categorias` | usuario | Distribuye montos del periodo por categoría; acepta `year`, `month` y `tipo_movimiento` |
+| `GET`  | `/api/finanzas/analitica/distribucion-cuentas`    | usuario | Distribuye montos del periodo por cuenta; acepta `year`, `month` y `tipo_movimiento`    |
+
+Parámetros útiles:
+
+- `year`: año del periodo, opcional; por defecto usa el año actual de Chile
+- `month`: mes del periodo, opcional; por defecto usa el mes actual de Chile
+- `months`: cantidad de meses para tendencia, por defecto `6`, máximo `24`
+- `tipo_movimiento`: `gasto` o `ingreso`; en distribuciones por defecto usa `gasto`
+
+Notas de comportamiento:
+
+- estos endpoints no devuelven `404` cuando el usuario no tiene movimientos; responden con ceros o listas vacías
+- `proyeccion_gasto_fin_mes` solo se calcula para el mes actual en horario de Chile
+- `variacion_gasto_vs_mes_anterior_pct` queda en `null` si el mes anterior no tuvo gasto
+
+Respuesta base de `GET /api/finanzas/analitica/resumen`:
+
+```json
+{
+  "year": 2026,
+  "month": 4,
+  "period_start": "2026-04-01T00:00:00",
+  "period_end": "2026-05-01T00:00:00",
+  "gasto_total": 245000,
+  "ingreso_total": 850000,
+  "balance_total": 605000,
+  "gasto_fijo_total": 120000,
+  "gasto_variable_total": 125000,
+  "cantidad_movimientos": 18,
+  "ticket_promedio_gasto": 17500,
+  "gasto_mayor": 49990,
+  "tasa_ahorro_pct": 71.18,
+  "variacion_gasto_vs_mes_anterior": -35000,
+  "variacion_gasto_vs_mes_anterior_pct": -12.5,
+  "proyeccion_gasto_fin_mes": 312500
+}
+```
 
 ### 3. Entrenamientos
 

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, ArrowUpRight, Landmark, ReceiptText, Wallet } from "lucide-react"
 import { FinanzasAPI } from "@/modules/finanzas/api/finanzas.api"
+import { MovimientoDetailSkeleton } from "@/modules/finanzas/components/skeletons/movimiento-detail-skeleton"
 import type { MovimientoResponse } from "@/modules/finanzas/types/finanzas"
 import { getFriendlyErrorMessage } from "@/lib/error-messages"
 
@@ -50,11 +51,7 @@ export function MovimientoDetailView({ idMovimiento }: { idMovimiento: number })
   }
 
   if (loading) {
-    return (
-      <section className="rounded-[1.75rem] bg-[color:var(--surface-low)] p-6">
-        <p className="text-sm text-muted-foreground">Cargando detalle del movimiento...</p>
-      </section>
-    )
+    return <MovimientoDetailSkeleton includeChrome={false} />
   }
 
   if (error || !movimiento) {

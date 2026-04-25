@@ -10,10 +10,12 @@ import {
 export const AuthAPI = {
   login: async (payload: AuthLoginPayload): Promise<AuthTokenResponse> => {
     const body = new URLSearchParams()
+    body.set("grant_type", "password")
     body.append("username", payload.username)
     body.append("password", payload.password)
+    body.set("scope", "")
 
-    const { data } = await api.post("/auth/jwt/login", body, {
+    const { data } = await api.post<AuthTokenResponse>("/auth/jwt/login", body.toString(), {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },

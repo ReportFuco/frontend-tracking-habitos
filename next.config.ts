@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["100.107.250.78", "100.124.185.116", "franciscoa.taile7865b.ts.net"],
+  allowedDevOrigins: ["100.107.250.78", "100.124.185.116"],
   redirects: async () => [
     { source: "/finanzas", destination: "/app/finanzas", permanent: false },
     { source: "/finanzas/:path*", destination: "/app/finanzas/:path*", permanent: false },

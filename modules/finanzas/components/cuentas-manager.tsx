@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
+import { CuentasSkeleton } from "@/modules/finanzas/components/skeletons/cuentas-skeleton"
 import { useFinanzas } from "@/modules/finanzas/hooks/useFinanzas"
 
 export function CuentasManager() {
@@ -38,6 +39,10 @@ export function CuentasManager() {
     if (normalized.includes("ahorro")) return "bg-secondary"
 
     return "bg-[color:var(--primary-container)]"
+  }
+
+  if (loadingCatalogos && cuentas.length === 0) {
+    return <CuentasSkeleton />
   }
 
   return (
@@ -97,11 +102,7 @@ export function CuentasManager() {
           </p>
         </div>
 
-        {loadingCatalogos ? (
-          <div className="mt-6 rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-6 text-sm text-muted-foreground shadow-[var(--shadow-airy)]">
-            Cargando cuentas bancarias...
-          </div>
-        ) : cuentas.length === 0 ? (
+        {cuentas.length === 0 ? (
           <div className="mt-6 rounded-[1.5rem] bg-[color:var(--surface-lowest)] p-6 text-sm leading-6 text-muted-foreground shadow-[var(--shadow-airy)]">
             Aun no tienes cuentas bancarias registradas. Usa el flujo de <span className="font-medium text-foreground">Registrar cuenta bancaria</span> para crear la primera.
           </div>

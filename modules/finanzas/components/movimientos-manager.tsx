@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import { useFinanzas } from "@/modules/finanzas/hooks/useFinanzas"
+import { MovimientosSkeleton } from "@/modules/finanzas/components/skeletons/movimientos-skeleton"
 import { TipoMovimiento } from "@/modules/finanzas/types/finanzas"
 
 export function MovimientosManager() {
@@ -51,6 +52,10 @@ export function MovimientosManager() {
     tipo === "ingreso" ? "bg-secondary" : "bg-module-finanzas"
 
   const navigate = (id: number) => router.push(`/app/finanzas/movimientos/${id}`)
+
+  if (loadingCatalogos && movimientos.length === 0) {
+    return <MovimientosSkeleton />
+  }
 
   return (
     <section className="flex flex-col gap-4 sm:gap-6">
@@ -109,11 +114,7 @@ export function MovimientosManager() {
           </p>
         </div>
 
-        {loadingCatalogos ? (
-          <div className="mt-6 rounded-[1.5rem] bg-surface-lowest p-6 text-sm text-muted-foreground shadow-(--shadow-airy)">
-            Cargando movimientos...
-          </div>
-        ) : movimientos.length === 0 ? (
+        {movimientos.length === 0 ? (
           <div className="mt-6 rounded-[1.5rem] bg-surface-lowest p-6 text-sm leading-6 text-muted-foreground shadow-(--shadow-airy)">
             Aun no tienes movimientos registrados. Usa el flujo de{" "}
             <span className="font-medium text-foreground">Registrar movimientos</span> para comenzar a construir tu diario financiero.

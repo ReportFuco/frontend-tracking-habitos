@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation"
 import { ReactNode, useEffect, useRef, useState } from "react"
+import { FullScreenLoader } from "@/components/feedback/loaders/full-screen-loader"
 import { getValidStoredToken } from "@/lib/auth-session"
 import { AuthAPI } from "@/modules/auth/api/auth.api"
 
@@ -42,11 +43,7 @@ export function AuthGuard({ children, redirectTo = "/login" }: AuthGuardProps) {
   }, [redirectTo, router])
 
   if (status !== "authorized") {
-    return (
-      <main className="mx-auto flex min-h-screen w-full max-w-3xl items-center justify-center p-6">
-        <p className="text-sm text-muted-foreground">Validando sesion...</p>
-      </main>
-    )
+    return <FullScreenLoader accent="olive" label="Validando acceso..." mode="session" />
   }
 
   return <>{children}</>
