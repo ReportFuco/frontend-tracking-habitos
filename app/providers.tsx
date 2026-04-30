@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState, useSyncExternalStore } from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client"
@@ -12,7 +12,16 @@ const ONE_DAY = 1000 * 60 * 60 * 24
 const shouldPersistQuery = (query: { meta?: Record<string, unknown> }) =>
   query.meta?.persist === true
 
+const subscribeToClientSnapshot = () => () => {}
+const getClientSnapshot = () => true
+const getServerSnapshot = () => false
+
 export function Providers({ children }: { children: React.ReactNode }) {
+  const isClient = useSyncExternalStore(
+    subscribeToClientSnapshot,
+    getClientSnapshot,
+    getServerSnapshot
+  )
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -30,16 +39,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
       })
   )
 
-  const [persister] = useState(() =>
-    typeof window === "undefined"
-      ? null
-      : createSyncStoragePersister({
-          storage: window.localStorage,
-          key: QUERY_CACHE_STORAGE_KEY,
-        })
+  const persister = useMemo(
+    () =>
+      isClient
+        ? createSyncStoragePersister({
+            storage: window.localStorage,
+            key: QUERY_CACHE_STORAGE_KEY,
+          })
+        : null,
+    [isClient]
   )
 
-  if (!persister) {
+  if (!isClient || !persister) {
     return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   }
 

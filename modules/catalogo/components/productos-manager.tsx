@@ -2,13 +2,15 @@
 
 import { Pencil, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { EditorialInput, FieldGroup, FormPanel, FormSubmitBar } from "@/components/forms/editorial-form"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { SearchableCombobox } from "@/components/forms/searchable-combobox"
+import { queryKeys } from "@/lib/query-keys"
 import { CatalogoAPI } from "@/modules/catalogo/api/catalogo.api"
-import type { ProductoResponse, MarcaResponse } from "@/modules/catalogo/types/catalogo"
+import type { ProductoResponse } from "@/modules/catalogo/types/catalogo"
 
 type FormState = {
   nombre_producto: string
@@ -51,32 +53,58 @@ const toFormState = (p: ProductoResponse): FormState => ({
 })
 
 export function ProductosManager() {
-  const [productos, setProductos] = useState<ProductoResponse[]>([])
-  const [marcas, setMarcas] = useState<MarcaResponse[]>([])
-  const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
-  const [search, setSearch] = useState("")
+  const queryClient = useQueryClient()
+  const [searchInput, setSearchInput] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [form, setForm] = useState<FormState>(emptyForm)
   const [editingId, setEditingId] = useState<number | null>(null)
   const isEditing = editingId !== null
 
   useEffect(() => {
-    void CatalogoAPI.getMarcas().then(setMarcas).catch(() => null)
-  }, [])
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      void CatalogoAPI.getProductos(search.trim() ? { q: search.trim() } : undefined)
-        .then(setProductos)
-        .catch(() => toast.error("Error al cargar productos"))
-        .finally(() => setLoading(false))
-    }, 250)
+    const timer = setTimeout(() => setDebouncedSearch(searchInput.trim()), 250)
     return () => clearTimeout(timer)
-  }, [search])
+  }, [searchInput])
+
+  const productosParams = debouncedSearch ? { q: debouncedSearch } : undefined
+
+  const productosQuery = useQuery({
+    queryKey: queryKeys.catalogo.productos(productosParams),
+    queryFn: () => CatalogoAPI.getProductos(productosParams),
+  })
+  const marcasQuery = useQuery({
+    queryKey: queryKeys.catalogo.marcas,
+    queryFn: CatalogoAPI.getMarcas,
+  })
+
+  const invalidateProductos = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalogo.productosRoot }),
+      // Tablas nutricionales muestran nombre_producto denormalizado.
+      queryClient.invalidateQueries({ queryKey: queryKeys.nutricion.tablas }),
+    ])
+
+  const createMutation = useMutation({
+    mutationFn: CatalogoAPI.createProducto,
+    onSuccess: () => invalidateProductos(),
+  })
+  const updateMutation = useMutation({
+    mutationFn: ({ idProducto, payload }: { idProducto: number; payload: ReturnType<typeof toPayload> }) =>
+      CatalogoAPI.updateProducto(idProducto, payload),
+    onSuccess: () => invalidateProductos(),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: CatalogoAPI.deleteProducto,
+    onSuccess: () => invalidateProductos(),
+  })
+
+  const productos = productosQuery.data ?? []
+  const loading = productosQuery.isLoading
+  const submitting =
+    createMutation.isPending || updateMutation.isPending || deleteMutation.isPending
 
   const marcaOptions = useMemo(
-    () => marcas.map((m) => ({ value: String(m.id_marca), label: m.nombre_marca })),
-    [marcas],
+    () => (marcasQuery.data ?? []).map((m) => ({ value: String(m.id_marca), label: m.nombre_marca })),
+    [marcasQuery.data],
   )
 
   const cancelEdit = () => { setEditingId(null); setForm(emptyForm) }
@@ -84,36 +112,27 @@ export function ProductosManager() {
 
   const handleSubmit = async () => {
     if (!form.nombre_producto.trim()) { toast.error("Nombre requerido"); return }
-    setSubmitting(true)
     try {
       if (isEditing) {
-        const updated = await CatalogoAPI.updateProducto(editingId!, toPayload(form))
-        setProductos((prev) => prev.map((p) => (p.id_producto === editingId ? updated : p)))
+        await updateMutation.mutateAsync({ idProducto: editingId!, payload: toPayload(form) })
         toast.success("Producto actualizado")
         cancelEdit()
       } else {
-        const nuevo = await CatalogoAPI.createProducto(toPayload(form))
-        setProductos((prev) => [...prev, nuevo])
+        await createMutation.mutateAsync(toPayload(form))
         toast.success("Producto creado")
         setForm(emptyForm)
       }
     } catch {
       toast.error("No se pudo guardar el producto")
-    } finally {
-      setSubmitting(false)
     }
   }
 
   const handleDelete = async (idProducto: number) => {
-    setSubmitting(true)
     try {
-      await CatalogoAPI.deleteProducto(idProducto)
-      setProductos((prev) => prev.filter((p) => p.id_producto !== idProducto))
+      await deleteMutation.mutateAsync(idProducto)
       toast.success("Producto eliminado")
     } catch {
       toast.error("No se pudo eliminar el producto")
-    } finally {
-      setSubmitting(false)
     }
   }
 
@@ -163,8 +182,8 @@ export function ProductosManager() {
         <div className="space-y-4">
           <EditorialInput
             placeholder="Buscar producto..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
 
           {loading ? (

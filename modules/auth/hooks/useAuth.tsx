@@ -21,6 +21,7 @@ export const useAuth = () => {
       setError(null)
     },
     onSuccess: async (data) => {
+      queryClient.clear()
       localStorage.setItem("auth_token", data.access_token)
       setToken(data.access_token)
       await queryClient.fetchQuery({

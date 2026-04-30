@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tracking de Habitos — Frontend
 
-## Getting Started
+Aplicacion web para tracking de habitos (finanzas, entrenamientos, nutricion, compras). Construida sobre Next.js 16 (App Router) y React 19.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router) + React 19 + TypeScript
+- Tailwind CSS 4
+- TanStack Query (`@tanstack/react-query`) con persistencia selectiva en `localStorage`
+- Axios (`lib/api.ts`) con interceptores de auth
+- React Hook Form + Zod
+- Radix UI + Sonner (toasts)
+
+## Comandos
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev       # Servidor de desarrollo (http://localhost:3000)
+npm run build     # Build de produccion
+npm start         # Servir build de produccion
+npm run lint      # ESLint
+npx tsc --noEmit  # Type check
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+No hay suite de tests configurada (ver `docs/AUDITORIA_PROYECTO.md` Fase 5).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Variables de entorno
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copia `.env.example` a `.env.local` y completa:
 
-## Learn More
+| Variable               | Requerido | Uso                                                |
+| ---------------------- | --------- | -------------------------------------------------- |
+| `NEXT_PUBLIC_API_URL`  | Si        | URL base del backend (consumida desde el navegador)|
 
-To learn more about Next.js, take a look at the following resources:
+Importante: cualquier variable con prefijo `NEXT_PUBLIC_` se inyecta en el bundle del cliente — no usar para secretos.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Arquitectura
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Resumen rapido (ver `CLAUDE.md` para detalles):
 
-## Deploy on Vercel
+- Rutas publicas: `/login`, `/register`.
+- Rutas protegidas: `/app/<modulo>/**` (auth-guard valida token local + perfil remoto).
+- Cada feature vive en `modules/<feature>/` con `api/`, `hooks/`, `types/`, `schemas/`, `components/`.
+- Cliente Axios centralizado en `lib/api.ts` (auto-inyecta `Authorization: Bearer <token>` y redirige a `/login` ante 401).
+- Query keys centralizadas en `lib/query-keys.ts`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Auth y sesion
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+El JWT se guarda en `localStorage` (clave `auth_token`). Esto implica:
+
+- Riesgo de exposicion ante XSS.
+- En logout y en login se limpia el cache persistido de React Query (`queryClient.clear()`) para evitar fuga de datos entre usuarios en el mismo navegador.
+- Migracion futura a cookie `HttpOnly` esta en `docs/AUDITORIA_PROYECTO.md` Fase 3.
+
+## Persistencia de cache
+
+Solo se persisten queries marcadas con `meta: { persist: true }`. La politica vigente es persistir solo catalogos no sensibles (ej: bancos, ejercicios, tipos musculares, tablas nutricionales, cadenas/locales de compras). Datos del usuario (categorias, gimnasios, productos financieros) **no** se persisten.
+
+## Documentacion adicional
+
+- `CLAUDE.md` — guia para asistentes Claude Code que trabajan en este repo.
+- `docs/AUDITORIA_PROYECTO.md` — auditoria tecnica (2026-04-30).
+- `docs/AVANCES_AUDITORIA.md` — seguimiento de tareas de la auditoria.
+
+## Checklist antes de PR
+
+```bash
+npm run lint
+npx tsc --noEmit
+npm run build
+npm audit
+```

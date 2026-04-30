@@ -1,61 +1,78 @@
 "use client"
 
 import { Pencil, Trash2 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { EditorialInput, FormPanel } from "@/components/forms/editorial-form"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { queryKeys } from "@/lib/query-keys"
 import { ComprasAPI } from "@/modules/compras/api/compras.api"
-import type { CadenaResponse } from "@/modules/compras/types/compras"
 
 export function CadenasManager() {
-  const [cadenas, setCadenas] = useState<CadenaResponse[]>([])
-  const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
+  const queryClient = useQueryClient()
   const [formValue, setFormValue] = useState("")
   const [editingId, setEditingId] = useState<number | null>(null)
   const isEditing = editingId !== null
 
-  useEffect(() => {
-    void ComprasAPI.getCadenas()
-      .then(setCadenas)
-      .catch(() => toast.error("Error al cargar cadenas"))
-      .finally(() => setLoading(false))
-  }, [])
+  const cadenasQuery = useQuery({
+    queryKey: queryKeys.compras.cadenas,
+    queryFn: ComprasAPI.getCadenas,
+  })
+
+  const invalidate = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.compras.cadenas }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.compras.locales }),
+    ])
+
+  const createMutation = useMutation({
+    mutationFn: ComprasAPI.createCadena,
+    onSuccess: () => invalidate(),
+  })
+  const updateMutation = useMutation({
+    mutationFn: ({ idCadena, nombre }: { idCadena: number; nombre: string }) =>
+      ComprasAPI.updateCadena(idCadena, { nombre_cadena: nombre }),
+    onSuccess: () => invalidate(),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: ComprasAPI.deleteCadena,
+    onSuccess: () => invalidate(),
+  })
+
+  const cadenas = cadenasQuery.data ?? []
+  const loading = cadenasQuery.isLoading
+  const submitting =
+    createMutation.isPending || updateMutation.isPending || deleteMutation.isPending
 
   const handleSubmit = async () => {
-    if (!formValue.trim()) { toast.error("Nombre requerido"); return }
-    setSubmitting(true)
+    const nombre = formValue.trim()
+    if (!nombre) {
+      toast.error("Nombre requerido")
+      return
+    }
     try {
       if (isEditing) {
-        const updated = await ComprasAPI.updateCadena(editingId!, { nombre_cadena: formValue.trim() })
-        setCadenas((prev) => prev.map((c) => (c.id_cadena === editingId ? updated : c)))
+        await updateMutation.mutateAsync({ idCadena: editingId!, nombre })
         toast.success("Cadena actualizada")
       } else {
-        const nueva = await ComprasAPI.createCadena({ nombre_cadena: formValue.trim() })
-        setCadenas((prev) => [...prev, nueva])
+        await createMutation.mutateAsync({ nombre_cadena: nombre })
         toast.success("Cadena creada")
       }
       setFormValue("")
       setEditingId(null)
     } catch {
       toast.error("No se pudo guardar la cadena")
-    } finally {
-      setSubmitting(false)
     }
   }
 
   const handleDelete = async (idCadena: number) => {
-    setSubmitting(true)
     try {
-      await ComprasAPI.deleteCadena(idCadena)
-      setCadenas((prev) => prev.filter((c) => c.id_cadena !== idCadena))
+      await deleteMutation.mutateAsync(idCadena)
       toast.success("Cadena eliminada")
     } catch {
       toast.error("No se pudo eliminar la cadena")
-    } finally {
-      setSubmitting(false)
     }
   }
 

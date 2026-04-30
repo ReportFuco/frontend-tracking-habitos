@@ -37,4 +37,10 @@ export const queryKeys = {
     locales: ["compras", "locales"] as const,
     compras: ["compras", "compras"] as const,
   },
+  catalogo: {
+    marcas: ["catalogo", "marcas"] as const,
+    productosRoot: ["catalogo", "productos"] as const,
+    productos: (params?: { q?: string }) =>
+      ["catalogo", "productos", params ?? {}] as const,
+  },
 }

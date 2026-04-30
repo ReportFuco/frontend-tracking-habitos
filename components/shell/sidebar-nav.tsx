@@ -14,7 +14,7 @@ export function SidebarNav({ sections, onNavigate }: SidebarNavProps) {
   const pathname = usePathname() ?? ""
 
   return (
-    <nav className="flex flex-col gap-7 px-4 py-6">
+    <nav aria-label="Navegacion principal" className="flex flex-col gap-7 px-4 py-6">
       {sections.map((section, idx) => (
         <div key={section.title ?? idx} className="flex flex-col gap-2">
           {section.title ? (
@@ -34,6 +34,7 @@ export function SidebarNav({ sections, onNavigate }: SidebarNavProps) {
                   <Link
                     href={item.href}
                     onClick={onNavigate}
+                    aria-current={isActive ? "page" : undefined}
                     className={cn(
                       "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                       isActive

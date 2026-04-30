@@ -38,6 +38,7 @@ export function MobileBottomNav({ items, preferredOrder, className }: MobileBott
 
   return (
     <nav
+      aria-label="Navegacion principal"
       className={cn(
         "fixed inset-x-0 bottom-0 z-40 border-t border-(--border)/30 bg-background/96 px-2 pb-[calc(env(safe-area-inset-bottom)+0.55rem)] pt-2 sm:bg-background/88 sm:backdrop-blur-xl lg:hidden",
         className,
@@ -66,6 +67,7 @@ export function MobileBottomNav({ items, preferredOrder, className }: MobileBott
               <li key={item.href} className="flex-1">
                 <Link
                   href={item.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={cn(
                     "relative z-10 flex flex-col items-center justify-center gap-0.5 rounded-3xl px-1.5 py-1.5 text-[9px] font-medium tracking-[0.01em] transition-colors duration-300 ease-out",
                     isActive ? "text-foreground" : "text-muted-foreground",

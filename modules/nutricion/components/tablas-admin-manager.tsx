@@ -1,16 +1,18 @@
 "use client"
 
 import { Pencil, Trash2 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { EditorialInput, FieldGroup, FormPanel, FormSubmitBar } from "@/components/forms/editorial-form"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { SearchableCombobox } from "@/components/forms/searchable-combobox"
+import { InvalidNumericInputError, parseOptionalNumber, parseRequiredNumber } from "@/lib/parse-numeric"
+import { queryKeys } from "@/lib/query-keys"
 import { NutricionAPI } from "@/modules/nutricion/api/nutricion.api"
 import { CatalogoAPI } from "@/modules/catalogo/api/catalogo.api"
 import type { TablaNutricionalResponse } from "@/modules/nutricion/types/nutricion"
-import type { ProductoResponse } from "@/modules/catalogo/types/catalogo"
 
 type FormState = {
   id_producto: string
@@ -39,28 +41,28 @@ const emptyForm: FormState = {
 }
 
 const toCreatePayload = (f: FormState) => ({
-  id_producto: Number(f.id_producto),
-  porcion_cantidad: Number(f.porcion_cantidad),
+  id_producto: parseRequiredNumber(f.id_producto),
+  porcion_cantidad: parseRequiredNumber(f.porcion_cantidad),
   porcion_unidad: f.porcion_unidad.trim(),
-  calorias: Number(f.calorias),
-  proteinas: Number(f.proteinas),
-  carbohidratos: Number(f.carbohidratos),
-  grasas: Number(f.grasas),
-  azucares: f.azucares ? Number(f.azucares) : null,
-  sodio: f.sodio ? Number(f.sodio) : null,
-  fibra: f.fibra ? Number(f.fibra) : null,
+  calorias: parseRequiredNumber(f.calorias),
+  proteinas: parseRequiredNumber(f.proteinas),
+  carbohidratos: parseRequiredNumber(f.carbohidratos),
+  grasas: parseRequiredNumber(f.grasas),
+  azucares: parseOptionalNumber(f.azucares),
+  sodio: parseOptionalNumber(f.sodio),
+  fibra: parseOptionalNumber(f.fibra),
 })
 
 const toPatchPayload = (f: FormState) => ({
-  porcion_cantidad: Number(f.porcion_cantidad) || null,
+  porcion_cantidad: parseOptionalNumber(f.porcion_cantidad),
   porcion_unidad: f.porcion_unidad.trim() || null,
-  calorias: Number(f.calorias) || null,
-  proteinas: Number(f.proteinas) || null,
-  carbohidratos: Number(f.carbohidratos) || null,
-  grasas: Number(f.grasas) || null,
-  azucares: f.azucares ? Number(f.azucares) : null,
-  sodio: f.sodio ? Number(f.sodio) : null,
-  fibra: f.fibra ? Number(f.fibra) : null,
+  calorias: parseOptionalNumber(f.calorias),
+  proteinas: parseOptionalNumber(f.proteinas),
+  carbohidratos: parseOptionalNumber(f.carbohidratos),
+  grasas: parseOptionalNumber(f.grasas),
+  azucares: parseOptionalNumber(f.azucares),
+  sodio: parseOptionalNumber(f.sodio),
+  fibra: parseOptionalNumber(f.fibra),
 })
 
 const toFormState = (t: TablaNutricionalResponse): FormState => ({
@@ -77,28 +79,49 @@ const toFormState = (t: TablaNutricionalResponse): FormState => ({
 })
 
 export function TablasAdminManager() {
-  const [tablas, setTablas] = useState<TablaNutricionalResponse[]>([])
-  const [productos, setProductos] = useState<ProductoResponse[]>([])
-  const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
+  const queryClient = useQueryClient()
   const [form, setForm] = useState<FormState>(emptyForm)
   const [editingId, setEditingId] = useState<number | null>(null)
   const isEditing = editingId !== null
 
-  useEffect(() => {
-    void Promise.all([NutricionAPI.getTablas(), CatalogoAPI.getProductos()])
-      .then(([ts, ps]) => { setTablas(ts); setProductos(ps) })
-      .catch(() => toast.error("Error al cargar datos"))
-      .finally(() => setLoading(false))
-  }, [])
+  const tablasQuery = useQuery({
+    queryKey: queryKeys.nutricion.tablas,
+    queryFn: NutricionAPI.getTablas,
+  })
+  const productosQuery = useQuery({
+    queryKey: queryKeys.catalogo.productos(),
+    queryFn: () => CatalogoAPI.getProductos(),
+  })
+
+  const invalidateTablas = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.nutricion.tablas })
+
+  const createMutation = useMutation({
+    mutationFn: NutricionAPI.createTabla,
+    onSuccess: () => invalidateTablas(),
+  })
+  const updateMutation = useMutation({
+    mutationFn: ({ idTabla, payload }: { idTabla: number; payload: ReturnType<typeof toPatchPayload> }) =>
+      NutricionAPI.updateTabla(idTabla, payload),
+    onSuccess: () => invalidateTablas(),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: NutricionAPI.deleteTabla,
+    onSuccess: () => invalidateTablas(),
+  })
+
+  const tablas = tablasQuery.data ?? []
+  const loading = tablasQuery.isLoading || productosQuery.isLoading
+  const submitting =
+    createMutation.isPending || updateMutation.isPending || deleteMutation.isPending
 
   const productoOptions = useMemo(
-    () => productos.map((p) => ({
+    () => (productosQuery.data ?? []).map((p) => ({
       value: String(p.id_producto),
       label: p.nombre_producto,
       description: p.nombre_marca ?? undefined,
     })),
-    [productos],
+    [productosQuery.data],
   )
 
   const cancelEdit = () => { setEditingId(null); setForm(emptyForm) }
@@ -113,36 +136,31 @@ export function TablasAdminManager() {
       toast.error("Producto, porcion y macros principales son requeridos")
       return
     }
-    setSubmitting(true)
     try {
       if (isEditing) {
-        const updated = await NutricionAPI.updateTabla(editingId!, toPatchPayload(form))
-        setTablas((prev) => prev.map((t) => (t.id_tabla === editingId ? updated : t)))
+        await updateMutation.mutateAsync({ idTabla: editingId!, payload: toPatchPayload(form) })
         toast.success("Tabla actualizada")
         cancelEdit()
       } else {
-        const nueva = await NutricionAPI.createTabla(toCreatePayload(form))
-        setTablas((prev) => [...prev, nueva])
+        await createMutation.mutateAsync(toCreatePayload(form))
         toast.success("Tabla nutricional creada")
         setForm(emptyForm)
       }
-    } catch {
-      toast.error("No se pudo guardar la tabla")
-    } finally {
-      setSubmitting(false)
+    } catch (err) {
+      if (err instanceof InvalidNumericInputError) {
+        toast.error("Revisa los valores numericos", { description: err.message })
+      } else {
+        toast.error("No se pudo guardar la tabla")
+      }
     }
   }
 
   const handleDelete = async (idTabla: number) => {
-    setSubmitting(true)
     try {
-      await NutricionAPI.deleteTabla(idTabla)
-      setTablas((prev) => prev.filter((t) => t.id_tabla !== idTabla))
+      await deleteMutation.mutateAsync(idTabla)
       toast.success("Tabla eliminada")
     } catch {
       toast.error("No se pudo eliminar la tabla")
-    } finally {
-      setSubmitting(false)
     }
   }
 

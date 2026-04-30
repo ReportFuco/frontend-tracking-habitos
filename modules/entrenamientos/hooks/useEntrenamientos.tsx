@@ -45,7 +45,6 @@ const useEntrenamientosState = () => {
     queryFn: () => EntrenamientosAPI.getGimnasios(gimnasiosSearch),
     staleTime: SIX_HOURS,
     gcTime: ONE_WEEK,
-    meta: persistMeta,
   })
   const entrenamientosQuery = useQuery({
     queryKey: queryKeys.entrenamientos.fuerzaLista,
@@ -143,7 +142,6 @@ const useEntrenamientosState = () => {
       queryFn: () => EntrenamientosAPI.getGimnasios(q),
       staleTime: SIX_HOURS,
       gcTime: ONE_WEEK,
-      meta: persistMeta,
     })
   }
 

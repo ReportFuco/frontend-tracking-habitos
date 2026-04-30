@@ -52,7 +52,6 @@ const useFinanzasState = () => {
     queryFn: FinanzasAPI.getCategorias,
     staleTime: ONE_DAY,
     gcTime: ONE_WEEK,
-    meta: persistMeta,
   })
   const cuentasQuery = useQuery({
     queryKey: queryKeys.finanzas.cuentas,
@@ -180,7 +179,6 @@ const useFinanzasState = () => {
         queryFn: () => FinanzasAPI.getProductosFinancieros({ id_banco: idBanco }),
         staleTime: ONE_DAY,
         gcTime: ONE_WEEK,
-        meta: persistMeta,
       })
     } catch (err) {
       toast.error("No pudimos cargar los productos del banco", {
