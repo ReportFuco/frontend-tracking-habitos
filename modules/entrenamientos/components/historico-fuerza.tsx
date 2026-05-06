@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { CalendarCheck, ChevronRight, Flame } from "lucide-react"
 import {
   Table,
@@ -35,9 +35,15 @@ const formatDateShort = (value: string) => {
 }
 
 export function HistoricoFuerza() {
-  const { entrenamientosFuerza, fetchDetalleEntrenoFuerza, loading } = useEntrenamientos()
+  const { entrenamientosFuerza, fetchEntrenosFuerza, fetchDetalleEntrenoFuerza, loading } = useEntrenamientos()
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [detail, setDetail] = useState<Awaited<ReturnType<typeof fetchDetalleEntrenoFuerza>> | null>(null)
+
+  useEffect(() => {
+    if (entrenamientosFuerza.length === 0) {
+      void fetchEntrenosFuerza()
+    }
+  }, [entrenamientosFuerza.length, fetchEntrenosFuerza])
 
   const sesionesCerradas = entrenamientosFuerza.filter((entreno) => entreno.estado !== "activo")
   const totalSeriesDetalle = detail?.series?.length ?? 0
@@ -360,7 +366,9 @@ export function HistoricoFuerza() {
                               {serie.es_calentamiento ? "calentamiento" : "trabajo"}
                             </span>
                             <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground sm:text-xs sm:tracking-[0.18em]">
-                              {serie.tipo_ejercicio ?? "sin grupo"}
+                              {serie.subcategoria_ejercicio && serie.subcategoria_ejercicio.toLowerCase() !== "general"
+                                ? `${serie.tipo_ejercicio ?? "sin grupo"} / ${serie.subcategoria_ejercicio}`
+                                : serie.tipo_ejercicio ?? "sin grupo"}
                             </span>
                           </div>
                           <p className="truncate text-base font-semibold tracking-tight text-foreground sm:text-lg">

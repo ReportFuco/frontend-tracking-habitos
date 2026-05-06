@@ -8,6 +8,7 @@ import { queryKeys } from "@/lib/query-keys"
 import { EntrenamientosAPI } from "@/modules/entrenamientos/api/entrenamientos.api"
 import {
   EntrenoFuerzaCreate,
+  EjerciciosParams,
   GimnasioCreate,
   GimnasioEdit,
   SerieFuerzaCreate,
@@ -15,6 +16,7 @@ import {
 } from "@/modules/entrenamientos/types/entrenamientos"
 
 const ONE_MINUTE = 1000 * 60
+const THIRTY_SECONDS = 1000 * 30
 const SIX_HOURS = ONE_MINUTE * 60 * 6
 const ONE_DAY = ONE_MINUTE * 60 * 24
 const ONE_WEEK = ONE_DAY * 7
@@ -38,7 +40,7 @@ const getEntrenoActivoOrNull = async () => {
 const useEntrenamientosState = () => {
   const queryClient = useQueryClient()
   const [gimnasiosSearch, setGimnasiosSearch] = useState<string | undefined>()
-  const [ejercicioParams, setEjercicioParams] = useState<{ q?: string; tipo?: string } | undefined>()
+  const [ejercicioParams, setEjercicioParams] = useState<EjerciciosParams | undefined>()
 
   const gimnasiosQuery = useQuery({
     queryKey: queryKeys.entrenamientos.gimnasios(gimnasiosSearch),
@@ -50,12 +52,13 @@ const useEntrenamientosState = () => {
     queryKey: queryKeys.entrenamientos.fuerzaLista,
     queryFn: EntrenamientosAPI.getEntrenosFuerza,
     staleTime: ONE_MINUTE,
+    enabled: false,
   })
   const entrenamientoActivoQuery = useQuery({
     queryKey: queryKeys.entrenamientos.fuerzaActivo,
     queryFn: getEntrenoActivoOrNull,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    staleTime: THIRTY_SECONDS,
+    refetchOnWindowFocus: false,
   })
   const ejerciciosQuery = useQuery({
     queryKey: queryKeys.entrenamientos.ejercicios(ejercicioParams),
@@ -63,18 +66,20 @@ const useEntrenamientosState = () => {
     staleTime: ONE_DAY,
     gcTime: ONE_WEEK,
     meta: persistMeta,
+    enabled: false,
   })
-  const tiposMuscularesQuery = useQuery({
-    queryKey: queryKeys.entrenamientos.tiposMusculares,
-    queryFn: EntrenamientosAPI.getTiposMusculares,
+  const musculosQuery = useQuery({
+    queryKey: queryKeys.entrenamientos.musculos,
+    queryFn: EntrenamientosAPI.getMusculos,
     staleTime: ONE_DAY,
     gcTime: ONE_WEEK,
     meta: persistMeta,
+    enabled: false,
   })
 
-  const invalidate = async (...keys: readonly (readonly unknown[])[]) => {
+  const invalidate = useCallback(async (...keys: readonly (readonly unknown[])[]) => {
     await Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey })))
-  }
+  }, [queryClient])
 
   const runAction = useCallback(async <T,>(action: () => Promise<T>) => {
     try {
@@ -128,14 +133,14 @@ const useEntrenamientosState = () => {
     onSuccess: () => invalidate(queryKeys.entrenamientos.fuerzaActivo),
   })
 
-  const fetchResumen = () =>
+  const fetchResumen = useCallback(() =>
     invalidate(
       queryKeys.entrenamientos.gimnasiosRoot,
       queryKeys.entrenamientos.fuerzaLista,
       queryKeys.entrenamientos.fuerzaActivo
-    )
+    ), [invalidate])
 
-  const fetchGimnasios = async (q?: string) => {
+  const fetchGimnasios = useCallback(async (q?: string) => {
     setGimnasiosSearch(q)
     return queryClient.fetchQuery({
       queryKey: queryKeys.entrenamientos.gimnasios(q),
@@ -143,9 +148,9 @@ const useEntrenamientosState = () => {
       staleTime: SIX_HOURS,
       gcTime: ONE_WEEK,
     })
-  }
+  }, [queryClient])
 
-  const fetchEjercicios = async (params?: { q?: string; tipo?: string }) => {
+  const fetchEjercicios = useCallback(async (params?: EjerciciosParams) => {
     setEjercicioParams(params)
     return queryClient.fetchQuery({
       queryKey: queryKeys.entrenamientos.ejercicios(params),
@@ -154,42 +159,49 @@ const useEntrenamientosState = () => {
       gcTime: ONE_WEEK,
       meta: persistMeta,
     })
-  }
+  }, [queryClient])
 
-  const fetchTiposMusculares = () =>
+  const fetchMusculos = useCallback(() =>
     queryClient.fetchQuery({
-      queryKey: queryKeys.entrenamientos.tiposMusculares,
-      queryFn: EntrenamientosAPI.getTiposMusculares,
+      queryKey: queryKeys.entrenamientos.musculos,
+      queryFn: EntrenamientosAPI.getMusculos,
       staleTime: ONE_DAY,
       gcTime: ONE_WEEK,
       meta: persistMeta,
-    })
+    }), [queryClient])
 
-  const fetchEntrenamientoActivo = () =>
+  const fetchEntrenosFuerza = useCallback(() =>
+    queryClient.fetchQuery({
+      queryKey: queryKeys.entrenamientos.fuerzaLista,
+      queryFn: EntrenamientosAPI.getEntrenosFuerza,
+      staleTime: ONE_MINUTE,
+    }), [queryClient])
+
+  const fetchEntrenamientoActivo = useCallback(() =>
     queryClient.fetchQuery({
       queryKey: queryKeys.entrenamientos.fuerzaActivo,
       queryFn: getEntrenoActivoOrNull,
-      staleTime: 0,
-    })
+      staleTime: THIRTY_SECONDS,
+    }), [queryClient])
 
-  const fetchDetalleEntrenoFuerza = (idEntrenamientoFuerza: number) =>
+  const fetchDetalleEntrenoFuerza = useCallback((idEntrenamientoFuerza: number) =>
     queryClient.fetchQuery({
       queryKey: queryKeys.entrenamientos.fuerzaDetalle(idEntrenamientoFuerza),
       queryFn: () => EntrenamientosAPI.getEntrenoFuerzaDetalle(idEntrenamientoFuerza),
       staleTime: ONE_MINUTE,
-    })
+    }), [queryClient])
 
   const error =
     gimnasiosQuery.error ??
     entrenamientosQuery.error ??
     entrenamientoActivoQuery.error ??
     ejerciciosQuery.error ??
-    tiposMuscularesQuery.error ??
+    musculosQuery.error ??
     null
 
   return {
     ejercicios: ejerciciosQuery.data ?? [],
-    tiposMusculares: tiposMuscularesQuery.data ?? [],
+    musculos: musculosQuery.data ?? [],
     gimnasios: gimnasiosQuery.data ?? [],
     entrenamientosFuerza: entrenamientosQuery.data ?? [],
     entrenamientoActivo: entrenamientoActivoQuery.data ?? null,
@@ -198,7 +210,7 @@ const useEntrenamientosState = () => {
       entrenamientosQuery.isLoading ||
       entrenamientoActivoQuery.isLoading ||
       ejerciciosQuery.isLoading ||
-      tiposMuscularesQuery.isLoading,
+      musculosQuery.isLoading,
     submitting:
       gimnasioCreateMutation.isPending ||
       gimnasioUpdateMutation.isPending ||
@@ -212,7 +224,8 @@ const useEntrenamientosState = () => {
     fetchResumen,
     fetchEjercicios,
     fetchGimnasios,
-    fetchTiposMusculares,
+    fetchMusculos,
+    fetchEntrenosFuerza,
     fetchEntrenamientoActivo,
     fetchDetalleEntrenoFuerza,
     crearGimnasio: (payload: GimnasioCreate) =>

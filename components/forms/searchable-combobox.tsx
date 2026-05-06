@@ -41,6 +41,7 @@ interface SearchableComboboxProps {
 
 interface DropdownPosition {
   listMaxHeight: number;
+  placement: "popover" | "sheet";
   style: CSSProperties;
 }
 
@@ -73,6 +74,7 @@ export function SearchableCombobox({
   const listRef = useRef<HTMLUListElement>(null);
   const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition>({
     listMaxHeight: compactOnMobile ? 208 : 256,
+    placement: "popover",
     style: {},
   });
 
@@ -116,6 +118,26 @@ export function SearchableCombobox({
       const verticalMargin = 12;
       const gap = 8;
       const minListHeight = 96;
+      const isMobile = viewportWidth < 640;
+
+      if (isMobile) {
+        setDropdownPosition({
+          listMaxHeight: Math.max(
+            176,
+            Math.min(viewportHeight * 0.52, viewportHeight - 190),
+          ),
+          placement: "sheet",
+          style: {
+            bottom: verticalMargin,
+            left: horizontalMargin,
+            maxHeight: `calc(100dvh - ${verticalMargin * 2}px)`,
+            position: "fixed",
+            right: horizontalMargin,
+            zIndex: 60,
+          },
+        });
+        return;
+      }
 
       const width = Math.min(rect.width, viewportWidth - horizontalMargin * 2);
       const maxLeft = viewportWidth - horizontalMargin - width;
@@ -130,7 +152,8 @@ export function SearchableCombobox({
       );
 
       setDropdownPosition({
-        listMaxHeight: availableSpace,
+        listMaxHeight: Math.min(availableSpace, compactOnMobile ? 288 : 360),
+        placement: "popover",
         style: openAbove
           ? {
               bottom: Math.max(viewportHeight - rect.top + gap, verticalMargin),
@@ -233,40 +256,61 @@ export function SearchableCombobox({
     }
   };
 
+  const optionsCountLabel =
+    filtered.length === 1 ? "1 opcion" : `${filtered.length} opciones`;
+  const hasManyOptions = options.length > 8;
+
   const dropdownPanel = open ? (
     <div
       ref={dropdownRef}
       className={cn(
-        "overflow-hidden rounded-4xl bg-surface-lowest shadow-(--shadow-airy-lg)",
-        "ring-1 ring-black/5",
+        "overflow-hidden bg-surface-lowest shadow-(--shadow-airy-lg) ring-1 ring-black/5",
+        dropdownPosition.placement === "sheet"
+          ? "rounded-[1.5rem]"
+          : "rounded-[1.25rem]",
       )}
       style={dropdownPosition.style}
       role="dialog"
     >
-      <div className="flex items-center gap-2 border-b border-(--border)/40 bg-surface-low px-3 py-2.5">
-        <Search className="size-4 text-muted-foreground" />
-        <input
-          ref={searchInputRef}
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setHighlighted(0);
-          }}
-          onKeyDown={handleKeyDown}
-          placeholder={searchPlaceholder}
-          className={cn(
-            "flex-1 border-0 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none sm:text-sm",
-            compactOnMobile ? "h-8 sm:h-9" : "h-9",
-          )}
-        />
-        {query ? (
-          <button
-            type="button"
-            onClick={() => setQuery("")}
-            className="flex size-6 items-center justify-center rounded-full text-muted-foreground transition hover:bg-background/80 hover:text-foreground"
-          >
-            <X className="size-3.5" />
-          </button>
+      {dropdownPosition.placement === "sheet" ? (
+        <div className="flex justify-center pt-2">
+          <span className="h-1 w-10 rounded-full bg-muted-foreground/25" />
+        </div>
+      ) : null}
+
+      <div className="border-b border-(--border)/40 bg-surface-low px-3 py-2.5">
+        <div className="flex items-center gap-2">
+          <Search className="size-4 text-muted-foreground" />
+          <input
+            ref={searchInputRef}
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setHighlighted(0);
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder={searchPlaceholder}
+            className={cn(
+              "min-w-0 flex-1 border-0 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none sm:text-sm",
+              compactOnMobile ? "h-8 sm:h-9" : "h-9",
+            )}
+          />
+          {query ? (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-background/80 hover:text-foreground sm:size-6"
+              aria-label="Limpiar busqueda"
+            >
+              <X className="size-3.5" />
+            </button>
+          ) : null}
+        </div>
+        {hasManyOptions ? (
+          <div className="mt-1.5 flex items-center justify-between gap-3 px-0.5 text-[11px] text-muted-foreground">
+            <span className="truncate">{optionsCountLabel}</span>
+            {query ? <span className="truncate">Filtrando resultados</span> : null}
+          </div>
         ) : null}
       </div>
 
@@ -278,7 +322,11 @@ export function SearchableCombobox({
         <ul
           ref={listRef}
           role="listbox"
-          className="overflow-y-auto py-1.5"
+          className={cn(
+            "overflow-y-auto overscroll-contain py-1.5",
+            "[scrollbar-width:thin] [scrollbar-color:color-mix(in_oklch,var(--muted-foreground)_30%,transparent)_transparent]",
+            "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/25 [&::-webkit-scrollbar-track]:bg-transparent",
+          )}
           style={{ maxHeight: dropdownPosition.listMaxHeight }}
         >
           {filtered.map((option, index) => {
@@ -298,21 +346,21 @@ export function SearchableCombobox({
                   className={cn(
                     "flex w-full items-start gap-3 text-left transition",
                     compactOnMobile
-                      ? "px-3 py-2 sm:px-4 sm:py-2.5"
-                      : "px-4 py-2.5",
+                      ? "px-3 py-2.5 sm:px-4"
+                      : "px-3.5 py-2.5",
                     isHighlighted && "bg-primary/8",
                     isSelected && "bg-primary/12",
                   )}
                 >
                   <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-sm font-medium text-foreground">
+                    <span className="line-clamp-2 text-sm font-medium leading-5 text-foreground">
                       {option.label}
                     </span>
                     {option.description ? (
                       <span
                         className={cn(
-                          "truncate text-xs text-muted-foreground",
-                          compactOnMobile && "hidden sm:block",
+                          "line-clamp-2 text-xs leading-5 text-muted-foreground",
+                          compactOnMobile && "sm:line-clamp-1",
                         )}
                       >
                         {option.description}
@@ -347,7 +395,7 @@ export function SearchableCombobox({
             return;
           }
           setOpen(true);
-          setHighlighted(0);
+          setHighlighted(Math.max(options.findIndex((option) => option.value === value), 0));
         }}
         className={cn(
           "flex w-full items-center gap-3 rounded-3xl border-0 bg-surface-variant text-left text-sm text-foreground shadow-none outline-none transition",

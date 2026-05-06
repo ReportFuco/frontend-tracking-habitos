@@ -27,11 +27,11 @@ import {
   serieFuerzaCreateSchema,
   serieFuerzaPatchSchema,
 } from "@/modules/entrenamientos/schemas/entrenamientos.schema";
-import { SerieFuerzaResponse } from "@/modules/entrenamientos/types/entrenamientos";
+import { Musculo, SerieFuerzaResponse } from "@/modules/entrenamientos/types/entrenamientos";
 
 const initialForm = {
   id_ejercicio: "",
-  tipo: "",
+  id_musculo: "",
   es_calentamiento: false,
   cantidad_peso: "",
   repeticiones: "",
@@ -73,23 +73,55 @@ function loadUltimaSerieLocal(idEjercicio: number): CachedSerie | null {
   }
 }
 
-const getEditableForm = (serie: SerieFuerzaResponse) => ({
+const getEditableForm = (serie: SerieFuerzaResponse, musculos: Musculo[]) => ({
   id_ejercicio: "",
-  tipo: serie.tipo_ejercicio ?? "",
+  id_musculo: String(
+    musculos.find(
+      (musculo) =>
+        normalizeText(musculo.nombre) === normalizeText(serie.tipo_ejercicio) ||
+        normalizeText(musculo.codigo) === normalizeText(serie.tipo_ejercicio),
+    )?.id_musculo ?? "",
+  ),
   es_calentamiento: serie.es_calentamiento,
   cantidad_peso: String(serie.cantidad_peso),
   repeticiones: String(serie.repeticiones),
 });
 
+const formatEjercicioGrupo = (ejercicio: {
+  musculo_nombre?: string | null;
+  subcategoria_nombre?: string | null;
+  tipo?: string | null;
+}) => {
+  const musculo = ejercicio.musculo_nombre ?? ejercicio.tipo ?? "";
+  const subcategoria = ejercicio.subcategoria_nombre;
+
+  if (!subcategoria || subcategoria.toLowerCase() === "general") {
+    return musculo || undefined;
+  }
+
+  return musculo ? `${musculo} / ${subcategoria}` : subcategoria;
+};
+
+const formatSerieGrupo = (serie: SerieFuerzaResponse) => {
+  const musculo = serie.tipo_ejercicio ?? "";
+  const subcategoria = serie.subcategoria_ejercicio;
+
+  if (!subcategoria || subcategoria.toLowerCase() === "general") {
+    return musculo;
+  }
+
+  return musculo ? `${musculo} / ${subcategoria}` : subcategoria;
+};
+
 export function EntrenamientoActivoCard() {
   const {
     entrenamientoActivo,
     ejercicios,
-    tiposMusculares,
+    musculos,
     loading,
     submitting,
     fetchEjercicios,
-    fetchTiposMusculares,
+    fetchMusculos,
     agregarSerieFuerza,
     editarSerieFuerza,
     eliminarSerieFuerza,
@@ -116,14 +148,14 @@ export function EntrenamientoActivoCard() {
       void fetchEjercicios();
     }
 
-    if (tiposMusculares.length === 0) {
-      void fetchTiposMusculares();
+    if (musculos.length === 0) {
+      void fetchMusculos();
     }
   }, [
     ejercicios.length,
     fetchEjercicios,
-    fetchTiposMusculares,
-    tiposMusculares.length,
+    fetchMusculos,
+    musculos.length,
   ]);
 
   const handleEjercicioChange = (value: string) => {
@@ -173,33 +205,32 @@ export function EntrenamientoActivoCard() {
   };
 
   const ejerciciosFiltrados = useMemo(() => {
-    if (!form.tipo) {
+    if (!form.id_musculo) {
       return [];
     }
 
     return ejercicios.filter(
-      (ejercicio) => normalizeText(ejercicio.tipo) === normalizeText(form.tipo),
+      (ejercicio) => ejercicio.id_musculo === Number(form.id_musculo),
     );
-  }, [ejercicios, form.tipo]);
+  }, [ejercicios, form.id_musculo]);
 
   const ejerciciosFiltradosEdicion = useMemo(() => {
-    if (!editingForm.tipo) {
+    if (!editingForm.id_musculo) {
       return [];
     }
 
     return ejercicios.filter(
-      (ejercicio) =>
-        normalizeText(ejercicio.tipo) === normalizeText(editingForm.tipo),
+      (ejercicio) => ejercicio.id_musculo === Number(editingForm.id_musculo),
     );
-  }, [editingForm.tipo, ejercicios]);
+  }, [editingForm.id_musculo, ejercicios]);
 
-  const tipoMuscularOptions = useMemo(
+  const musculoOptions = useMemo(
     () =>
-      tiposMusculares.map((tipo) => ({
-        value: tipo,
-        label: tipo,
+      musculos.filter((musculo) => musculo.activo).map((musculo) => ({
+        value: String(musculo.id_musculo),
+        label: musculo.nombre,
       })),
-    [tiposMusculares],
+    [musculos],
   );
 
   const ejercicioOptions = useMemo(
@@ -207,7 +238,7 @@ export function EntrenamientoActivoCard() {
       ejerciciosFiltrados.map((ejercicio) => ({
         value: String(ejercicio.id_ejercicio),
         label: ejercicio.nombre,
-        description: ejercicio.tipo || undefined,
+        description: formatEjercicioGrupo(ejercicio),
       })),
     [ejerciciosFiltrados],
   );
@@ -217,7 +248,7 @@ export function EntrenamientoActivoCard() {
       ejerciciosFiltradosEdicion.map((ejercicio) => ({
         value: String(ejercicio.id_ejercicio),
         label: ejercicio.nombre,
-        description: ejercicio.tipo || undefined,
+        description: formatEjercicioGrupo(ejercicio),
       })),
     [ejerciciosFiltradosEdicion],
   );
@@ -230,7 +261,7 @@ export function EntrenamientoActivoCard() {
     for (const serie of entrenamientoActivo?.series ?? []) {
       const key = serie.nombre_ejercicio ?? `serie_${serie.id_fuerza_detalle}`;
       if (!groups.has(key))
-        groups.set(key, { tipo: serie.tipo_ejercicio ?? "", series: [] });
+        groups.set(key, { tipo: formatSerieGrupo(serie), series: [] });
       groups.get(key)!.series.push(serie);
     }
     return groups;
@@ -534,21 +565,21 @@ export function EntrenamientoActivoCard() {
                                   <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
                                     <FieldGroup label="Musculo">
                                       <SearchableCombobox
-                                        value={editingForm.tipo}
+                                        value={editingForm.id_musculo}
                                         onChange={(value) =>
                                           setEditingForm((prev) => ({
                                             ...prev,
-                                            tipo: value,
+                                            id_musculo: value,
                                             id_ejercicio: "",
                                           }))
                                         }
-                                        options={tipoMuscularOptions}
+                                        options={musculoOptions}
                                         placeholder="Selecciona un grupo muscular"
                                         searchPlaceholder="Buscar grupo muscular..."
                                         emptyMessage="No hay grupos musculares"
                                         loading={
                                           loading &&
-                                          tipoMuscularOptions.length === 0
+                                          musculoOptions.length === 0
                                         }
                                         loadingMessage="Cargando grupos..."
                                       />
@@ -567,7 +598,7 @@ export function EntrenamientoActivoCard() {
                                         searchPlaceholder="Buscar ejercicio..."
                                         emptyMessage="No hay ejercicios para este grupo"
                                         disabled={
-                                          submitting || !editingForm.tipo
+                                          submitting || !editingForm.id_musculo
                                         }
                                         disabledMessage="Primero elige un grupo"
                                         loading={
@@ -676,7 +707,7 @@ export function EntrenamientoActivoCard() {
                                       size="sm"
                                       onClick={() => {
                                         setEditingId(serie.id_fuerza_detalle);
-                                        setEditingForm(getEditableForm(serie));
+                                        setEditingForm(getEditableForm(serie, musculos));
                                       }}
                                       className="h-7 px-2 text-foreground hover:text-primary"
                                     >
@@ -750,36 +781,36 @@ export function EntrenamientoActivoCard() {
                 <div className="grid gap-4 sm:gap-5">
                   <FieldGroup label="Grupo muscular">
                     <SearchableCombobox
-                      value={form.tipo}
+                      value={form.id_musculo}
                       onChange={(value) =>
                         setForm((prev) => ({
                           ...prev,
-                          tipo: value,
+                          id_musculo: value,
                           id_ejercicio: "",
                         }))
                       }
-                      options={tipoMuscularOptions}
+                      options={musculoOptions}
                       disabled={submitting || loading}
                       placeholder="Selecciona un grupo muscular"
                       searchPlaceholder="Buscar grupo muscular..."
                       emptyMessage="No hay grupos musculares"
-                      loading={loading && tipoMuscularOptions.length === 0}
+                      loading={loading && musculoOptions.length === 0}
                       loadingMessage="Cargando grupos..."
                     />
                   </FieldGroup>
 
                   <FieldGroup
                     label="Ejercicio"
-                    hint={form.tipo ? "Disponibles para el grupo" : ""}
+                    hint={form.id_musculo ? "Disponibles para el grupo" : ""}
                   >
                     <SearchableCombobox
                       value={form.id_ejercicio}
                       onChange={handleEjercicioChange}
                       options={ejercicioOptions}
-                      disabled={submitting || !form.tipo}
+                      disabled={submitting || !form.id_musculo}
                       disabledMessage="Primero elige un grupo"
                       placeholder={
-                        form.tipo
+                        form.id_musculo
                           ? "Selecciona un ejercicio"
                           : "Primero elige un grupo"
                       }

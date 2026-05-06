@@ -2,6 +2,7 @@ import { api } from "@/lib/api"
 import {
   EjercicioCreate,
   EjercicioEdit,
+  EjerciciosParams,
   EjercicioResponse,
   EntrenoFuerzaCreate,
   EntrenoFuerzaResponse,
@@ -9,6 +10,8 @@ import {
   GimnasioCreate,
   GimnasioEdit,
   GimnasioResponse,
+  Musculo,
+  SubcategoriaMusculo,
   SerieFuerzaCreate,
   SerieFuerzaPatch,
   SerieFuerzaResponse,
@@ -39,7 +42,9 @@ const normalizeEjercicio = (item: unknown): EjercicioResponse | null => {
   const record = item as Record<string, unknown>
   const id = Number(record.id_ejercicio ?? record.id ?? 0)
   const nombre = String(record.nombre ?? record.nombre_ejercicio ?? "").trim()
-  const tipo = String(record.tipo ?? record.tipo_ejercicio ?? "").trim()
+  const idSubcategoria = Number(record.id_subcategoria_musculo ?? 0)
+  const idMusculo = Number(record.id_musculo ?? 0)
+  const tipoLegacy = String(record.tipo ?? record.tipo_ejercicio ?? "").trim()
 
   if (!Number.isFinite(id) || id <= 0 || !nombre) {
     return null
@@ -48,44 +53,81 @@ const normalizeEjercicio = (item: unknown): EjercicioResponse | null => {
   return {
     id_ejercicio: id,
     nombre,
-    tipo,
+    id_subcategoria_musculo:
+      Number.isFinite(idSubcategoria) && idSubcategoria > 0 ? idSubcategoria : null,
     url_video: typeof record.url_video === "string" ? record.url_video : null,
+    id_musculo: Number.isFinite(idMusculo) && idMusculo > 0 ? idMusculo : null,
+    musculo_codigo: typeof record.musculo_codigo === "string" ? record.musculo_codigo : null,
+    musculo_nombre:
+      typeof record.musculo_nombre === "string"
+        ? record.musculo_nombre
+        : tipoLegacy || null,
+    subcategoria_codigo:
+      typeof record.subcategoria_codigo === "string" ? record.subcategoria_codigo : null,
+    subcategoria_nombre:
+      typeof record.subcategoria_nombre === "string" ? record.subcategoria_nombre : null,
+    tipo: tipoLegacy || (typeof record.musculo_nombre === "string" ? record.musculo_nombre : null),
   }
 }
 
-const normalizeTipoMuscular = (item: unknown): string | null => {
-  if (typeof item === "string") {
-    const value = item.trim()
-    return value || null
-  }
-
+const normalizeSubcategoriaMusculo = (item: unknown, fallbackMusculoId: number): SubcategoriaMusculo | null => {
   if (!item || typeof item !== "object") {
     return null
   }
 
   const record = item as Record<string, unknown>
-  const value =
-    record.tipo ?? record.nombre ?? record.label ?? record.value ?? record.descripcion ?? null
+  const id = Number(record.id_subcategoria_musculo ?? record.id ?? 0)
+  const idMusculo = Number(record.id_musculo ?? fallbackMusculoId)
+  const nombre = String(record.nombre ?? record.label ?? "").trim()
+  const codigo = String(record.codigo ?? record.value ?? nombre).trim()
 
-  if (typeof value !== "string") {
+  if (!Number.isFinite(id) || id <= 0 || !Number.isFinite(idMusculo) || idMusculo <= 0 || !nombre) {
     return null
   }
 
-  const normalized = value.trim()
-  return normalized || null
+  return {
+    id_subcategoria_musculo: id,
+    id_musculo: idMusculo,
+    codigo,
+    nombre,
+    activo: typeof record.activo === "boolean" ? record.activo : true,
+  }
+}
+
+const normalizeMusculo = (item: unknown): Musculo | null => {
+  if (!item || typeof item !== "object") {
+    return null
+  }
+
+  const record = item as Record<string, unknown>
+  const id = Number(record.id_musculo ?? record.id ?? 0)
+  const nombre = String(record.nombre ?? record.label ?? record.tipo ?? "").trim()
+  const codigo = String(record.codigo ?? record.value ?? record.tipo ?? nombre).trim()
+
+  if (!Number.isFinite(id) || id <= 0 || !nombre) {
+    return null
+  }
+
+  return {
+    id_musculo: id,
+    codigo,
+    nombre,
+    activo: typeof record.activo === "boolean" ? record.activo : true,
+    subcategorias: toArray<unknown>(record.subcategorias)
+      .map((subcategoria) => normalizeSubcategoriaMusculo(subcategoria, id))
+      .filter((subcategoria): subcategoria is SubcategoriaMusculo => subcategoria !== null),
+  }
 }
 
 const toEjercicioPayload = (payload: EjercicioCreate | EjercicioEdit) => {
-  const body: Record<string, string | null> = {}
+  const body: Record<string, string | number | null> = {}
 
   if ("nombre" in payload && payload.nombre !== undefined) {
     body.nombre = payload.nombre ?? null
-    body.nombre_ejercicio = payload.nombre ?? null
   }
 
-  if ("tipo" in payload && payload.tipo !== undefined) {
-    body.tipo = payload.tipo ?? null
-    body.tipo_ejercicio = payload.tipo ?? null
+  if ("id_subcategoria_musculo" in payload && payload.id_subcategoria_musculo !== undefined) {
+    body.id_subcategoria_musculo = payload.id_subcategoria_musculo
   }
 
   if ("url_video" in payload && payload.url_video !== undefined) {
@@ -96,9 +138,12 @@ const toEjercicioPayload = (payload: EjercicioCreate | EjercicioEdit) => {
 }
 
 export const EntrenamientosAPI = {
-  getEjercicios: async (params?: { q?: string; tipo?: string }): Promise<EjercicioResponse[]> => {
+  getEjercicios: async (params?: EjerciciosParams): Promise<EjercicioResponse[]> => {
     const { data } = await api.get("/api/entrenamientos/ejercicios/", {
-      params: params?.q || params?.tipo ? params : undefined,
+      params:
+        params?.q || params?.tipo || params?.id_musculo || params?.id_subcategoria_musculo
+          ? params
+          : undefined,
     })
 
     return toArray<unknown>(data).map(normalizeEjercicio).filter((item): item is EjercicioResponse => item !== null)
@@ -118,12 +163,10 @@ export const EntrenamientosAPI = {
     await api.delete(`/api/entrenamientos/ejercicios/${idEjercicio}`)
   },
 
-  getTiposMusculares: async (): Promise<string[]> => {
+  getMusculos: async (): Promise<Musculo[]> => {
     const { data } = await api.get("/api/entrenamientos/ejercicios/musculos")
 
-    return Array.from(
-      new Set(toArray<unknown>(data).map(normalizeTipoMuscular).filter((item): item is string => item !== null))
-    )
+    return toArray<unknown>(data).map(normalizeMusculo).filter((item): item is Musculo => item !== null)
   },
 
   getGimnasios: async (q?: string): Promise<GimnasioResponse[]> => {

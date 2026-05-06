@@ -30,21 +30,50 @@ export interface GimnasioResponse {
 
 export interface EjercicioCreate {
   nombre: string
-  tipo: string
+  id_subcategoria_musculo: number
   url_video?: string | null
 }
 
 export interface EjercicioEdit {
   nombre?: string | null
-  tipo?: string | null
+  id_subcategoria_musculo?: number | null
   url_video?: string | null
 }
 
 export interface EjercicioResponse {
   id_ejercicio: number
   nombre: string
-  tipo: string
+  id_subcategoria_musculo: number | null
   url_video?: string | null
+  id_musculo: number | null
+  musculo_codigo: string | null
+  musculo_nombre: string | null
+  subcategoria_codigo: string | null
+  subcategoria_nombre: string | null
+  tipo?: string | null
+}
+
+export interface SubcategoriaMusculo {
+  id_subcategoria_musculo: number
+  id_musculo: number
+  codigo: string
+  nombre: string
+  activo: boolean
+}
+
+export interface Musculo {
+  id_musculo: number
+  codigo: string
+  nombre: string
+  activo: boolean
+  subcategorias: SubcategoriaMusculo[]
+}
+
+export interface EjerciciosParams {
+  q?: string
+  id_musculo?: number
+  id_subcategoria_musculo?: number
+  tipo?: string
 }
 
 export interface EntrenoFuerzaCreate {
@@ -87,6 +116,7 @@ export interface SerieFuerzaResponse {
   repeticiones: number
   nombre_ejercicio?: string | null
   tipo_ejercicio?: string | null
+  subcategoria_ejercicio?: string | null
   url_video?: string | null
 }
 

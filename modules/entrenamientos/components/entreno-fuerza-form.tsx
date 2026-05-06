@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { FormEvent, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowRight, Flame } from "lucide-react"
 import { toast } from "sonner"
 import { SearchableCombobox } from "@/components/forms/searchable-combobox"
@@ -39,6 +39,7 @@ const steps = [
 
 export function EntrenoFuerzaFormCard() {
   const { gimnasios, entrenamientoActivo, submitting, iniciarEntrenoFuerza } = useEntrenamientos()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const initialGymId = searchParams.get("id_gimnasio") ?? ""
   const [form, setForm] = useState(() => ({
@@ -68,6 +69,7 @@ export function EntrenoFuerzaFormCard() {
       toast.success("Entrenamiento activo", {
         description: "La sesion ya quedo abierta para registrar series.",
       })
+      router.push("/app/entrenamientos/activo")
       return
     }
 

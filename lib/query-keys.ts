@@ -17,9 +17,14 @@ export const queryKeys = {
   },
   entrenamientos: {
     ejerciciosRoot: ["entrenamientos", "ejercicios"] as const,
-    ejercicios: (params?: { q?: string; tipo?: string }) =>
+    ejercicios: (params?: {
+      q?: string
+      id_musculo?: number
+      id_subcategoria_musculo?: number
+      tipo?: string
+    }) =>
       ["entrenamientos", "ejercicios", params ?? {}] as const,
-    tiposMusculares: ["entrenamientos", "tipos-musculares"] as const,
+    musculos: ["entrenamientos", "musculos"] as const,
     gimnasiosRoot: ["entrenamientos", "gimnasios"] as const,
     gimnasios: (q?: string) => ["entrenamientos", "gimnasios", { q: q ?? "" }] as const,
     fuerzaLista: ["entrenamientos", "fuerza", "lista"] as const,

@@ -11,28 +11,32 @@ import { SearchableCombobox } from "@/components/forms/searchable-combobox"
 import { getFriendlyErrorMessage } from "@/lib/error-messages"
 import { EntrenamientosAPI } from "@/modules/entrenamientos/api/entrenamientos.api"
 import { ejercicioCreateSchema, ejercicioEditSchema } from "@/modules/entrenamientos/schemas/entrenamientos.schema"
-import type { EjercicioResponse } from "@/modules/entrenamientos/types/entrenamientos"
+import type { EjercicioResponse, Musculo } from "@/modules/entrenamientos/types/entrenamientos"
 
-type FormState = { nombre: string; tipo: string; url_video: string }
-const emptyForm: FormState = { nombre: "", tipo: "", url_video: "" }
-const fallbackTipoOptions = [
-  { value: "bicep", label: "Bicep" },
-  { value: "tricep", label: "Tricep" },
-  { value: "pecho", label: "Pecho" },
-  { value: "hombro", label: "Hombro" },
-  { value: "espalda", label: "Espalda" },
-  { value: "cuadricep", label: "Cuadricep" },
-]
+type FormState = { nombre: string; id_musculo: string; id_subcategoria_musculo: string; url_video: string }
+const emptyForm: FormState = { nombre: "", id_musculo: "", id_subcategoria_musculo: "", url_video: "" }
 
 const toFormState = (e: EjercicioResponse): FormState => ({
   nombre: e.nombre,
-  tipo: e.tipo,
+  id_musculo: e.id_musculo ? String(e.id_musculo) : "",
+  id_subcategoria_musculo: e.id_subcategoria_musculo ? String(e.id_subcategoria_musculo) : "",
   url_video: e.url_video ?? "",
 })
 
+const formatEjercicioGrupo = (ejercicio: EjercicioResponse) => {
+  const musculo = ejercicio.musculo_nombre ?? ejercicio.tipo ?? "Sin musculo"
+  const subcategoria = ejercicio.subcategoria_nombre
+
+  if (!subcategoria || subcategoria.toLowerCase() === "general") {
+    return musculo
+  }
+
+  return `${musculo} / ${subcategoria}`
+}
+
 export function EjerciciosManager() {
   const [ejercicios, setEjercicios] = useState<EjercicioResponse[]>([])
-  const [tiposMusculares, setTiposMusculares] = useState<string[]>([])
+  const [musculos, setMusculos] = useState<Musculo[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [search, setSearch] = useState("")
@@ -41,7 +45,7 @@ export function EjerciciosManager() {
   const isEditing = editingId !== null
 
   useEffect(() => {
-    void EntrenamientosAPI.getTiposMusculares().then(setTiposMusculares).catch(() => null)
+    void EntrenamientosAPI.getMusculos().then(setMusculos).catch(() => null)
   }, [])
 
   useEffect(() => {
@@ -54,9 +58,24 @@ export function EjerciciosManager() {
     return () => clearTimeout(timer)
   }, [search])
 
-  const tipoOptions = useMemo(
-    () => (tiposMusculares.length > 0 ? tiposMusculares.map((t) => ({ value: t, label: t })) : fallbackTipoOptions),
-    [tiposMusculares],
+  const musculoOptions = useMemo(
+    () => musculos.filter((musculo) => musculo.activo).map((musculo) => ({
+      value: String(musculo.id_musculo),
+      label: musculo.nombre,
+    })),
+    [musculos],
+  )
+
+  const subcategoriaOptions = useMemo(
+    () =>
+      musculos
+        .find((musculo) => String(musculo.id_musculo) === form.id_musculo)
+        ?.subcategorias.filter((subcategoria) => subcategoria.activo)
+        .map((subcategoria) => ({
+          value: String(subcategoria.id_subcategoria_musculo),
+          label: subcategoria.nombre,
+        })) ?? [],
+    [form.id_musculo, musculos],
   )
 
   const cancelEdit = () => { setEditingId(null); setForm(emptyForm) }
@@ -64,7 +83,7 @@ export function EjerciciosManager() {
   const handleSubmit = async () => {
     const basePayload = {
       nombre: form.nombre.trim(),
-      tipo: form.tipo.trim(),
+      id_subcategoria_musculo: Number(form.id_subcategoria_musculo),
       url_video: form.url_video.trim() || "",
     }
 
@@ -85,7 +104,7 @@ export function EjerciciosManager() {
       if (isEditing) {
         const updated = await EntrenamientosAPI.updateEjercicio(editingId!, {
           nombre: parsed.data.nombre?.trim() || null,
-          tipo: parsed.data.tipo?.trim() || null,
+          id_subcategoria_musculo: parsed.data.id_subcategoria_musculo ?? null,
           url_video: parsed.data.url_video ? parsed.data.url_video.trim() : null,
         })
         setEjercicios((prev) => prev.map((e) => (e.id_ejercicio === editingId ? updated : e)))
@@ -94,7 +113,7 @@ export function EjerciciosManager() {
       } else {
         const nuevo = await EntrenamientosAPI.createEjercicio({
           nombre: basePayload.nombre,
-          tipo: basePayload.tipo,
+          id_subcategoria_musculo: basePayload.id_subcategoria_musculo,
           ...(basePayload.url_video ? { url_video: basePayload.url_video } : {}),
         })
         setEjercicios((prev) => [...prev, nuevo])
@@ -140,13 +159,27 @@ export function EjerciciosManager() {
               onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))}
             />
           </FieldGroup>
-          <FieldGroup label="Grupo muscular">
+          <FieldGroup label="Musculo">
             <SearchableCombobox
-              value={form.tipo}
-              onChange={(v) => setForm((p) => ({ ...p, tipo: v }))}
-              options={tipoOptions}
-              placeholder="Selecciona grupo"
+              value={form.id_musculo}
+              onChange={(value) =>
+                setForm((prev) => ({ ...prev, id_musculo: value, id_subcategoria_musculo: "" }))
+              }
+              options={musculoOptions}
+              placeholder="Selecciona musculo"
               searchPlaceholder="Buscar..."
+              allowClear={false}
+            />
+          </FieldGroup>
+          <FieldGroup label="Subcategoria">
+            <SearchableCombobox
+              value={form.id_subcategoria_musculo}
+              onChange={(value) => setForm((prev) => ({ ...prev, id_subcategoria_musculo: value }))}
+              options={subcategoriaOptions}
+              placeholder={form.id_musculo ? "Selecciona zona" : "Primero elige musculo"}
+              searchPlaceholder="Buscar..."
+              disabled={!form.id_musculo}
+              disabledMessage="Primero elige musculo"
               allowClear={false}
             />
           </FieldGroup>
@@ -190,7 +223,7 @@ export function EjerciciosManager() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Ejercicio</TableHead>
-                  <TableHead>Tipo</TableHead>
+                  <TableHead>Musculo</TableHead>
                   <TableHead className="w-20 text-right" />
                 </TableRow>
               </TableHeader>
@@ -210,7 +243,7 @@ export function EjerciciosManager() {
                         </a>
                       ) : null}
                     </TableCell>
-                    <TableCell className="capitalize text-muted-foreground">{ej.tipo}</TableCell>
+                    <TableCell className="text-muted-foreground">{formatEjercicioGrupo(ej)}</TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
                         <Button

@@ -1,25 +1,6 @@
 import { z } from "zod"
 
 const optionalTrimmedText = z.string().trim().optional().nullable().or(z.literal(""))
-const enumMusculoValues = ["bicep", "tricep", "pecho", "hombro", "espalda", "cuadricep"] as const
-const musculoAliases: Record<string, (typeof enumMusculoValues)[number]> = {
-  biceps: "bicep",
-  bicep: "bicep",
-  triceps: "tricep",
-  tricep: "tricep",
-  pecho: "pecho",
-  hombro: "hombro",
-  espalda: "espalda",
-  cuadricep: "cuadricep",
-  cuadriceps: "cuadricep",
-  pierna: "cuadricep",
-  piernas: "cuadricep",
-}
-const normalizeMusculo = (value: string) => musculoAliases[value.trim().toLowerCase()] ?? value.trim().toLowerCase()
-const musculoSchema = z.preprocess(
-  (value) => (typeof value === "string" ? normalizeMusculo(value) : value),
-  z.enum(enumMusculoValues, { error: "Grupo muscular invalido" }),
-)
 
 export const gimnasioCreateSchema = z.object({
   nombre_gimnasio: z.string().trim().min(2, "El nombre del gimnasio debe tener al menos 2 caracteres"),
@@ -41,7 +22,10 @@ export const gimnasioEditSchema = z.object({
 
 export const ejercicioCreateSchema = z.object({
   nombre: z.string().trim().min(2, "El nombre del ejercicio debe tener al menos 2 caracteres"),
-  tipo: musculoSchema,
+  id_subcategoria_musculo: z
+    .number()
+    .int("Selecciona una subcategoria valida")
+    .positive("Selecciona una subcategoria"),
   url_video: z
     .string()
     .trim()
@@ -53,7 +37,7 @@ export const ejercicioCreateSchema = z.object({
 
 export const ejercicioEditSchema = z.object({
   nombre: z.string().trim().min(2).optional().nullable().or(z.literal("")),
-  tipo: musculoSchema.optional().nullable().or(z.literal("")),
+  id_subcategoria_musculo: z.number().int().positive().optional().nullable(),
   url_video: z.string().trim().url("La URL del video no es valida").optional().nullable().or(z.literal("")),
 })
 
